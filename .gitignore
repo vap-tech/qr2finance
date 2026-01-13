@@ -208,3 +208,4 @@ __marimo__/
 
 # Me
 .idea
+/frontend/node_modules/
