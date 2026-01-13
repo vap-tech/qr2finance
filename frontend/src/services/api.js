@@ -139,4 +139,35 @@ export const analyticsAPI = {
   getStoreStats: () => api.get('/analytics/store-stats'),
 };
 
+export const storesAPI = {
+  getStores: (skip = 0, limit = 100, favoriteOnly = false) => {
+    const params = new URLSearchParams();
+    params.append('skip', skip);
+    params.append('limit', limit);
+    if (favoriteOnly) params.append('favorite_only', 'true');
+
+    return api.get(`/stores?${params.toString()}`);
+  },
+
+  getStoreStats: () => api.get('/stores/stats'),
+
+  getStore: (storeId) => api.get(`/stores/${storeId}`),
+
+  createStore: (storeData) => api.post('/stores/', storeData),
+
+  updateStore: (storeId, storeData) => api.put(`/stores/${storeId}`, storeData),
+
+  deleteStore: (storeId) => api.delete(`/stores/${storeId}`),
+
+  createStorePattern: (storeId, patternData) => api.post(`/stores/${storeId}/patterns`, patternData),
+
+  autoDetectStore: (retailPlace, address = null) => {
+    const params = new URLSearchParams();
+    params.append('retail_place', retailPlace);
+    if (address) params.append('address', address);
+
+    return api.get(`/stores/auto-detect?${params.toString()}`);
+  },
+};
+
 export default api;

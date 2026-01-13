@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 import json
 from typing import List
-from .. import crud, schemas
+from .. import crud, schemas, crud_stores
 from ..database import get_db
 from ..dependencies import get_current_user
 from ..models import User
@@ -26,6 +26,16 @@ def create_receipt(
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
+    # Если store_id не указан, пытаемся определить автоматически
+    if not receipt.store_id and receipt.retail_place:
+        store_id = crud_stores.find_store_for_receipt(
+            db,
+            user_id=current_user.user_id,
+            retail_place=receipt.retail_place,
+            retail_place_address=receipt.retail_place_address
+        )
+        if store_id:
+            receipt.store_id = store_id
     return crud.create_receipt(db=db, receipt=receipt, user_id=current_user.user_id)
 
 

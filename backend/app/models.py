@@ -17,6 +17,7 @@ class User(Base):
     receipts = relationship("Receipt", back_populates="owner")
     categories = relationship("ProductCategory", back_populates="owner")
     tags = relationship("ReceiptTag", back_populates="owner")
+    stores = relationship("Store", back_populates="owner")
 
 
 class Receipt(Base):
@@ -49,10 +50,12 @@ class Receipt(Base):
     user_org_inn = Column(String(20))
     raw_data = Column(JSON)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    store_id = Column(Integer, ForeignKey("stores.store_id", ondelete="SET NULL"))
 
     owner = relationship("User", back_populates="receipts")
     items = relationship("ReceiptItem", back_populates="receipt", cascade="all, delete-orphan")
     tags = relationship("ReceiptTagMapping", back_populates="receipt")
+    store = relationship("Store", back_populates="receipts")
 
 
 class ReceiptItem(Base):
@@ -110,3 +113,39 @@ class ReceiptTagMapping(Base):
 
     receipt = relationship("Receipt", back_populates="tags")
     tag = relationship("ReceiptTag", back_populates="receipts")
+
+
+class Store(Base):
+    __tablename__ = "stores"
+
+    store_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
+    name = Column(String(255), nullable=False)
+    chain_name = Column(String(255))
+    address = Column(Text)
+    latitude = Column(Numeric(10, 8))
+    longitude = Column(Numeric(11, 8))
+    is_favorite = Column(Boolean, default=False)
+    category = Column(String(50))
+    notes = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    owner = relationship("User", back_populates="stores")
+    receipts = relationship("Receipt", back_populates="store")
+
+
+class StorePattern(Base):
+    __tablename__ = "store_patterns"
+
+    pattern_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
+    pattern_type = Column(String(20), nullable=False)  # 'name', 'address', 'both'
+    pattern_value = Column(String(500), nullable=False)
+    store_id = Column(Integer, ForeignKey("stores.store_id", ondelete="CASCADE"))
+    is_regex = Column(Boolean, default=False)
+    priority = Column(Integer, default=10)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    owner = relationship("User")
+    store = relationship("Store")

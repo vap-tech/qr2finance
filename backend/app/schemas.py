@@ -117,6 +117,7 @@ class ReceiptBase(BaseModel):
 
 class ReceiptCreate(ReceiptBase):
     items: List[ReceiptItemCreate]
+    store_id: Optional[int] = None
 
     @field_validator(
         'total_sum',
@@ -177,3 +178,55 @@ class StoreStats(BaseModel):
     avg_receipt_sum_rub: Decimal
     first_purchase: datetime
     last_purchase: datetime
+
+
+class StoreBase(BaseModel):
+    name: str
+    chain_name: Optional[str] = None
+    address: Optional[str] = None
+    latitude: Optional[Decimal] = None
+    longitude: Optional[Decimal] = None
+    is_favorite: bool = False
+    category: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class StoreCreate(StoreBase):
+    pass
+
+
+class StoreUpdate(StoreBase):
+    name: Optional[str] = None
+
+
+class Store(StoreBase):
+    store_id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+    receipts_count: Optional[int] = None  # Для статистики
+    total_spent: Optional[Decimal] = None  # Для статистики
+
+    class Config:
+        from_attributes = True
+
+
+class StorePatternBase(BaseModel):
+    pattern_type: str  # 'name', 'address', 'both'
+    pattern_value: str
+    store_id: int
+    is_regex: bool = False
+    priority: int = 10
+
+
+class StorePatternCreate(StorePatternBase):
+    pass
+
+
+class StorePattern(StorePatternBase):
+    pattern_id: int
+    user_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

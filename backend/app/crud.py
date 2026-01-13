@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from . import models, schemas
 from .auth import get_password_hash
+from typing import Optional
 
 
 # User CRUD
@@ -170,3 +171,155 @@ def get_store_stats(db: Session, user_id: int):
         )
         for row in results
     ]
+
+
+# Магазины
+def create_store(db: Session, store: schemas.StoreCreate, user_id: int):
+    db_store = models.Store(**store.dict(), user_id=user_id)
+    db.add(db_store)
+    db.commit()
+    db.refresh(db_store)
+    return db_store
+
+
+def get_user_stores(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    return db.query(models.Store) \
+        .filter(models.Store.user_id == user_id) \
+        .order_by(models.Store.name) \
+        .offset(skip).limit(limit).all()
+
+
+def get_store_by_id(db: Session, store_id: int, user_id: int):
+    return db.query(models.Store) \
+        .filter(
+        models.Store.store_id == store_id,
+        models.Store.user_id == user_id
+    ).first()
+
+
+def update_store(db: Session, store_id: int, store_update: schemas.StoreUpdate, user_id: int):
+    db_store = get_store_by_id(db, store_id, user_id)
+    if not db_store:
+        return None
+
+    update_data = store_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_store, field, value)
+
+    db.commit()
+    db.refresh(db_store)
+    return db_store
+
+
+def delete_store(db: Session, store_id: int, user_id: int):
+    db_store = get_store_by_id(db, store_id, user_id)
+    if not db_store:
+        return False
+
+    db.delete(db_store)
+    db.commit()
+    return True
+
+
+# Автоматическое определение магазина по чеку
+def find_store_for_receipt(db: Session, user_id: int, retail_place: str, retail_place_address: str = None) -> Optional[
+    int]:
+    if not retail_place:
+        return None
+
+    # Пока просто ищем точное совпадение
+    query = db.query(models.Store).filter(models.Store.user_id == user_id)
+
+    if retail_place_address:
+        exact_match = query.filter(
+            models.Store.name.ilike(f"%{retail_place}%"),
+            models.Store.address.ilike(f"%{retail_place_address}%") if retail_place_address else True
+        ).first()
+        if exact_match:
+            return exact_match.store_id
+
+    # Ищем по частичному совпадению названия
+    partial_match = query.filter(
+        models.Store.name.ilike(f"%{retail_place}%")
+    ).first()
+
+    if partial_match:
+        return partial_match.store_id
+
+    return None
+
+
+# Статистика по магазинам
+def get_store_stats2(db: Session, user_id: int):
+    results = db.query(
+        models.Store.store_id,
+        models.Store.user_id,  # Добавьте user_id
+        models.Store.name,
+        models.Store.chain_name,
+        models.Store.address,
+        models.Store.is_favorite,
+        models.Store.category,
+        models.Store.notes,
+        models.Store.created_at,  # Добавьте created_at
+        models.Store.updated_at,  # Добавьте updated_at
+        func.count(models.Receipt.receipt_id).label('receipts_count'),
+        func.sum(models.Receipt.total_sum).label('total_spent'),
+        func.avg(models.Receipt.total_sum).label('avg_receipt'),
+        func.min(models.Receipt.date_time).label('first_purchase'),
+        func.max(models.Receipt.date_time).label('last_purchase')
+    ).outerjoin(
+        models.Receipt, models.Receipt.store_id == models.Store.store_id
+    ).filter(
+        models.Store.user_id == user_id
+    ).group_by(
+        models.Store.store_id,
+        models.Store.user_id,
+        models.Store.name,
+        models.Store.chain_name,
+        models.Store.address,
+        models.Store.is_favorite,
+        models.Store.category,
+        models.Store.notes,
+        models.Store.created_at,
+        models.Store.updated_at
+    ).order_by(
+        func.count(models.Receipt.receipt_id).desc()
+    ).all()
+
+    # Преобразуем результат в словари
+    stats = []
+    for row in results:
+        stat = {
+            'store_id': row.store_id,
+            'user_id': row.user_id,
+            'name': row.name,
+            'chain_name': row.chain_name,
+            'address': row.address,
+            'is_favorite': row.is_favorite,
+            'category': row.category,
+            'notes': row.notes,
+            'created_at': row.created_at,
+            'updated_at': row.updated_at,
+            'receipts_count': row.receipts_count or 0,
+            'total_spent': row.total_spent or 0,
+            'avg_receipt': row.avg_receipt or 0,
+            'first_purchase': row.first_purchase,
+            'last_purchase': row.last_purchase,
+        }
+        stats.append(stat)
+
+    return stats
+
+
+# Паттерны магазинов
+def create_store_pattern(db: Session, pattern: schemas.StorePatternCreate, user_id: int):
+    # Проверяем, что магазин принадлежит пользователю
+    store = get_store_by_id(db, pattern.store_id, user_id)
+    if not store:
+        return None
+
+    db_pattern = models.StorePattern(**pattern.dict(), user_id=user_id)
+    db.add(db_pattern)
+    db.commit()
+    db.refresh(db_pattern)
+    return db_pattern

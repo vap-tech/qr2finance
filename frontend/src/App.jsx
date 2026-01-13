@@ -5,6 +5,7 @@ import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import Receipts from './components/Receipts';
 import Analytics from './components/Analytics';
+import Stores from './components/Stores';
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -41,6 +42,14 @@ function App() {
             </PrivateRoute>
           }
         />
+          <Route
+          path="/stores"
+          element={
+            <PrivateRoute>
+              <Stores />
+            </PrivateRoute>
+          }
+          />
         <Route path="/" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>

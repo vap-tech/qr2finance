@@ -13,6 +13,7 @@ import {
   MenuItem,
 } from '@chakra-ui/react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { FaStore } from 'react-icons/fa';
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
@@ -65,6 +66,15 @@ const Layout = ({ children }) => {
             colorScheme="teal"
           >
             Analytics
+          </Button>
+          <Button
+              as={Link}
+              to="/stores"
+              variant={isActive('/stores') ? 'solid' : 'ghost'}
+              colorScheme="teal"
+              leftIcon={<FaStore />}
+          >
+            Магазины
           </Button>
         </Flex>
 
