@@ -1,97 +1,107 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from typing import List, Optional
-from .. import crud, schemas
+from typing import List
+from .. import crud, schemas, services, models
 from ..database import get_db
 from ..dependencies import get_current_user
-from ..models import User
 
 router = APIRouter(prefix="/stores", tags=["stores"])
 
-
-@router.post("/", response_model=schemas.Store)
-def create_store(
-        store: schemas.StoreCreate,
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
-):
-    return crud.create_store(db=db, store=store, user_id=current_user.user_id)
-
-
-@router.get("/", response_model=List[schemas.Store])
+# GET /stores?skip=0&limit=100
+@router.get("/", response_model=List[schemas.Shop])
 def read_stores(
-        skip: int = 0,
-        limit: int = 100,
-        favorite_only: bool = Query(False, description="Только избранные магазины"),
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
-    stores = crud.get_user_stores(db, user_id=current_user.user_id, skip=skip, limit=limit)
+    # Простое получение всех магазинов
+    from sqlalchemy import select
+    return db.execute(
+        select(models.Shop).offset(skip).limit(limit)
+    ).scalars().all()
 
-    if favorite_only:
-        stores = [store for store in stores if store.is_favorite]
-
-    return stores
-
-
-@router.get("/stats", response_model=List[schemas.Store])
+# GET /stores/stats
+@router.get("/stats", response_model=List[schemas.StoreStat])
 def get_stores_stats(
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
-    stats = crud.get_store_stats2(db, user_id=current_user.user_id)
-    return stats
+    # Используем метод, который мы уже писали в services
+    return services.get_spending_by_retail_shops(db, user_id=current_user.id)
 
-
-@router.get("/{store_id}", response_model=schemas.Store)
-def read_store(
-        store_id: int,
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
+# POST /stores/
+@router.post("/", response_model=schemas.Shop)
+def create_manual_store(
+    store_data: dict, # Фронт шлет кастомный JSON
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
 ):
-    store = crud.get_store_by_id(db, store_id=store_id, user_id=current_user.user_id)
-    if store is None:
-        raise HTTPException(status_code=404, detail="Магазин не найден")
-    return store
+    # Логика сохранения магазина, созданного вручную на фронте
+    new_shop = models.Shop(
+        retail_name=store_data.get("name"),
+        legal_name=store_data.get("chain_name", "Unknown"),
+        address=store_data.get("address"),
+        category=store_data.get("category"),
+        is_favorite=store_data.get("is_favorite", False),
+        notes=store_data.get("notes"),
+        inn="0000000000" # Заглушка, если ИНН не пришел с фронта
+    )
+    db.add(new_shop)
+    db.commit()
+    db.refresh(new_shop)
+    return new_shop
 
 
-@router.put("/{store_id}", response_model=schemas.Store)
+@router.put("/{store_id}", response_model=schemas.Shop)
 def update_store(
         store_id: int,
-        store_update: schemas.StoreUpdate,
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
+        store_data: dict,  # Принимаем данные от фронта
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
 ):
-    store = crud.update_store(db, store_id=store_id, store_update=store_update, user_id=current_user.user_id)
-    if store is None:
+    # 1. Ищем магазин в базе
+    query = select(models.Shop).where(models.Shop.id == store_id)
+    db_shop = db.execute(query).scalar_one_or_none()
+
+    if not db_shop:
         raise HTTPException(status_code=404, detail="Магазин не найден")
-    return store
+
+    # 2. Обновляем поля, сопоставляя имена фронтенда с именами бэкенда
+    # Если фронт прислал 'name', пишем в 'retail_name' и т.д.
+    if "name" in store_data:
+        db_shop.retail_name = store_data["name"]
+    if "chain_name" in store_data:
+        db_shop.legal_name = store_data["chain_name"]
+    if "address" in store_data:
+        db_shop.address = store_data["address"]
+    if "category" in store_data:
+        db_shop.category = store_data["category"]
+    if "is_favorite" in store_data:
+        db_shop.is_favorite = store_data["is_favorite"]
+    if "notes" in store_data:
+        db_shop.notes = store_data["notes"]
+
+    # 3. Сохраняем изменения
+    db.commit()
+    db.refresh(db_shop)
+
+    return db_shop
 
 
 @router.delete("/{store_id}")
 def delete_store(
         store_id: int,
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        current_user: models.User = Depends(get_current_user)
 ):
-    success = crud.delete_store(db, store_id=store_id, user_id=current_user.user_id)
-    if not success:
+    query = select(models.Shop).where(models.Shop.id == store_id)
+    db_shop = db.execute(query).scalar_one_or_none()
+
+    if not db_shop:
         raise HTTPException(status_code=404, detail="Магазин не найден")
-    return {"message": "Магазин удален"}
 
-
-@router.post("/auto-detect")
-def auto_detect_store(
-        retail_place: str = Query(..., description="Название магазина из чека"),
-        address: Optional[str] = Query(None, description="Адрес магазина из чека"),
-        current_user: User = Depends(get_current_user),
-        db: Session = Depends(get_db)
-):
-    store_id = crud.find_store_for_receipt(
-        db,
-        user_id=current_user.user_id,
-        retail_place=retail_place,
-        retail_place_address=address
-    )
-
-    return {"store_id": store_id, "retail_place": retail_place}
+    db.delete(db_shop)
+    db.commit()
+    return {"status": "success", "message": "Магазин удален"}

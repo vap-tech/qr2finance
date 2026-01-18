@@ -80,6 +80,25 @@ const Stores = () => {
     'Другое'
   ];
 
+  // Функция для конвертации копеек в рубли
+  const kopecksToRubles = (kopecks) => {
+    if (kopecks === null || kopecks === undefined) return 0;
+    // Проверяем, если число уже в рублях (больше 1000)
+    if (kopecks > 1000) {
+      // Если число большое, возможно оно уже в рублях
+      // Для примера: 117699.0 - это 1176.99 рублей, значит в копейках должно быть 117699
+      // Проверяем логику: если число > 1000, делим на 100
+      return Number(kopecks) / 100;
+    }
+    return Number(kopecks);
+  };
+
+  // Функция для форматирования чисел
+  const formatCurrency = (value) => {
+    const rubles = kopecksToRubles(value);
+    return rubles.toFixed(2);
+  };
+
   useEffect(() => {
     fetchStores();
   }, []);
@@ -95,8 +114,46 @@ const Stores = () => {
       console.log('Stores response:', storesRes.data);
       console.log('Stats response:', statsRes.data);
 
+      // Установка списка магазинов
       setStores(storesRes.data || []);
-      setStoreStats(statsRes.data || []);
+
+      // Преобразование статистики магазинов из API
+      const formattedStats = (statsRes.data || []).map(store => {
+        // Используем новые поля из API
+        const storeName = store.name || 'Неизвестный магазин';
+        const totalSpent = store.total_spent || 0;
+        const receiptsCount = store.receipts_count || 0;
+        const avgReceipt = store.avg_receipt || 0;
+
+        // Конвертируем копейки в рубли
+        const totalSpentRub = kopecksToRubles(totalSpent);
+        const avgReceiptRub = kopecksToRubles(avgReceipt);
+
+        // Если avg_receipt = 0, но есть чеки, рассчитываем средний чек
+        const calculatedAvgReceipt = avgReceiptRub === 0 && receiptsCount > 0
+          ? totalSpentRub / receiptsCount
+          : avgReceiptRub;
+
+        return {
+          // Новые поля из API
+          name: storeName,
+          retail_place: storeName, // Для совместимости с существующим кодом
+          total_spent: totalSpent,
+          total_spent_rub: totalSpentRub,
+          receipts_count: receiptsCount,
+          avg_receipt: avgReceipt,
+          avg_receipt_rub: calculatedAvgReceipt,
+          // Остальные поля
+          chain_name: store.chain_name || '',
+          address: '',
+          first_purchase: null,
+          last_purchase: null
+        };
+      });
+
+      console.log('Formatted stats (в рублях):', formattedStats);
+      setStoreStats(formattedStats);
+
     } catch (error) {
       console.error('Error fetching stores:', error);
       toast({
@@ -240,14 +297,8 @@ const Stores = () => {
         </Button>
       </HStack>
 
-      {/* Отладка - покажите данные в консоли */}
-      <Box display="none">
-        <button onClick={() => console.log('Stores:', stores)}>Log Stores</button>
-        <button onClick={() => console.log('Stats:', storeStats)}>Log Stats</button>
-      </Box>
-
       <Box mb={8}>
-        <Heading size="md" mb={4}>Статистика по магазинам</Heading>
+        <Heading size="md" mb={4}>Статистика по магазинам (из чеков)</Heading>
         {storeStats.length > 0 ? (
           <Box
             bg="white"
@@ -262,46 +313,39 @@ const Stores = () => {
                   <Th isNumeric>Чеков</Th>
                   <Th isNumeric>Потрачено</Th>
                   <Th isNumeric>Ср. чек</Th>
-                  <Th>Первый чек</Th>
-                  <Th>Последний чек</Th>
                 </Tr>
               </Thead>
               <Tbody>
-                {storeStats.map((store) => (
-                  <Tr key={store.store_id} _hover={{ bg: 'gray.50' }}>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontWeight="medium">{store.name}</Text>
-                        {store.chain_name && (
-                          <Tag size="sm" colorScheme="blue">
-                            {store.chain_name}
-                          </Tag>
-                        )}
-                        {store.address && (
-                          <Text fontSize="xs" color="gray.600">
-                            <FaMapMarkerAlt style={{ display: 'inline', marginRight: '4px' }} />
-                            {store.address}
-                          </Text>
-                        )}
-                      </VStack>
-                    </Td>
-                    <Td isNumeric>{store.receipts_count || 0}</Td>
-                    <Td isNumeric>{parseFloat(store.total_spent || 0).toFixed(2)} ₽</Td>
-                    <Td isNumeric>{parseFloat(store.avg_receipt || 0).toFixed(2)} ₽</Td>
-                    <Td>
-                      {store.first_purchase ?
-                        new Date(store.first_purchase).toLocaleDateString('ru-RU') :
-                        '—'
-                      }
-                    </Td>
-                    <Td>
-                      {store.last_purchase ?
-                        new Date(store.last_purchase).toLocaleDateString('ru-RU') :
-                        '—'
-                      }
-                    </Td>
-                  </Tr>
-                ))}
+                {storeStats.map((store, index) => {
+                  // Безопасное получение значений
+                  const totalSpent = store.total_spent_rub || 0;
+                  const avgReceipt = store.avg_receipt_rub || 0;
+                  const storeName = store.name || store.retail_place || 'Неизвестный магазин';
+
+                  return (
+                    <Tr key={`${storeName}-${index}`} _hover={{ bg: 'gray.50' }}>
+                      <Td>
+                        <VStack align="start" spacing={1}>
+                          <Text fontWeight="medium">{storeName}</Text>
+                          {store.chain_name && (
+                            <Tag size="sm" colorScheme="blue">
+                              {store.chain_name}
+                            </Tag>
+                          )}
+                          {store.address && (
+                            <Text fontSize="xs" color="gray.600">
+                              <FaMapMarkerAlt style={{ display: 'inline', marginRight: '4px' }} />
+                              {store.address}
+                            </Text>
+                          )}
+                        </VStack>
+                      </Td>
+                      <Td isNumeric>{store.receipts_count || 0}</Td>
+                      <Td isNumeric>{totalSpent.toFixed(2)} ₽</Td>
+                      <Td isNumeric>{avgReceipt.toFixed(2)} ₽</Td>
+                    </Tr>
+                  );
+                })}
               </Tbody>
             </Table>
           </Box>
@@ -316,7 +360,7 @@ const Stores = () => {
       </Box>
 
       <Box>
-        <Heading size="md" mb={4}>Мои магазины</Heading>
+        <Heading size="md" mb={4}>Мои магазины (добавленные вручную)</Heading>
         {stores.length > 0 ? (
           <Box
             display="grid"
@@ -377,20 +421,10 @@ const Stores = () => {
                 )}
 
                 {store.notes && (
-                  <Text fontSize="sm" color="gray.500" mb={3}>
+                  <Text fontSize="sm" color="gray.500">
                     {store.notes}
                   </Text>
                 )}
-
-                <HStack justifyContent="space-between" pt={2} borderTop="1px solid" borderColor="gray.100">
-                  <HStack>
-                    <FaShoppingCart />
-                    <Text fontSize="sm">{store.receipts_count || 0} чеков</Text>
-                  </HStack>
-                  <Text fontSize="sm" fontWeight="medium">
-                    {parseFloat(store.total_spent || 0).toFixed(2)} ₽
-                  </Text>
-                </HStack>
               </Box>
             ))}
           </Box>
@@ -398,8 +432,20 @@ const Stores = () => {
           <Box textAlign="center" py={8} bg="gray.50" borderRadius="lg">
             <Text color="gray.500">Пока нет добавленных магазинов</Text>
             <Text fontSize="sm" color="gray.400" mt={2}>
-              Добавьте магазин вручную или загрузите чеки для автоматического определения
+              Добавьте магазин вручную для удобного управления
             </Text>
+            <Button
+              mt={4}
+              leftIcon={<FaPlus />}
+              colorScheme="teal"
+              size="sm"
+              onClick={() => {
+                resetForm();
+                onOpen();
+              }}
+            >
+              Добавить первый магазин
+            </Button>
           </Box>
         )}
       </Box>

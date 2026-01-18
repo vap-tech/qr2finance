@@ -1,151 +1,101 @@
-from sqlalchemy import Column, Integer, String, DateTime, Numeric, ForeignKey, Boolean, Text, JSON, BigInteger
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+from datetime import datetime
+from typing import List, Optional
+from sqlalchemy import ForeignKey, String, BigInteger, DateTime, Integer, Float, Boolean, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from .database import Base
 
-
 class User(Base):
+    """Пользователь системы (владелец чеков)"""
     __tablename__ = "users"
 
-    user_id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(255), unique=True, index=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
-    full_name = Column(String(255))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    is_active = Column(Boolean, default=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[Optional[str]] = mapped_column(String(255))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now()
+    )
 
-    receipts = relationship("Receipt", back_populates="owner")
-    categories = relationship("ProductCategory", back_populates="owner")
-    tags = relationship("ReceiptTag", back_populates="owner")
-    stores = relationship("Store", back_populates="owner")
+    receipts: Mapped[List["Receipt"]] = relationship(back_populates="user")
+
+
+class Shop(Base):
+    """Магазин и Юр.лицо (владелец сети)"""
+    __tablename__ = "shops"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    legal_name: Mapped[str] = mapped_column(String(255))  # Напр: ООО "Агроторг"
+    inn: Mapped[str] = mapped_column(String(12), index=True)
+    retail_name: Mapped[Optional[str]] = mapped_column(String(255))  # Напр: Пятерочка
+    address: Mapped[Optional[str]] = mapped_column(String(500))
+
+    # Новые поля для совместимости с фронтендом
+    category: Mapped[Optional[str]] = mapped_column(String(100))  # Супермаркет
+    is_favorite: Mapped[bool] = mapped_column(Boolean, default=False)
+    notes: Mapped[Optional[str]] = mapped_column(String(1000))
+
+    receipts: Mapped[List["Receipt"]] = relationship(back_populates="shop")
+
+
+class Cashier(Base):
+    """Информация о кассире"""
+    __tablename__ = "cashiers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(String(255))  # ФИО
+    inn: Mapped[Optional[str]] = mapped_column(String(12))  # ИНН кассира
+
+    receipts: Mapped[List["Receipt"]] = relationship(back_populates="cashier")
 
 
 class Receipt(Base):
+    """Заголовок чека"""
     __tablename__ = "receipts"
 
-    receipt_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-    fiscal_drive_number = Column(String(20), nullable=False)
-    fiscal_document_number = Column(Integer, nullable=False)
-    fiscal_sign = Column(BigInteger, nullable=False)
-    date_time = Column(DateTime(timezone=True), nullable=False)
-    total_sum = Column(Numeric(12, 2), nullable=False)
-    cash_total_sum = Column(Numeric(12, 2), default=0)
-    ecash_total_sum = Column(Numeric(12, 2), default=0)
-    credit_sum = Column(Numeric(12, 2), default=0)
-    prepaid_sum = Column(Numeric(12, 2), default=0)
-    provision_sum = Column(Numeric(12, 2), default=0)
-    retail_place = Column(String(255))
-    retail_place_address = Column(Text)
-    operator_name = Column(String(255))
-    operator_inn = Column(String(20))
-    shift_number = Column(Integer)
-    kkt_reg_id = Column(String(30))
-    fns_url = Column(String(255))
-    taxation_type = Column(Integer)
-    applied_taxation_type = Column(Integer)
-    nds10 = Column(Numeric(12, 2), default=0)
-    nds18 = Column(Numeric(12, 2), default=0)
-    user_org_name = Column(String(255))
-    user_org_inn = Column(String(20))
-    raw_data = Column(JSON)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    store_id = Column(Integer, ForeignKey("stores.store_id", ondelete="SET NULL"))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    external_id: Mapped[str] = mapped_column(String(100), unique=True)
+    date_time: Mapped[datetime] = mapped_column(DateTime)
+    total_sum: Mapped[int] = mapped_column(BigInteger)  # В копейках
 
-    owner = relationship("User", back_populates="receipts")
-    items = relationship("ReceiptItem", back_populates="receipt", cascade="all, delete-orphan")
-    tags = relationship("ReceiptTagMapping", back_populates="receipt")
-    store = relationship("Store", back_populates="receipts")
+    # Реквизиты ФНС
+    fiscal_drive_number: Mapped[str] = mapped_column(String(20))
+    fiscal_document_number: Mapped[int] = mapped_column(Integer)
+    fiscal_sign: Mapped[str] = mapped_column(String(20))
+    shift_number: Mapped[Optional[int]] = mapped_column(Integer)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    shop_id: Mapped[int] = mapped_column(ForeignKey("shops.id"))
+    cashier_id: Mapped[Optional[int]] = mapped_column(ForeignKey("cashiers.id"))
+
+    user: Mapped["User"] = relationship(back_populates="receipts")
+    shop: Mapped["Shop"] = relationship(back_populates="receipts")
+    cashier: Mapped["Cashier"] = relationship(back_populates="receipts")
+    items: Mapped[List["ReceiptItem"]] = relationship(back_populates="receipt", cascade="all, delete-orphan")
 
 
 class ReceiptItem(Base):
+    """Позиция товара в чеке"""
     __tablename__ = "receipt_items"
 
-    item_id = Column(Integer, primary_key=True, index=True)
-    receipt_id = Column(Integer, ForeignKey("receipts.receipt_id", ondelete="CASCADE"))
-    name = Column(String(500), nullable=False)
-    price = Column(Numeric(12, 2), nullable=False)
-    quantity = Column(Numeric(10, 3), nullable=False)
-    sum = Column(Numeric(12, 2), nullable=False)
-    nds = Column(Integer)
-    product_type = Column(Integer)
-    payment_type = Column(Integer, default=4)
-    gtin = Column(String(14))
-    product_id_type = Column(Integer)
-    serial_number = Column(String(100))
-    raw_product_code = Column(Text)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    receipt_id: Mapped[int] = mapped_column(ForeignKey("receipts.id"))
 
-    receipt = relationship("Receipt", back_populates="items")
+    name: Mapped[str] = mapped_column(String(500))
+    price: Mapped[int] = mapped_column(BigInteger)
+    quantity: Mapped[float] = mapped_column(Float)
+    sum: Mapped[int] = mapped_column(BigInteger)
 
+    # --- Единицы измерения ---
+    # Сюда записываем "шт", "кг", "л" или "уп"
+    # Позволяет отличать весовой товар от штучного для разной логики обработки
+    measure: Mapped[Optional[str]] = mapped_column(String(20), default="шт")
 
-class ProductCategory(Base):
-    __tablename__ = "product_categories"
+    # Технические поля из JSON
+    product_type: Mapped[Optional[int]] = mapped_column(Integer)  # Напр. 1 - товар, 33 - маркированный
+    gtin: Mapped[Optional[str]] = mapped_column(String(20))
+    raw_product_code: Mapped[Optional[str]] = mapped_column(String(500))
 
-    category_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-    category_name = Column(String(100), nullable=False)
-    description = Column(Text)
-    parent_category_id = Column(Integer, ForeignKey("product_categories.category_id"))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    owner = relationship("User", back_populates="categories")
-    parent = relationship("ProductCategory", remote_side=[category_id])
-
-
-class ReceiptTag(Base):
-    __tablename__ = "receipt_tags"
-
-    tag_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-    tag_name = Column(String(50), nullable=False)
-    color = Column(String(7))
-
-    owner = relationship("User", back_populates="tags")
-    receipts = relationship("ReceiptTagMapping", back_populates="tag")
-
-
-class ReceiptTagMapping(Base):
-    __tablename__ = "receipt_tag_mapping"
-
-    receipt_id = Column(Integer, ForeignKey("receipts.receipt_id", ondelete="CASCADE"), primary_key=True)
-    tag_id = Column(Integer, ForeignKey("receipt_tags.tag_id", ondelete="CASCADE"), primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-
-    receipt = relationship("Receipt", back_populates="tags")
-    tag = relationship("ReceiptTag", back_populates="receipts")
-
-
-class Store(Base):
-    __tablename__ = "stores"
-
-    store_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-    name = Column(String(255), nullable=False)
-    chain_name = Column(String(255))
-    address = Column(Text)
-    latitude = Column(Numeric(10, 8))
-    longitude = Column(Numeric(11, 8))
-    is_favorite = Column(Boolean, default=False)
-    category = Column(String(50))
-    notes = Column(Text)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    owner = relationship("User", back_populates="stores")
-    receipts = relationship("Receipt", back_populates="store")
-
-
-class StorePattern(Base):
-    __tablename__ = "store_patterns"
-
-    pattern_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"))
-    pattern_type = Column(String(20), nullable=False)  # 'name', 'address', 'both'
-    pattern_value = Column(String(500), nullable=False)
-    store_id = Column(Integer, ForeignKey("stores.store_id", ondelete="CASCADE"))
-    is_regex = Column(Boolean, default=False)
-    priority = Column(Integer, default=10)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    owner = relationship("User")
-    store = relationship("Store")
+    receipt: Mapped["Receipt"] = relationship(back_populates="items")
