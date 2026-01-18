@@ -84,10 +84,8 @@ const Stores = () => {
   const kopecksToRubles = (kopecks) => {
     if (kopecks === null || kopecks === undefined) return 0;
     // Проверяем, если число уже в рублях (больше 1000)
-    if (kopecks > 1000) {
-      // Если число большое, возможно оно уже в рублях
-      // Для примера: 117699.0 - это 1176.99 рублей, значит в копейках должно быть 117699
-      // Проверяем логику: если число > 1000, делим на 100
+    if (kopecks >= 100) {
+      // если число >= 100, делим на 100
       return Number(kopecks) / 100;
     }
     return Number(kopecks);
@@ -120,30 +118,25 @@ const Stores = () => {
       // Преобразование статистики магазинов из API
       const formattedStats = (statsRes.data || []).map(store => {
         // Используем новые поля из API
-        const storeName = store.name || 'Неизвестный магазин';
-        const totalSpent = store.total_spent || 0;
+        const id = store.id;
+        const retailName = store.retail_name || 'Неизвестный магазин';
+        const legalName = store.legal_name || 'Неизвестно'
+        const totalAmount = store.total_amount || 0;
         const receiptsCount = store.receipts_count || 0;
-        const avgReceipt = store.avg_receipt || 0;
+        const receiptAvg = store.receipt_avg || 0;
 
         // Конвертируем копейки в рубли
-        const totalSpentRub = kopecksToRubles(totalSpent);
-        const avgReceiptRub = kopecksToRubles(avgReceipt);
-
-        // Если avg_receipt = 0, но есть чеки, рассчитываем средний чек
-        const calculatedAvgReceipt = avgReceiptRub === 0 && receiptsCount > 0
-          ? totalSpentRub / receiptsCount
-          : avgReceiptRub;
+        const totalSpentRub = kopecksToRubles(totalAmount);
+        const avgReceiptRub = kopecksToRubles(receiptAvg);
 
         return {
-          // Новые поля из API
-          name: storeName,
-          retail_place: storeName, // Для совместимости с существующим кодом
-          total_spent: totalSpent,
+          id: id,
+          retail_name: retailName,
+          legal_name: legalName,
           total_spent_rub: totalSpentRub,
           receipts_count: receiptsCount,
-          avg_receipt: avgReceipt,
-          avg_receipt_rub: calculatedAvgReceipt,
-          // Остальные поля
+          avg_receipt_rub: avgReceiptRub,
+          // TODO:
           chain_name: store.chain_name || '',
           address: '',
           first_purchase: null,
@@ -309,7 +302,9 @@ const Stores = () => {
             <Table variant="simple">
               <Thead bg="gray.50">
                 <Tr>
+                  <Th>№</Th>
                   <Th>Магазин</Th>
+                  <Th>Оф. название</Th>
                   <Th isNumeric>Чеков</Th>
                   <Th isNumeric>Потрачено</Th>
                   <Th isNumeric>Ср. чек</Th>
@@ -318,15 +313,20 @@ const Stores = () => {
               <Tbody>
                 {storeStats.map((store, index) => {
                   // Безопасное получение значений
-                  const totalSpent = store.total_spent_rub || 0;
-                  const avgReceipt = store.avg_receipt_rub || 0;
-                  const storeName = store.name || store.retail_place || 'Неизвестный магазин';
+                  const retailName = store.retail_name || 'Неизвестный магазин';
+                  const legalName = store.legal_name || 'Неизвестно';
+                  const totalSpentRub = store.total_spent_rub || 0;
+                  const receiptsCount = store.receipts_count || 0;
+                  const avgReceiptRub = store.avg_receipt_rub || 0;
 
                   return (
-                    <Tr key={`${storeName}-${index}`} _hover={{ bg: 'gray.50' }}>
+                    <Tr key={store.id} _hover={{ bg: 'gray.50' }}>
+                      <Td isNumeric color="gray.400" fontSize="xs" width="50px">
+                        #{store.id}
+                      </Td>
                       <Td>
                         <VStack align="start" spacing={1}>
-                          <Text fontWeight="medium">{storeName}</Text>
+                          <Text fontWeight="medium">{retailName}</Text>
                           {store.chain_name && (
                             <Tag size="sm" colorScheme="blue">
                               {store.chain_name}
@@ -340,9 +340,10 @@ const Stores = () => {
                           )}
                         </VStack>
                       </Td>
+                      <Td>{legalName}</Td>
                       <Td isNumeric>{store.receipts_count || 0}</Td>
-                      <Td isNumeric>{totalSpent.toFixed(2)} ₽</Td>
-                      <Td isNumeric>{avgReceipt.toFixed(2)} ₽</Td>
+                      <Td isNumeric>{totalSpentRub.toFixed(2)} ₽</Td>
+                      <Td isNumeric>{avgReceiptRub.toFixed(2)} ₽</Td>
                     </Tr>
                   );
                 })}

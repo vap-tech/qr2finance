@@ -16,7 +16,8 @@ def get_monthly_dynamics(db: Session, user_id: int, year: int = 2026):
     return db.execute(
         select(
             extract('month', models.Receipt.date_time).label('month'),
-            func.sum(models.Receipt.total_sum).label('sum')
+            func.sum(models.Receipt.total_sum).label('sum'),
+            func.count(models.Receipt.id).label('count')
         )
         .where(models.Receipt.user_id == user_id)
         .where(extract('year', models.Receipt.date_time) == year)
@@ -47,13 +48,20 @@ def get_spending_by_retail_shops(db: Session, user_id: int):
     """
     return db.execute(
         select(
+            models.Shop.id.label("id"),
             models.Shop.retail_name,
+            models.Shop.legal_name,
             func.sum(models.Receipt.total_sum).label("total_amount"),
-            func.count(models.Receipt.id).label("receipts_count")
+            func.count(models.Receipt.id).label("receipts_count"),
+            func.avg(models.Receipt.total_sum).label("receipt_avg")
         )
         .join(models.Receipt, models.Receipt.shop_id == models.Shop.id)
         .where(models.Receipt.user_id == user_id)
-        .group_by(models.Shop.retail_name)
+        .group_by(
+            models.Shop.id,
+            models.Shop.retail_name,
+            models.Shop.legal_name
+        )
         .order_by(func.sum(models.Receipt.total_sum).desc())
     ).all()
 

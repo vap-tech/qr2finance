@@ -8,7 +8,6 @@ from ..models import User
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
-@router.get("/monthly-stats", response_model=List[schemas.MonthlyDynamics])
 @router.get("/monthly-dynamics", response_model=List[schemas.MonthlyDynamics])
 def get_monthly_dynamics(
     year: int = Query(2026, description="Год для анализа"),
@@ -17,7 +16,7 @@ def get_monthly_dynamics(
 ):
     results = services.get_monthly_dynamics(db, user_id=current_user.id, year=year)
     # Преобразуем копейки в рубли (float) для соответствия схеме
-    return [{"month": r.month, "sum": r.sum / 100} for r in results]
+    return [{"month": r.month, "sum": r.sum / 100, "receipts_count": r.count} for r in results]
 
 @router.get("/top-products", response_model=List[schemas.ProductTop])
 def get_top_products(
@@ -47,9 +46,12 @@ def get_store_stats(
     results = services.get_spending_by_retail_shops(db, user_id=current_user.id)
     return [
         {
+            "id": r.id,
             "retail_name": r.retail_name,
-            "total_amount": r.total_amount / 100,
-            "receipts_count": r.receipts_count
+            "legal_name": r.legal_name,
+            "total_amount": r.total_amount,
+            "receipts_count": r.receipts_count,
+            "receipt_avg": r.receipt_avg
         }
         for r in results
     ]

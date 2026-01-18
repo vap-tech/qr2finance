@@ -31,8 +31,6 @@ class Shop(Base):
     inn: Mapped[str] = mapped_column(String(12), index=True)
     retail_name: Mapped[Optional[str]] = mapped_column(String(255))  # Напр: Пятерочка
     address: Mapped[Optional[str]] = mapped_column(String(500))
-
-    # Новые поля для совместимости с фронтендом
     category: Mapped[Optional[str]] = mapped_column(String(100))  # Супермаркет
     is_favorite: Mapped[bool] = mapped_column(Boolean, default=False)
     notes: Mapped[Optional[str]] = mapped_column(String(1000))

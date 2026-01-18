@@ -62,15 +62,12 @@ class Shop(BaseModel):
 class StoreStat(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    # Фронтенд в таблице статистики ищет именно эти ключи
-    retail_name: str = Field(serialization_alias="name")
-    legal_name: Optional[str] = Field(None, serialization_alias="chain_name")
-    total_amount: float = Field(serialization_alias="total_spent")
+    id: int
+    retail_name: str
+    legal_name: str
+    total_amount: int
     receipts_count: int
-
-    # Доп. поля, которые ожидает фронт (могут быть None)
-    store_id: Optional[int] = None
-    avg_receipt: Optional[float] = 0
+    receipt_avg: Optional[float] = 0
 
 
 # --- ЧЕК ---
@@ -115,7 +112,6 @@ class UserWithReceipts(User):
     receipts: List[Receipt] = []
 
 # --- СХЕМЫ ДЛЯ АУТЕНТИФИКАЦИИ ---
-
 class UserLogin(BaseModel):
     """Схема для входа пользователя"""
     email: EmailStr
@@ -130,8 +126,11 @@ class TokenData(BaseModel):
     """Данные, хранящиеся внутри токена (payload)"""
     user_id: Optional[str] = None
 
+
+# Аналитика
 class MonthlyDynamics(BaseModel):
     month: int
+    receipts_count: int
     sum: float
 
 class ProductTop(BaseModel):
