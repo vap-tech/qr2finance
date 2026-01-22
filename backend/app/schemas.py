@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import List, Optional
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 
 # --- ПОЗИЦИЯ ЧЕКА ---
 class ReceiptItemBase(BaseModel):
@@ -13,25 +15,31 @@ class ReceiptItemBase(BaseModel):
     raw_product_code: Optional[str] = None
     product_type: Optional[int] = None
 
+
 class ReceiptItemCreate(ReceiptItemBase):
     pass
+
 
 class ReceiptItem(ReceiptItemBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     receipt_id: int
 
+
 # --- КАССИР ---
 class CashierBase(BaseModel):
     name: Optional[str] = None
     inn: Optional[str] = None
 
+
 class CashierCreate(CashierBase):
     pass
+
 
 class Cashier(CashierBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
+
 
 # --- МАГАЗИН ---
 class ShopBase(BaseModel):
@@ -40,14 +48,15 @@ class ShopBase(BaseModel):
     retail_name: Optional[str] = None
     address: Optional[str] = None
 
+
 class ShopCreate(ShopBase):
     pass
+
 
 class Shop(BaseModel):
     # Позволяет Pydantic работать с объектами SQLAlchemy
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    # Алиасы: при чтении из БД берется 'id', но в JSON превращается в 'store_id'
     id: int
     retail_name: str
     legal_name: str
@@ -77,14 +86,21 @@ class ReceiptBase(BaseModel):
     total_sum: int
     fiscal_drive_number: str
     fiscal_document_number: int
-    fiscal_sign: str
+    fiscal_sign: int
+    cash_total_sum: int
+    credit_sum: int
+    ecash_total_sum: int
+    prepaid_sum: int
+    provision_sum: int
     shift_number: Optional[int] = None
+
 
 class ReceiptCreate(ReceiptBase):
     shop_id: int
     cashier_id: Optional[int] = None
     user_id: int
     items: List[ReceiptItemCreate]
+
 
 class Receipt(ReceiptBase):
     model_config = ConfigDict(from_attributes=True)
@@ -93,37 +109,49 @@ class Receipt(ReceiptBase):
     cashier: Optional[Cashier]
     items: List[ReceiptItem]
 
+
 # --- ПОЛЬЗОВАТЕЛЬ ---
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     is_active: bool = True
 
+
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8, description="Пароль должен быть не менее 8 символов")
+    password: str = Field(
+        ..., min_length=8, description="Пароль должен быть не менее 8 символов"
+    )
+
 
 class User(UserBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
 
+
 # --- СХЕМЫ ДЛЯ ОТВЕТОВ С ВКЛАДЫВАЕМЫМИ ДАННЫМИ ---
 class UserWithReceipts(User):
     receipts: List[Receipt] = []
 
+
 # --- СХЕМЫ ДЛЯ АУТЕНТИФИКАЦИИ ---
 class UserLogin(BaseModel):
     """Схема для входа пользователя"""
+
     email: EmailStr
     password: str
 
+
 class Token(BaseModel):
     """Схема ответа при успешном логине"""
+
     access_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
     """Данные, хранящиеся внутри токена (payload)"""
+
     user_id: Optional[str] = None
 
 
@@ -132,6 +160,10 @@ class MonthlyDynamics(BaseModel):
     month: int
     receipts_count: int
     sum: float
+    total_sum: int = 54180
+    ecash_total_sum: int = 30286
+    cash_total_sum: int = 303286
+
 
 class ProductTop(BaseModel):
     name: str

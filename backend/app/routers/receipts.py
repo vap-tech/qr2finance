@@ -1,11 +1,13 @@
 import json
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from .. import crud, models, schemas, services
+from .. import crud, models, schemas
 from ..database import get_db
-# Предполагаем, что у вас есть зависимость для получения текущего юзера из JWT
+
+# Зависимость для получения текущего юзера из JWT
 from ..dependencies import get_current_user
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
@@ -13,9 +15,9 @@ router = APIRouter(prefix="/receipts", tags=["receipts"])
 
 @router.post("/", response_model=schemas.Receipt)
 def create_receipt(
-        receipt_data: dict,  # Или schemas.ReceiptCreate если шлете плоский JSON
-        db: Session = Depends(get_db),
-        current_user: models.User = Depends(get_current_user)
+    receipt_data: dict,  # Или schemas.ReceiptCreate если плоский JSON
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Создание чека вручную через передачу JSON-тела запроса.
@@ -25,28 +27,33 @@ def create_receipt(
 
 @router.get("/", response_model=List[schemas.Receipt])
 def read_receipts(
-        skip: int = 0,
-        limit: int = 100,
-        db: Session = Depends(get_db),
-        current_user: models.User = Depends(get_current_user)
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Получение списка чеков текущего пользователя с пагинацией.
     """
-    receipts = crud.get_user_receipts(db, user_id=current_user.id, skip=skip, limit=limit)
+    receipts = crud.get_user_receipts(
+        db, user_id=current_user.id, skip=skip, limit=limit
+    )
     return receipts
 
 
 @router.post("/upload-json")
 async def upload_json_file(
-        file: UploadFile = File(...),
-        db: Session = Depends(get_db),
-        current_user: models.User = Depends(get_current_user)
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     """
     Загрузка файла чека (JSON).
     Принимает файл, парсит его и сохраняет в базу.
     """
+    if file.filename is None:
+        raise HTTPException(status_code=400, detail="Filename is missing")
+
     if not file.filename.endswith(".json"):
         raise HTTPException(status_code=400, detail="Only JSON files are allowed")
 
@@ -55,18 +62,21 @@ async def upload_json_file(
         contents = await file.read()
         data = json.loads(contents)
 
-        # Если в файле список чеков (как в ваших примерах [{}])
+        # Если в файле список чеков (ака [{}] )
         if isinstance(data, list):
-            # Берем первый чек из списка для обработки (или можно сделать цикл)
+            # Берем первый чек из списка для обработки
+            # TODO: можно сделать цикл
             receipt_json = data[0]
         else:
             receipt_json = data
 
-        # Вызываем ваш CRUD метод для сохранения
+        # Вызываем CRUD метод для сохранения
         receipt = crud.create_receipt_full(db, receipt_json, user_id=current_user.id)
 
         # Получаем данные для ответа
-        ticket_data = receipt_json.get("ticket", {}).get("document", {}).get("receipt", {})
+        ticket_data = (
+            receipt_json.get("ticket", {}).get("document", {}).get("receipt", {})
+        )
 
         return {
             "status": "success",
@@ -74,7 +84,7 @@ async def upload_json_file(
             "receipt_id": receipt.id,
             "external_id": receipt.external_id,
             "items_processed": len(receipt.items),
-            "items_in_file": len(ticket_data.get("items", []))
+            "items_in_file": len(ticket_data.get("items", [])),
         }
 
     except json.JSONDecodeError:
@@ -82,4 +92,6 @@ async def upload_json_file(
     except Exception as e:
         # Логируем ошибку для отладки
         print(f"Error processing file: {e}")
-        raise HTTPException(status_code=500, detail=f"Error processing receipt: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error processing receipt: {str(e)}"
+        )

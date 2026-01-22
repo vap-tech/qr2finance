@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Heading,
@@ -31,11 +31,11 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-} from '@chakra-ui/react';
-import { useDropzone } from 'react-dropzone';
-import Layout from './Layout';
-import { receiptsAPI } from '../services/api';
-import { format } from 'date-fns';
+} from "@chakra-ui/react";
+import { useDropzone } from "react-dropzone";
+import Layout from "./Layout";
+import { receiptsAPI } from "../services/api";
+import { format } from "date-fns";
 
 const Receipts = () => {
   const [receipts, setReceipts] = useState([]);
@@ -59,14 +59,14 @@ const Receipts = () => {
   const fetchReceipts = async () => {
     try {
       const response = await receiptsAPI.getReceipts();
-      console.log('Receipts response:', response.data);
+      console.log("Receipts response:", response.data);
       setReceipts(response.data || []);
     } catch (error) {
-      console.error('Error fetching receipts:', error);
+      console.error("Error fetching receipts:", error);
       toast({
-        title: 'Ошибка загрузки',
-        description: 'Не удалось загрузить чеки',
-        status: 'error',
+        title: "Ошибка загрузки",
+        description: "Не удалось загрузить чеки",
+        status: "error",
         duration: 3000,
       });
     } finally {
@@ -76,8 +76,8 @@ const Receipts = () => {
 
   const { getRootProps, getInputProps } = useDropzone({
     accept: {
-      'application/json': ['.json'],
-      'image/*': ['.png', '.jpg', '.jpeg'],
+      "application/json": [".json"],
+      "image/*": [".png", ".jpg", ".jpeg"],
     },
     onDrop: async (acceptedFiles) => {
       if (acceptedFiles.length === 0) return;
@@ -86,17 +86,18 @@ const Receipts = () => {
       try {
         await receiptsAPI.uploadReceipt(acceptedFiles[0]);
         toast({
-          title: 'Чек успешно загружен',
-          status: 'success',
+          title: "Чек успешно загружен",
+          status: "success",
           duration: 3000,
         });
         fetchReceipts();
       } catch (error) {
-        console.error('Upload error:', error);
+        console.error("Upload error:", error);
         toast({
-          title: 'Ошибка загрузки',
-          description: error.response?.data?.detail || 'Ошибка при загрузке файла',
-          status: 'error',
+          title: "Ошибка загрузки",
+          description:
+            error.response?.data?.detail || "Ошибка при загрузке файла",
+          status: "error",
           duration: 5000,
         });
       } finally {
@@ -132,12 +133,14 @@ const Receipts = () => {
           p={4}
           textAlign="center"
           cursor="pointer"
-          _hover={{ borderColor: 'teal.500' }}
+          _hover={{ borderColor: "teal.500" }}
           bg="gray.50"
         >
           <input {...getInputProps()} />
           <Text>
-            {uploading ? 'Загрузка...' : 'Перетащите JSON или изображение чека сюда, или кликните для выбора файла'}
+            {uploading
+              ? "Загрузка..."
+              : "Перетащите JSON или изображение чека сюда, или кликните для выбора файла"}
           </Text>
           <Text fontSize="sm" color="gray.500" mt={2}>
             Поддерживаемые форматы: JSON, PNG, JPG
@@ -145,12 +148,7 @@ const Receipts = () => {
         </Box>
       </HStack>
 
-      <Box
-        bg="white"
-        borderRadius="lg"
-        shadow="sm"
-        overflow="hidden"
-      >
+      <Box bg="white" borderRadius="lg" shadow="sm" overflow="hidden">
         {receipts.length > 0 ? (
           <Table variant="simple">
             <Thead bg="gray.50">
@@ -167,21 +165,30 @@ const Receipts = () => {
               {receipts.map((receipt) => {
                 // Конвертируем сумму из копеек в рубли
                 const totalSumRub = kopecksToRubles(receipt.total_sum);
-                const storeName = receipt.shop?.name || 'Неизвестный магазин';
-                const cashierName = receipt.cashier?.name || 'Не указан';
+                const storeName =
+                  receipt.shop?.retail_name || "Неизвестный магазин";
+                const cashierName = receipt.cashier?.name || "Не указан";
                 const itemsCount = receipt.items?.length || 0;
 
                 return (
-                  <Tr key={receipt.id || receipt.external_id} _hover={{ bg: 'gray.50' }}>
+                  <Tr
+                    key={receipt.id || receipt.external_id}
+                    _hover={{ bg: "gray.50" }}
+                  >
                     <Td>
-                      {receipt.date_time ? format(new Date(receipt.date_time), 'dd.MM.yyyy HH:mm') : 'Нет даты'}
+                      {receipt.date_time
+                        ? format(
+                            new Date(receipt.date_time),
+                            "dd.MM.yyyy HH:mm",
+                          )
+                        : "Нет даты"}
                     </Td>
                     <Td>
                       <VStack align="start" spacing={0}>
                         <Text fontWeight="medium">{storeName}</Text>
-                        {receipt.shop?.chain_name && (
+                        {receipt.shop?.legal_name && (
                           <Tag size="sm" colorScheme="blue" mt={1}>
-                            {receipt.shop.chain_name}
+                            {receipt.shop.legal_name}
                           </Tag>
                         )}
                       </VStack>
@@ -228,15 +235,19 @@ const Receipts = () => {
               <VStack align="stretch" spacing={4}>
                 {/* Информация о магазине */}
                 <Box p={4} bg="gray.50" borderRadius="md">
-                  <Heading size="md" mb={3}>Магазин</Heading>
+                  <Heading size="md" mb={3}>
+                    Магазин
+                  </Heading>
                   <HStack justifyContent="space-between">
                     <Text fontWeight="bold">Название:</Text>
-                    <Text>{selectedReceipt.shop?.name || 'Не указано'}</Text>
+                    <Text>
+                      {selectedReceipt.shop?.retail_name || "Не указано"}
+                    </Text>
                   </HStack>
-                  {selectedReceipt.shop?.chain_name && (
+                  {selectedReceipt.shop?.legal_name && (
                     <HStack justifyContent="space-between" mt={2}>
                       <Text fontWeight="bold">Сеть:</Text>
-                      <Text>{selectedReceipt.shop.chain_name}</Text>
+                      <Text>{selectedReceipt.shop.legal_name}</Text>
                     </HStack>
                   )}
                   {selectedReceipt.shop?.address && (
@@ -251,23 +262,29 @@ const Receipts = () => {
 
                 {/* Информация о чеке */}
                 <Box p={4} bg="gray.50" borderRadius="md">
-                  <Heading size="md" mb={3}>Информация о чеке</Heading>
+                  <Heading size="md" mb={3}>
+                    Информация о чеке
+                  </Heading>
                   <HStack justifyContent="space-between">
                     <Text fontWeight="bold">Дата:</Text>
                     <Text>
                       {selectedReceipt.date_time
-                        ? format(new Date(selectedReceipt.date_time), 'dd.MM.yyyy HH:mm')
-                        : 'Нет даты'
-                      }
+                        ? format(
+                            new Date(selectedReceipt.date_time),
+                            "dd.MM.yyyy HH:mm",
+                          )
+                        : "Нет даты"}
                     </Text>
                   </HStack>
                   <HStack justifyContent="space-between" mt={2}>
                     <Text fontWeight="bold">Кассир:</Text>
-                    <Text>{selectedReceipt.cashier?.name || 'Не указан'}</Text>
+                    <Text>{selectedReceipt.cashier?.name || "Не указан"}</Text>
                   </HStack>
                   <HStack justifyContent="space-between" mt={2}>
                     <Text fontWeight="bold">ФН:</Text>
-                    <Text fontFamily="monospace">{selectedReceipt.fiscal_drive_number}</Text>
+                    <Text fontFamily="monospace">
+                      {selectedReceipt.fiscal_drive_number}
+                    </Text>
                   </HStack>
                   <HStack justifyContent="space-between" mt={2}>
                     <Text fontWeight="bold">ФД №:</Text>
@@ -275,14 +292,18 @@ const Receipts = () => {
                   </HStack>
                   <HStack justifyContent="space-between" mt={2}>
                     <Text fontWeight="bold">ФП:</Text>
-                    <Text fontFamily="monospace">{selectedReceipt.fiscal_sign}</Text>
+                    <Text fontFamily="monospace">
+                      {selectedReceipt.fiscal_sign}
+                    </Text>
                   </HStack>
                 </Box>
 
                 {/* Сумма */}
                 <Box p={4} bg="teal.50" borderRadius="md">
                   <HStack justifyContent="space-between">
-                    <Text fontWeight="bold" fontSize="lg">Итого:</Text>
+                    <Text fontWeight="bold" fontSize="lg">
+                      Итого:
+                    </Text>
                     <Text fontSize="xl" fontWeight="bold">
                       {kopecksToRubles(selectedReceipt.total_sum).toFixed(2)} ₽
                     </Text>
@@ -291,7 +312,9 @@ const Receipts = () => {
 
                 {/* Товары */}
                 <Box mt={4}>
-                  <Heading size="md" mb={3}>Товары</Heading>
+                  <Heading size="md" mb={3}>
+                    Товары
+                  </Heading>
                   {selectedReceipt.items && selectedReceipt.items.length > 0 ? (
                     <Box
                       maxH="400px"
@@ -315,12 +338,19 @@ const Receipts = () => {
                             const itemSum = kopecksToRubles(item.sum);
 
                             return (
-                              <Tr key={item.id || index} _hover={{ bg: 'gray.50' }}>
+                              <Tr
+                                key={item.id || index}
+                                _hover={{ bg: "gray.50" }}
+                              >
                                 <Td>
                                   <VStack align="start" spacing={0}>
                                     <Text>{item.name}</Text>
                                     {item.gtin && (
-                                      <Text fontSize="xs" color="gray.500" fontFamily="monospace">
+                                      <Text
+                                        fontSize="xs"
+                                        color="gray.500"
+                                        fontFamily="monospace"
+                                      >
                                         GTIN: {item.gtin}
                                       </Text>
                                     )}
@@ -329,9 +359,7 @@ const Receipts = () => {
                                 <Td isNumeric>
                                   {item.quantity} {item.measure}
                                 </Td>
-                                <Td isNumeric>
-                                  {itemPrice.toFixed(2)} ₽
-                                </Td>
+                                <Td isNumeric>{itemPrice.toFixed(2)} ₽</Td>
                                 <Td isNumeric fontWeight="bold">
                                   {itemSum.toFixed(2)} ₽
                                 </Td>

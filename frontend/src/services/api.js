@@ -71,7 +71,7 @@ export const receiptsAPI = {
 
 export const analyticsAPI = {
   // Исправлено: поддержка фильтрации по году
-  getMonthlyStats: (year = 2026) =>
+  getMonthlyDynamics: (year = 2026) =>
     api.get("/analytics/monthly-dynamics", { params: { year } }),
 
   // Исправлено: поддержка месяцев (1, 3, 26...)

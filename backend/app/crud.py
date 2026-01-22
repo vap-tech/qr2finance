@@ -1,6 +1,8 @@
 from datetime import datetime
-from sqlalchemy.orm import Session
+
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from . import models, schemas
 from .auth import get_password_hash
 
@@ -12,10 +14,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     # Извлекаем все данные кроме пароля в виде обычного словаря
     user_data = user.model_dump(exclude={"password"})
 
-    db_user = models.User(
-        **user_data,
-        password_hash=hashed_password
-    )
+    db_user = models.User(**user_data, password_hash=hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -69,60 +68,84 @@ def create_receipt_full(db: Session, receipt_data: dict, user_id: int):
     """
     # 1. Проверяем, не существует ли уже такой чек (по external_id)
     existing_receipt = db.execute(
-        select(models.Receipt).where(models.Receipt.external_id == receipt_data['_id'])
+        select(models.Receipt).where(models.Receipt.external_id == receipt_data["_id"])
     ).scalar_one_or_none()
 
     if existing_receipt:
         return existing_receipt
 
-    ticket = receipt_data['ticket']['document']['receipt']
+    ticket: dict = receipt_data["ticket"]["document"]["receipt"]
 
     # 2. Обрабатываем магазин
-    shop = get_or_create_shop(db, schemas.ShopCreate(
-        legal_name=ticket['user'],
-        inn=ticket['userInn'].strip(),
-        retail_name=ticket.get('retailPlace'),
-        address=ticket.get('retailPlaceAddress')
-    ))
+    shop = get_or_create_shop(
+        db,
+        schemas.ShopCreate(
+            legal_name=ticket["user"],
+            inn=ticket["userInn"].strip(),
+            retail_name=ticket.get("retailPlace"),
+            address=ticket.get("retailPlaceAddress"),
+        ),
+    )
 
     # 3. Обрабатываем кассира
-    cashier = get_or_create_cashier(db, schemas.CashierCreate(
-        name=ticket.get('operator'),
-        inn=ticket.get('operatorInn')
-    ))
+    cashier = get_or_create_cashier(
+        db,
+        schemas.CashierCreate(
+            name=ticket.get("operator"), inn=ticket.get("operatorInn")
+        ),
+    )
 
     # 4. Создаем чек
     db_receipt = models.Receipt(
-        external_id=receipt_data['_id'],
-        date_time=datetime.fromisoformat(ticket['dateTime']),
-        total_sum=ticket['totalSum'],
-        fiscal_drive_number=ticket['fiscalDriveNumber'],
-        fiscal_document_number=ticket['fiscalDocumentNumber'],
-        fiscal_sign=str(ticket['fiscalSign']),
-        shift_number=ticket.get('shiftNumber'),
+        external_id=receipt_data["_id"],
+        created_at=datetime.fromisoformat(receipt_data["createdAt"]),
+        date_time=datetime.fromisoformat(ticket["dateTime"]),
+        cash_total_sum=ticket["cashTotalSum"],
+        code=ticket["code"],
+        credit_sum=ticket["creditSum"],
+        ecash_total_sum=ticket["ecashTotalSum"],
+        total_sum=ticket["totalSum"],
+        fiscal_document_format_ver=ticket["fiscalDocumentFormatVer"],
+        fiscal_drive_number=ticket["fiscalDriveNumber"],
+        fiscal_document_number=ticket["fiscalDocumentNumber"],
+        fiscal_sign=ticket["fiscalSign"],
+        shift_number=ticket.get("shiftNumber"),
+        prepaid_sum=ticket.get("prepaidSum"),
+        provision_sum=ticket.get("provisionSum"),
+        kkt_reg_id=ticket.get("kktRegId"),
+        nds_10=ticket.get("nds10"),
+        nds_18=ticket.get("nds18"),
+        operation_type=ticket.get("operationType"),
+        request_number=ticket.get("requestNumber"),
+        taxation_type=ticket.get("taxationType"),
+        applied_taxation_type=ticket.get("appliedTaxationType"),
         user_id=user_id,
         shop_id=shop.id,
-        cashier_id=cashier.id if cashier else None
+        cashier_id=cashier.id if cashier else None,
     )
     db.add(db_receipt)
     db.flush()
 
     # 5. Добавляем позиции (Items)
-    for item in ticket['items']:
+    for item in ticket["items"]:
         # Логика определения единицы измерения (кг vs шт)
-        quantity = item['quantity']
-        measure = "кг" if (not float(quantity).is_integer() or "кг" in item['name'].lower()) else "шт"
+        quantity = item["quantity"]
+        measure = (
+            "кг"
+            if (not float(quantity).is_integer() or "кг" in item["name"].lower())
+            else "шт"
+        )
 
         db_item = models.ReceiptItem(
             receipt_id=db_receipt.id,
-            name=item['name'],
-            price=item['price'],
+            name=item["name"],
+            price=item["price"],
             quantity=quantity,
-            sum=item['sum'],
+            sum=item["sum"],
             measure=measure,
-            product_type=item.get('productType'),
-            gtin=item.get('productCodeData', {}).get('gtin'),
-            raw_product_code=item.get('productCodeData', {}).get('rawProductCode')
+            product_type=item.get("productType"),
+            gtin=item.get("productCodeData", {}).get("gtin"),
+            raw_product_code=item.get("productCodeData", {}).get("rawProductCode"),
         )
         db.add(db_item)
 
@@ -132,10 +155,14 @@ def create_receipt_full(db: Session, receipt_data: dict, user_id: int):
 
 
 def get_user_receipts(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    return db.execute(
-        select(models.Receipt)
-        .where(models.Receipt.user_id == user_id)
-        .offset(skip)
-        .limit(limit)
-        .order_by(models.Receipt.date_time.desc())
-    ).scalars().all()
+    return (
+        db.execute(
+            select(models.Receipt)
+            .where(models.Receipt.user_id == user_id)
+            .offset(skip)
+            .limit(limit)
+            .order_by(models.Receipt.date_time.desc())
+        )
+        .scalars()
+        .all()
+    )
