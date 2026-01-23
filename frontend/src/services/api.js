@@ -74,7 +74,7 @@ export const analyticsAPI = {
   getMonthlyDynamics: (year = 2026) =>
     api.get("/analytics/monthly-dynamics", { params: { year } }),
 
-  // Исправлено: поддержка месяцев (1, 3, 26...)
+  getTotalSum: () => api.get("/analytics/total-sums"),
   getTopProducts: (months = 3, limit = 10) =>
     api.get("/analytics/top-products", { params: { months, limit } }),
 

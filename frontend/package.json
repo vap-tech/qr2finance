@@ -23,6 +23,7 @@
     "eject": "react-scripts eject"
   },
   "devDependencies": {
+    "@types/prop-types": "^15.7.15",
     "react-scripts": "5.0.1"
   },
   "browserslist": {

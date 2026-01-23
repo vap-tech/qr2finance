@@ -156,6 +156,13 @@ class TokenData(BaseModel):
 
 
 # Аналитика
+class TotalSums(BaseModel):
+    total_sum: int
+    cash_total_sum: int
+    ecash_total_sum: int
+    receipts_count: int
+
+
 class MonthlyDynamics(BaseModel):
     month: int
     receipts_count: int

@@ -1,29 +1,42 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import select, func, extract, and_
 from datetime import date
+
 from dateutil.relativedelta import relativedelta
+from sqlalchemy import and_, extract, func, select
+from sqlalchemy.orm import Session
+
 from . import models
 
-def get_user_total_spending(db: Session, user_id: int):
+
+def get_user_total_sum(db: Session, user_id: int):
     """Общая сумма трат пользователя за все время"""
     return db.execute(
-        select(func.sum(models.Receipt.total_sum))
-        .where(models.Receipt.user_id == user_id)
-    ).scalar() or 0
+        select(
+            func.coalesce(func.sum(models.Receipt.total_sum), 0).label("total_sum"),
+            func.coalesce(func.sum(models.Receipt.cash_total_sum), 0).label(
+                "cash_total_sum"
+            ),
+            func.coalesce(func.sum(models.Receipt.ecash_total_sum), 0).label(
+                "ecash_total_sum"
+            ),
+            func.count(models.Receipt.id).label("receipts_count"),
+        ).where(models.Receipt.user_id == user_id)
+    ).first()
+
 
 def get_monthly_dynamics(db: Session, user_id: int, year: int = 2026):
     """Динамика трат по месяцам за конкретный год"""
     return db.execute(
         select(
-            extract('month', models.Receipt.date_time).label('month'),
-            func.sum(models.Receipt.total_sum).label('sum'),
-            func.count(models.Receipt.id).label('count')
+            extract("month", models.Receipt.date_time).label("month"),
+            func.sum(models.Receipt.total_sum).label("sum"),
+            func.count(models.Receipt.id).label("count"),
         )
         .where(models.Receipt.user_id == user_id)
-        .where(extract('year', models.Receipt.date_time) == year)
-        .group_by('month')
-        .order_by('month')
+        .where(extract("year", models.Receipt.date_time) == year)
+        .group_by("month")
+        .order_by("month")
     ).all()
+
 
 def get_top_products(db: Session, user_id: int, limit: int = 10):
     """Топ самых покупаемых товаров (по сумме затрат)"""
@@ -32,7 +45,7 @@ def get_top_products(db: Session, user_id: int, limit: int = 10):
             models.ReceiptItem.name,
             func.sum(models.ReceiptItem.sum).label("total_sum"),
             func.sum(models.ReceiptItem.quantity).label("total_quantity"),
-            models.ReceiptItem.measure
+            models.ReceiptItem.measure,
         )
         .join(models.Receipt)
         .where(models.Receipt.user_id == user_id)
@@ -40,6 +53,7 @@ def get_top_products(db: Session, user_id: int, limit: int = 10):
         .order_by(func.sum(models.ReceiptItem.sum).desc())
         .limit(limit)
     ).all()
+
 
 # --- СТАТИСТИКА ПО МАГАЗИНАМ (Retail Name) ---
 def get_spending_by_retail_shops(db: Session, user_id: int):
@@ -53,20 +67,19 @@ def get_spending_by_retail_shops(db: Session, user_id: int):
             models.Shop.legal_name,
             func.sum(models.Receipt.total_sum).label("total_amount"),
             func.count(models.Receipt.id).label("receipts_count"),
-            func.avg(models.Receipt.total_sum).label("receipt_avg")
+            func.avg(models.Receipt.total_sum).label("receipt_avg"),
         )
         .join(models.Receipt, models.Receipt.shop_id == models.Shop.id)
         .where(models.Receipt.user_id == user_id)
-        .group_by(
-            models.Shop.id,
-            models.Shop.retail_name,
-            models.Shop.legal_name
-        )
+        .group_by(models.Shop.id, models.Shop.retail_name, models.Shop.legal_name)
         .order_by(func.sum(models.Receipt.total_sum).desc())
     ).all()
 
+
 # --- ТОП ПРОДУКТОВ ЗА УКАЗАННЫЙ ПЕРИОД ---
-def get_top_products_by_period(db: Session, user_id: int, months_back: int, limit: int = 10):
+def get_top_products_by_period(
+    db: Session, user_id: int, months_back: int, limit: int = 10
+):
     """
     Топ самых покупаемых товаров по затратам за последние N месяцев.
     """
@@ -80,14 +93,14 @@ def get_top_products_by_period(db: Session, user_id: int, months_back: int, limi
             models.ReceiptItem.name,
             func.sum(models.ReceiptItem.sum).label("total_sum"),
             func.sum(models.ReceiptItem.quantity).label("total_quantity"),
-            models.ReceiptItem.measure
+            models.ReceiptItem.measure,
         )
         .join(models.Receipt)
         .where(
             and_(
                 models.Receipt.user_id == user_id,
                 models.Receipt.date_time >= start_date,
-                models.Receipt.date_time <= end_date
+                models.Receipt.date_time <= end_date,
             )
         )
         .group_by(models.ReceiptItem.name, models.ReceiptItem.measure)

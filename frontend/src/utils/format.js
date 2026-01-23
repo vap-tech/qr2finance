@@ -1,62 +1,48 @@
-/**
- * Утилиты для форматирования данных из API
- */
+/* Утилиты для форматирования данных из API */
 
-/**
- * Конвертирует значение в число, обрабатывая Decimal объекты
- */
-export const toNumber = (value) => {
-  if (value === null || value === undefined) {
-    return 0;
-  }
+export const kopecksToRubles = (kopecks) => {
+  if (kopecks === null || kopecks === undefined) return 0;
+  return Number(kopecks) / 100;
+};
 
-  // Если это Decimal объект из Python
-  if (value && typeof value === 'object' && '__Decimal__' in value) {
-    return parseFloat(value.str) || 0;
-  }
+export const formatCurrency = (amount) => {
+  return amount.toFixed(2);
+};
 
-  // Если это строка
-  if (typeof value === 'string') {
-    return parseFloat(value) || 0;
-  }
-
-  // Если это число
-  if (typeof value === 'number') {
-    return value;
-  }
-
-  // Пробуем конвертировать
+export const formatDate = (dateString) => {
+  if (!dateString) return "Нет даты";
   try {
-    return parseFloat(value) || 0;
+    const date = new Date(dateString);
+    return date.toLocaleString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   } catch {
-    return 0;
+    return "Некорректная дата";
   }
 };
 
-/**
- * Форматирует сумму в рубли
- */
-export const formatRubles = (value) => {
-  const num = toNumber(value);
-  return `${num.toFixed(2)} ₽`;
-};
-
-/**
- * Конвертирует копейки в рубли
- */
-export const kopecksToRubles = (value) => {
-  const num = toNumber(value);
-  // Если число большое (вероятно копейки), делим на 100
-  if (num > 1000) {
-    return num / 100;
+export const formatMonth = (monthData) => {
+  if (!monthData) {
+    const now = new Date();
+    return `${String(now.getMonth() + 1).padStart(2, "0")}.${now.getFullYear()}`;
   }
-  return num;
+
+  if (typeof monthData === "string") {
+    if (monthData.includes("-")) {
+      const [year, month] = monthData.split("-");
+      return `${month}.${year}`;
+    }
+    return monthData;
+  }
+
+  return "текущий месяц";
 };
 
-/**
- * Безопасный toFixed
- */
-export const safeToFixed = (value, decimals = 2) => {
-  const num = toNumber(value);
-  return num.toFixed(decimals);
+export const calculatePercentages = (total, part) => {
+  if (total <= 0) return 0;
+  return (part / total) * 100;
 };

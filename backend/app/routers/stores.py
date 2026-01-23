@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from typing import List
-from .. import crud, schemas, services, models
+
+from .. import models, schemas, services
 from ..database import get_db
 from ..dependencies import get_current_user
 
 router = APIRouter(prefix="/stores", tags=["stores"])
+
 
 # GET /stores?skip=0&limit=100
 @router.get("/", response_model=List[schemas.Shop])
@@ -14,29 +17,29 @@ def read_stores(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     # Простое получение всех магазинов
     from sqlalchemy import select
-    return db.execute(
-        select(models.Shop).offset(skip).limit(limit)
-    ).scalars().all()
+
+    return db.execute(select(models.Shop).offset(skip).limit(limit)).scalars().all()
+
 
 # GET /stores/stats
 @router.get("/stats", response_model=List[schemas.StoreStat])
 def get_stores_stats(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)
 ):
     # Используем метод, который мы уже писали в services
     return services.get_spending_by_retail_shops(db, user_id=current_user.id)
 
+
 # POST /stores/
 @router.post("/", response_model=schemas.Shop)
 def create_manual_store(
-    store_data: dict, # Фронт шлет кастомный JSON
+    store_data: dict,  # Фронт шлет кастомный JSON
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(get_current_user),
 ):
     # Логика сохранения магазина, созданного вручную на фронте
     new_shop = models.Shop(
@@ -46,7 +49,7 @@ def create_manual_store(
         category=store_data.get("category"),
         is_favorite=store_data.get("is_favorite", False),
         notes=store_data.get("notes"),
-        inn="0000000000" # Заглушка, если ИНН не пришел с фронта
+        inn="0000000000",  # Заглушка, если ИНН не пришел с фронта
     )
     db.add(new_shop)
     db.commit()
@@ -56,10 +59,10 @@ def create_manual_store(
 
 @router.put("/{store_id}", response_model=schemas.Shop)
 def update_store(
-        store_id: int,
-        store_data: dict,  # Принимаем данные от фронта
-        db: Session = Depends(get_db),
-        current_user: models.User = Depends(get_current_user)
+    store_id: int,
+    store_data: dict,  # Принимаем данные от фронта
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     # 1. Ищем магазин в базе
     query = select(models.Shop).where(models.Shop.id == store_id)
@@ -92,9 +95,9 @@ def update_store(
 
 @router.delete("/{store_id}")
 def delete_store(
-        store_id: int,
-        db: Session = Depends(get_db),
-        current_user: models.User = Depends(get_current_user)
+    store_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
     query = select(models.Shop).where(models.Shop.id == store_id)
     db_shop = db.execute(query).scalar_one_or_none()

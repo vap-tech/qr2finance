@@ -1,14 +1,19 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
-import Register from './components/Register';
-import Dashboard from './components/Dashboard';
-import Receipts from './components/Receipts';
-import Analytics from './components/Analytics';
-import Stores from './components/Stores';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import Dashboard from "./components/dashboard/Dashboard";
+import Receipts from "./components/Receipts";
+import Analytics from "./components/Analytics";
+import Stores from "./components/Stores";
 
 const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   return token ? children : <Navigate to="/login" />;
 };
 
@@ -42,14 +47,14 @@ function App() {
             </PrivateRoute>
           }
         />
-          <Route
+        <Route
           path="/stores"
           element={
             <PrivateRoute>
               <Stores />
             </PrivateRoute>
           }
-          />
+        />
         <Route path="/" element={<Navigate to="/dashboard" />} />
       </Routes>
     </Router>
