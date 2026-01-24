@@ -5,10 +5,6 @@ export const kopecksToRubles = (kopecks) => {
   return Number(kopecks) / 100;
 };
 
-export const formatCurrency = (amount) => {
-  return amount.toFixed(2);
-};
-
 export const formatDate = (dateString) => {
   if (!dateString) return "Нет даты";
   try {
@@ -45,4 +41,16 @@ export const formatMonth = (monthData) => {
 export const calculatePercentages = (total, part) => {
   if (total <= 0) return 0;
   return (part / total) * 100;
+};
+
+export const formatCurrency = (value, decimals = 2) => {
+  return value.toFixed(decimals);
+};
+
+export const formatStoreStats = (stats) => {
+  return stats.map((store) => ({
+    ...store,
+    total_spent_rub: kopecksToRubles(store.total_amount),
+    avg_receipt_rub: kopecksToRubles(store.receipt_avg),
+  }));
 };
