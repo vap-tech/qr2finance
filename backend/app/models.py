@@ -95,8 +95,8 @@ class Receipt(Base):
     fiscal_sign: Mapped[int] = mapped_column(BigInteger)
     shift_number: Mapped[Optional[int]] = mapped_column(Integer)
     kkt_reg_id: Mapped[str] = mapped_column(String(20))
-    nds_10: Mapped[int] = mapped_column(BigInteger)  # В копейках
-    nds_18: Mapped[int] = mapped_column(BigInteger)  # В копейках
+    nds_10: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    nds_18: Mapped[int] = mapped_column(BigInteger, nullable=True)
     operation_type: Mapped[int] = mapped_column(Integer)
     request_number: Mapped[int] = mapped_column(Integer)
     taxation_type: Mapped[int | None] = mapped_column(Integer, nullable=True)
