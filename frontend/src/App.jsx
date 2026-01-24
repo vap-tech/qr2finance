@@ -7,10 +7,10 @@ import {
 } from "react-router-dom";
 import Login from "./components/Login";
 import Register from "./components/Register";
-import Dashboard from "./components/dashboard/Dashboard";
+import Dashboard from "./components/dashboard";
 import Receipts from "./components/Receipts";
 import Analytics from "./components/Analytics";
-import Stores from "./components/Stores";
+import Stores from "./components/stores";
 
 const PrivateRoute = ({ children }) => {
   const token = localStorage.getItem("token");
