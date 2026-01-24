@@ -16,6 +16,8 @@ import {
   Textarea,
   Select,
   Switch,
+  Text,
+  Badge,
 } from "@chakra-ui/react";
 
 const StoreModal = ({
@@ -24,10 +26,22 @@ const StoreModal = ({
   onSubmit,
   formData,
   onChange,
-  isEditing,
-  categories = [],
+  store,
   isLoading = false,
 }) => {
+  const isEditing = !!store;
+
+  const categories = [
+    "Супермаркет",
+    "Аптека",
+    "Одежда",
+    "Электроника",
+    "Ресторан/Кафе",
+    "Спорттовары",
+    "Книги",
+    "Другое",
+  ];
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit();
@@ -39,42 +53,29 @@ const StoreModal = ({
       <ModalContent as="form" onSubmit={handleSubmit}>
         <ModalHeader>
           {isEditing ? "Редактировать магазин" : "Добавить магазин"}
+          {store && (
+            <Text fontSize="sm" fontWeight="normal" color="gray.500" mt={1}>
+              Статистика: {store.receipts_count} чеков,{" "}
+              {store.total_spent_rub?.toFixed(2)} ₽ всего
+            </Text>
+          )}
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
+          {store && (
+            <VStack align="start" spacing={2} mb={4}>
+              <Text fontWeight="bold">{store.retail_name}</Text>
+              <Text fontSize="sm">{store.legal_name}</Text>
+              {store.inn && <Badge>ИНН: {store.inn}</Badge>}
+              {store.address && (
+                <Text fontSize="sm" color="gray.600">
+                  {store.address}
+                </Text>
+              )}
+            </VStack>
+          )}
+
           <VStack spacing={4}>
-            <FormControl isRequired>
-              <FormLabel>Название магазина</FormLabel>
-              <Input
-                name="name"
-                value={formData.name}
-                onChange={onChange}
-                placeholder="Например: Пятерочка"
-                required
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Название сети</FormLabel>
-              <Input
-                name="chain_name"
-                value={formData.chain_name}
-                onChange={onChange}
-                placeholder="Например: X5 Retail Group"
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Адрес</FormLabel>
-              <Textarea
-                name="address"
-                value={formData.address}
-                onChange={onChange}
-                placeholder="Полный адрес магазина"
-                rows={2}
-              />
-            </FormControl>
-
             <FormControl>
               <FormLabel>Категория</FormLabel>
               <Select
@@ -107,7 +108,7 @@ const StoreModal = ({
                 name="notes"
                 value={formData.notes}
                 onChange={onChange}
-                placeholder="Дополнительная информация"
+                placeholder="Дополнительная информация, пометки..."
                 rows={3}
               />
             </FormControl>
@@ -124,7 +125,7 @@ const StoreModal = ({
             isLoading={isLoading}
             loadingText={isEditing ? "Сохранение..." : "Создание..."}
           >
-            {isEditing ? "Сохранить" : "Создать"}
+            {isEditing ? "Сохранить изменения" : "Создать магазин"}
           </Button>
         </ModalFooter>
       </ModalContent>
@@ -137,30 +138,13 @@ StoreModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
   formData: PropTypes.shape({
-    name: PropTypes.string,
-    chain_name: PropTypes.string,
-    address: PropTypes.string,
     category: PropTypes.string,
     is_favorite: PropTypes.bool,
     notes: PropTypes.string,
   }).isRequired,
   onChange: PropTypes.func.isRequired,
-  isEditing: PropTypes.bool,
-  categories: PropTypes.arrayOf(PropTypes.string),
+  store: PropTypes.object,
   isLoading: PropTypes.bool,
-};
-
-StoreModal.defaultProps = {
-  categories: [
-    "Супермаркет",
-    "Аптека",
-    "Одежда",
-    "Электроника",
-    "Ресторан/Кафе",
-    "Спорттовары",
-    "Книги",
-    "Другое",
-  ],
 };
 
 export default StoreModal;

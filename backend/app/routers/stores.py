@@ -14,15 +14,16 @@ router = APIRouter(prefix="/stores", tags=["stores"])
 # GET /stores?skip=0&limit=100
 @router.get("/", response_model=List[schemas.Shop])
 def read_stores(
+    sort_by: str = "total_amount",
+    descending: bool = True,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    # Простое получение всех магазинов
-    from sqlalchemy import select
-
-    return db.execute(select(models.Shop).offset(skip).limit(limit)).scalars().all()
+    return services.get_spending_by_retail_shops(
+        db, user_id=current_user.id, sort_by=sort_by, descending=descending
+    )
 
 
 # GET /stores/stats
@@ -72,13 +73,6 @@ def update_store(
         raise HTTPException(status_code=404, detail="Магазин не найден")
 
     # 2. Обновляем поля, сопоставляя имена фронтенда с именами бэкенда
-    # Если фронт прислал 'name', пишем в 'retail_name' и т.д.
-    if "name" in store_data:
-        db_shop.retail_name = store_data["name"]
-    if "chain_name" in store_data:
-        db_shop.legal_name = store_data["chain_name"]
-    if "address" in store_data:
-        db_shop.address = store_data["address"]
     if "category" in store_data:
         db_shop.category = store_data["category"]
     if "is_favorite" in store_data:

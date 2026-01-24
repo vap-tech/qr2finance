@@ -61,6 +61,10 @@ class Shop(BaseModel):
     retail_name: str
     legal_name: str
 
+    total_amount: Optional[int] = None
+    receipts_count: Optional[int] = None
+    receipt_avg: Optional[float] = None
+
     inn: str
     address: Optional[str] = None
     category: Optional[str] = None

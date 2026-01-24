@@ -82,8 +82,10 @@ export const analyticsAPI = {
 };
 
 export const storesAPI = {
-  getStores: (skip = 0, limit = 100) =>
-    api.get("/stores/", { params: { skip, limit } }),
+  getStores: ({ skip, limit, sort_by, descending }) =>
+    api.get("/stores/", {
+      params: { skip, limit, sort_by, descending },
+    }),
 
   getStoreStats: () => api.get("/stores/stats"),
 
