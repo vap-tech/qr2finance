@@ -170,10 +170,9 @@ class TotalSums(BaseModel):
 class MonthlyDynamics(BaseModel):
     month: int
     receipts_count: int
-    sum: float
-    total_sum: int = 54180
-    ecash_total_sum: int = 30286
-    cash_total_sum: int = 303286
+    total_sum: int
+    ecash_total_sum: int
+    cash_total_sum: int
 
 
 class ProductTop(BaseModel):

@@ -54,3 +54,9 @@ export const formatStoreStats = (stats) => {
     avg_receipt_rub: kopecksToRubles(store.receipt_avg),
   }));
 };
+
+export const safeNumber = (value) => {
+  if (value === null || value === undefined) return 0;
+  const num = Number(value);
+  return isNaN(num) ? 0 : num;
+};

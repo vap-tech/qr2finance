@@ -1,4 +1,5 @@
 import React from "react";
+import { useTotalSums } from "../../hooks/useTotalSums";
 import PropTypes from "prop-types";
 import { SimpleGrid, Box, HStack, Icon, Text } from "@chakra-ui/react";
 import {
@@ -11,13 +12,20 @@ import StatCard from "./StatCard";
 import { formatMonth, calculatePercentages } from "../../utils/format";
 
 const DashboardStats = ({ stats }) => {
+  const totalSums = useTotalSums();
   const formattedMonth = formatMonth(stats.month);
-  const totalAmount = stats.total_sum_rub || 35;
-  const cashAmount = stats.cash_sum_rub || 0;
-  const cardAmount = stats.ecash_sum_rub || 0;
 
-  const cashPercentage = calculatePercentages(totalAmount, cashAmount);
-  const cardPercentage = calculatePercentages(totalAmount, cardAmount);
+  // Используем данные из useTotalSums для процентов
+  const totalAmount = totalSums.total_sum_rub || stats.total_sum_rub || 0;
+  const cashAmount = totalSums.cash_sum_rub || stats.cash_sum_rub || 0;
+  const cardAmount = totalSums.ecash_sum_rub || stats.ecash_sum_rub || 0;
+
+  const cashPercentage =
+    totalSums.percentages.cash ||
+    (totalAmount > 0 ? (cashAmount / totalAmount) * 100 : 0);
+  const cardPercentage =
+    totalSums.percentages.ecash ||
+    (totalAmount > 0 ? (cardAmount / totalAmount) * 100 : 0);
 
   return (
     <>
@@ -32,9 +40,9 @@ const DashboardStats = ({ stats }) => {
         <StatCard
           icon={FaReceipt}
           iconColor="brand.500"
-          label="Чеков всего"
-          value={stats.receipts_count || 0}
-          helpText="Количество чеков"
+          label="Всего чеков"
+          value={totalSums.receipts_count || stats.receipts_count || 0}
+          helpText="За всё время"
         />
 
         <StatCard
@@ -42,7 +50,7 @@ const DashboardStats = ({ stats }) => {
           iconColor="brand.500"
           label="Общие расходы"
           value={`${totalAmount.toFixed(2)} ₽`}
-          helpText={`На ${formattedMonth}`}
+          helpText="За всё время"
         />
 
         <StatCard

@@ -40,7 +40,7 @@ const RecentReceipts = ({ receipts }) => {
 RecentReceipts.propTypes = {
   receipts: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.string.isRequired,
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       total_sum_rub: PropTypes.number.isRequired,
       cash_total_sum: PropTypes.number,
       shop_name: PropTypes.string.isRequired,

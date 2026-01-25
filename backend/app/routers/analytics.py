@@ -27,7 +27,13 @@ def get_monthly_dynamics(
     results = services.get_monthly_dynamics(db, user_id=current_user.id, year=year)
 
     return [
-        {"month": r.month, "sum": r.sum / 100, "receipts_count": r.count}
+        {
+            "month": r.month,
+            "receipts_count": r.receipts_count,
+            "total_sum": r.total_sum,
+            "cash_total_sum": r.cash_total_sum,
+            "ecash_total_sum": r.ecash_total_sum,
+        }
         for r in results
     ]
 
@@ -45,7 +51,7 @@ def get_top_products(
     return [
         {
             "name": r.name,
-            "total_sum": r.total_sum / 100,
+            "total_sum": r.total_sum,
             "total_quantity": r.total_quantity,
             "measure": r.measure,
         }

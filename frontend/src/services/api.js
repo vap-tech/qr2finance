@@ -70,15 +70,32 @@ export const receiptsAPI = {
 };
 
 export const analyticsAPI = {
-  // Исправлено: поддержка фильтрации по году
-  getMonthlyDynamics: (year = 2026) =>
+  // Общая статистика за всё время
+  getTotalSums: () => api.get("/analytics/total-sums"),
+
+  // Месячная динамика
+  getMonthlyDynamics: (year = new Date().getFullYear()) =>
     api.get("/analytics/monthly-dynamics", { params: { year } }),
 
-  getTotalSum: () => api.get("/analytics/total-sums"),
+  // Топ товаров
   getTopProducts: (months = 3, limit = 10) =>
     api.get("/analytics/top-products", { params: { months, limit } }),
 
-  getStoreStats: () => api.get("/analytics/store-stats"),
+  // Получить статистику по магазинам (уже есть в stores, но оставим если нужно)
+  getStoreStats: (skip = 0, limit = 100) =>
+    api.get("/analytics/store-stats", { params: { skip, limit } }),
+
+  // Новый эндпоинт: получить расходы по категориям (если есть)
+  getCategoryStats: (year = new Date().getFullYear()) =>
+    api
+      .get("/analytics/category-stats", { params: { year } })
+      .catch(() => ({ data: [] })),
+
+  // Новый эндпоинт: средний чек по месяцам
+  getAverageReceipt: (year = new Date().getFullYear()) =>
+    api
+      .get("/analytics/average-receipt", { params: { year } })
+      .catch(() => ({ data: [] })),
 };
 
 export const storesAPI = {

@@ -28,8 +28,14 @@ def get_monthly_dynamics(db: Session, user_id: int, year: int = 2026):
     return db.execute(
         select(
             extract("month", models.Receipt.date_time).label("month"),
-            func.sum(models.Receipt.total_sum).label("sum"),
-            func.count(models.Receipt.id).label("count"),
+            func.coalesce(func.sum(models.Receipt.total_sum), 0).label("total_sum"),
+            func.coalesce(func.sum(models.Receipt.cash_total_sum), 0).label(
+                "cash_total_sum"
+            ),
+            func.coalesce(func.sum(models.Receipt.ecash_total_sum), 0).label(
+                "ecash_total_sum"
+            ),
+            func.count(models.Receipt.id).label("receipts_count"),
         )
         .where(models.Receipt.user_id == user_id)
         .where(extract("year", models.Receipt.date_time) == year)

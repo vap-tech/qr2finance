@@ -9,7 +9,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import Dashboard from "./components/dashboard";
 import Receipts from "./components/Receipts";
-import Analytics from "./components/Analytics";
+import Analytics from "./components/analytics";
 import Stores from "./components/stores";
 
 const PrivateRoute = ({ children }) => {
@@ -19,7 +19,12 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

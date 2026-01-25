@@ -9,7 +9,7 @@ export const useDashboardData = () => {
       total_sum_rub: 0,
       cash_sum_rub: 0,
       ecash_sum_rub: 0,
-      month: new Date().toISOString().slice(0, 7),
+      month: "текущий месяц",
     },
     recentReceipts: [],
     loading: true,
@@ -17,39 +17,66 @@ export const useDashboardData = () => {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [monthlyStatsRes, totalSumRes, receiptsRes] =
+      // Используем total-sums для общей статистики и monthly-dynamics для месячной
+      const [totalSumsRes, monthlyStatsRes, receiptsRes] =
         await Promise.allSettled([
-          analyticsAPI.getMonthlyDynamics(),
-          analyticsAPI.getTotalSum(),
+          analyticsAPI.getTotalSums(),
+          analyticsAPI.getMonthlyDynamics(new Date().getFullYear()),
           receiptsAPI.getReceipts(0, 50),
         ]);
 
+      const totalSums =
+        totalSumsRes.status === "fulfilled" ? totalSumsRes.value?.data : null;
       const monthlyStats =
         monthlyStatsRes.status === "fulfilled"
           ? monthlyStatsRes.value?.data
           : null;
-      const totalSum =
-        totalSumRes.status === "fulfilled" ? totalSumRes.value?.data : null;
       const receipts =
         receiptsRes.status === "fulfilled" ? receiptsRes.value?.data : [];
 
-      // Обработка статистики
-      const processedStats = {
-        receipts_count: totalSum?.receipts_count || 0,
-        total_sum: totalSum?.total_sum || 0,
-        total_sum_rub: kopecksToRubles(totalSum?.total_sum),
-        cash_sum: totalSum?.cash_total_sum || 0,
-        cash_sum_rub: kopecksToRubles(totalSum?.cash_total_sum),
-        ecash_sum: totalSum?.ecash_total_sum || 0,
-        ecash_sum_rub: kopecksToRubles(totalSum?.ecash_total_sum),
-        month: new Date().toISOString().slice(0, 7),
+      console.log("Dashboard - Total sums:", totalSums);
+      console.log("Dashboard - Monthly stats:", monthlyStats);
+
+      // Обрабатываем общую статистику
+      let processedStats = {
+        receipts_count: totalSums?.receipts_count || 0,
+        total_sum_rub: kopecksToRubles(totalSums?.total_sum || 0),
+        cash_sum_rub: kopecksToRubles(totalSums?.cash_total_sum || 0),
+        ecash_sum_rub: kopecksToRubles(totalSums?.ecash_total_sum || 0),
+        month: "все время",
       };
 
-      // Обработка чеков
+      // Если хотим показывать статистику за текущий месяц, а не общую
+      if (monthlyStats && Array.isArray(monthlyStats)) {
+        const currentMonth = new Date().getMonth() + 1;
+        const currentMonthData = monthlyStats.find(
+          (item) => item.month === currentMonth,
+        );
+
+        if (currentMonthData) {
+          processedStats = {
+            receipts_count: currentMonthData.receipts_count || 0,
+            total_sum_rub: kopecksToRubles(currentMonthData.total_sum || 0),
+            cash_sum_rub: kopecksToRubles(currentMonthData.cash_total_sum || 0),
+            ecash_sum_rub: kopecksToRubles(
+              currentMonthData.ecash_total_sum || 0,
+            ),
+            month: `${new Date().getFullYear()}-${String(currentMonth).padStart(2, "0")}`,
+          };
+        }
+      }
+
+      setData((prev) => ({
+        ...prev,
+        stats: processedStats,
+      }));
+
+      // Обрабатываем чеки
       const formattedReceipts = Array.isArray(receipts)
         ? receipts.map((receipt) => ({
             ...receipt,
-            total_sum_rub: kopecksToRubles(receipt.total_sum),
+            total_sum_rub: kopecksToRubles(receipt.total_sum || 0),
+            cash_total_sum: kopecksToRubles(receipt.cash_total_sum || 0),
             shop_name: receipt.shop?.retail_name || "Неизвестный магазин",
             shop_chain: receipt.shop?.legal_name || "",
             cashier_name: receipt.cashier?.name || "",
@@ -59,17 +86,24 @@ export const useDashboardData = () => {
           }))
         : [];
 
-      setData({
-        stats: processedStats,
-        recentReceipts: formattedReceipts,
-        loading: false,
-      });
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
       setData((prev) => ({
         ...prev,
+        recentReceipts: formattedReceipts,
         loading: false,
       }));
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      setData({
+        stats: {
+          receipts_count: 0,
+          total_sum_rub: 0,
+          cash_sum_rub: 0,
+          ecash_sum_rub: 0,
+          month: "текущий месяц",
+        },
+        recentReceipts: [],
+        loading: false,
+      });
     }
   }, []);
 
