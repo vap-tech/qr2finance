@@ -8,7 +8,7 @@ import {
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Dashboard from "./components/dashboard";
-import Receipts from "./components/Receipts";
+import Receipts from "./components/receipts";
 import Analytics from "./components/analytics";
 import Stores from "./components/stores";
 
