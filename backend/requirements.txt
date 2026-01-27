@@ -10,3 +10,4 @@ pydantic
 pydantic[email]
 python-dotenv==1.0.0
 python-dateutil
+aiogram
