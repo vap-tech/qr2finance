@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Container,
@@ -11,40 +11,62 @@ import {
   useToast,
   Text,
   Link as ChakraLink,
-} from '@chakra-ui/react';
-import { Link, useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
+} from "@chakra-ui/react";
+import { Link, useNavigate } from "react-router-dom";
+import { authAPI, userAPI } from "../services/api";
+import { useUser } from "../hooks/useUser";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
+  const { saveUser } = useUser();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const response = await authAPI.login({ email, password });
-      const { access_token } = response.data;
+      // 1. Логинимся и получаем токен
+      const loginResponse = await authAPI.login({ email, password });
+      const { access_token } = loginResponse.data;
 
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('user', JSON.stringify({ email, full_name: email.split('@')[0] }));
+      // Сохраняем токен
+      localStorage.setItem("token", access_token);
+
+      // 2. Получаем данные пользователя
+      const userResponse = await userAPI.me();
+      const userData = userResponse.data;
+
+      // 3. Сохраняем данные пользователя с telegram_id
+      const userToSave = {
+        email: userData.email,
+        full_name: userData.full_name || email.split("@")[0],
+        telegram_id: userData.telegram_id || "",
+        id: userData.id,
+        is_active: userData.is_active,
+        created_at: userData.created_at,
+      };
+
+      saveUser(userToSave);
 
       toast({
-        title: 'Login successful',
-        status: 'success',
+        title: "Login successful",
+        status: "success",
         duration: 3000,
       });
 
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
+      // В случае ошибки очищаем токен
+      localStorage.removeItem("token");
+
       toast({
-        title: 'Login failed',
-        description: error.response?.data?.detail || 'Invalid credentials',
-        status: 'error',
+        title: "Login failed",
+        description: error.response?.data?.detail || "Invalid credentials",
+        status: "error",
         duration: 5000,
       });
     } finally {
@@ -54,16 +76,11 @@ const Login = () => {
 
   return (
     <Container maxW="md" py={20}>
-      <Box
-        p={8}
-        bg="white"
-        borderRadius="lg"
-        shadow="lg"
-      >
+      <Box p={8} bg="white" borderRadius="lg" shadow="lg">
         <VStack spacing={6}>
           <Heading size="lg">Welcome Back</Heading>
 
-          <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+          <form onSubmit={handleSubmit} style={{ width: "100%" }}>
             <VStack spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Email</FormLabel>
@@ -98,7 +115,7 @@ const Login = () => {
           </form>
 
           <Text>
-            Don't have an account?{' '}
+            Don't have an account?{" "}
             <ChakraLink as={Link} to="/register" color="teal.500">
               Register here
             </ChakraLink>

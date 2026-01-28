@@ -54,6 +54,13 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (userData) => api.post("/auth/register", userData),
   login: (credentials) => api.post("/auth/login", credentials),
+  logout: () => api.post("/auth/logout"),
+};
+
+export const userAPI = {
+  me: () => api.get("/users/me"),
+  update: (userData) => api.put("/users/me", userData),
+  setTelegramId: (telegramId) => api.post("/users/set-telegram-id", telegramId),
 };
 
 export const receiptsAPI = {
@@ -99,9 +106,9 @@ export const analyticsAPI = {
 };
 
 export const storesAPI = {
-  getStores: ({ skip, limit, sort_by, descending }) =>
+  getStores: ({ page, page_size, sort_by, descending }) =>
     api.get("/stores/", {
-      params: { skip, limit, sort_by, descending },
+      params: { page, page_size, sort_by, descending },
     }),
 
   getStoreStats: () => api.get("/stores/stats"),

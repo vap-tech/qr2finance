@@ -9,8 +9,8 @@ export const useStores = () => {
   const [sortConfig, setSortConfig] = useState({
     sortBy: "total_amount",
     descending: true,
-    skip: 0,
-    limit: 100,
+    page: 0,
+    page_size: 100,
   });
   const [totalStores, setTotalStores] = useState(0);
 
@@ -22,8 +22,8 @@ export const useStores = () => {
       const response = await storesAPI.getStores({
         sort_by: sortConfig.sortBy,
         descending: sortConfig.descending,
-        skip: sortConfig.skip,
-        limit: sortConfig.limit,
+        page: sortConfig.page,
+        page_size: sortConfig.page_size,
       });
 
       const storesData = response.data || [];

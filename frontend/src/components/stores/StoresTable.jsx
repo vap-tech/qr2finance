@@ -69,7 +69,7 @@ const StoresTable = ({
             <Th isNumeric>Чеков</Th>
             <Th isNumeric>Потрачено</Th>
             <Th isNumeric>Ср. чек</Th>
-            <Th width="100px">Действия</Th>
+            <Th>🛠</Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -138,12 +138,14 @@ const StoresTable = ({
 
               <Td isNumeric>
                 <Text fontWeight="bold" color="green.600">
-                  {store.total_spent_rub.toFixed(2)} ₽
+                  {store.total_spent_rub.toFixed(2)}
                 </Text>
               </Td>
 
               <Td isNumeric>
-                <Text>{store.avg_receipt_rub.toFixed(2)} ₽</Text>
+                <Text fontWeight="bold" color="blue.600">
+                  {store.avg_receipt_rub.toFixed(2)}
+                </Text>
               </Td>
 
               <Td>

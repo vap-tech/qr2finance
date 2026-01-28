@@ -119,6 +119,7 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     is_active: bool = True
+    telegram_id: str | None = None
 
 
 class UserCreate(UserBase):
@@ -131,6 +132,10 @@ class User(UserBase):
     model_config = ConfigDict(from_attributes=True)
     id: int
     created_at: datetime
+
+
+class TelegramIdRequest(BaseModel):
+    telegram_id: str
 
 
 # --- СХЕМЫ ДЛЯ ОТВЕТОВ С ВКЛАДЫВАЕМЫМИ ДАННЫМИ ---

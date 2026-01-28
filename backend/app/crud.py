@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -18,6 +19,26 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    return db_user
+
+
+def set_user_telegram_id(
+    db: Session, user: models.User, telegram_id: str
+) -> models.User:
+    # 1. Ищем юзера в базе
+    query = select(models.User).where(models.User.id == user.id)
+    db_user = db.execute(query).scalar_one_or_none()
+
+    if not db_user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    # 2. Обновляем поле
+    db_user.telegram_id = telegram_id
+
+    # 3. Сохраняем изменения
+    db.commit()
+    db.refresh(db_user)
+
     return db_user
 
 

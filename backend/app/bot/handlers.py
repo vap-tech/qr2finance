@@ -3,7 +3,7 @@ import logging
 
 from aiogram import Bot, F, Router, types
 from aiogram.filters import Command
-from app import crud
+from app import crud, services
 from app.models import User
 from sqlalchemy.orm import Session
 
@@ -87,3 +87,65 @@ async def handle_receipt_json(
 async def handle_wrong_file_type(message: types.Message):
     """Отлавливает файлы, которые не JSON"""
     await message.reply("⚠️ Я принимаю только файлы формата **.json**")
+
+
+@router.message(Command("shops"))
+async def cmd_shops(message: types.Message, db: Session, user: User):
+    if not user:
+        return await message.answer("❌ Сначала привяжите аккаунт.")
+
+    # Вызываем твой сервис
+    shops_stats = services.get_spending_by_retail_shops(
+        db, user.id, page=0, page_size=8
+    )
+
+    if not shops_stats:
+        return await message.answer("🏪 Данные о магазинах не найдены.")
+
+    text = "🏪 **Топ-5 магазинов по тратам:**\n\n"
+    for i, shop in enumerate(shops_stats[:5], 1):
+        text += f"{i}. **{shop.retail_name or shop.legal_name}**\n"
+        text += f"   └ 💰 `{shop.total_amount:,.2f} ₽` ({shop.receipts_count} шт.)\n"
+
+    await message.answer(text, parse_mode="Markdown")
+
+
+# --- Команда /stats: Общая статистика ---
+@router.message(Command("stats"))
+async def cmd_stats(message: types.Message, db: Session, user: User):
+    if not user:
+        return await message.answer("❌ Сначала привяжите аккаунт.")
+
+    stats = services.get_user_total_sum(db, user.id)
+
+    if stats.receipts_count == 0:
+        return await message.answer("📊 У вас пока нет чеков для статистики.")
+
+    text = (
+        f"📊 **Твоя статистика:**\n\n"
+        f"🧾 Всего чеков: `{stats.receipts_count}`\n"
+        f"💰 Общая сумма: `{stats.total_sum:,.2f} ₽`\n"
+        f"💳 Безнал: `{stats.ecash_total_sum:,.2f} ₽`\n"
+        f"💵 Наличные: `{stats.cash_total_sum:,.2f} ₽`"
+    )
+    await message.answer(text, parse_mode="Markdown")
+
+
+# --- Команда /top: Топ-5 трат ---
+@router.message(Command("top"))
+async def cmd_top(message: types.Message, db: Session, user: User):
+    if not user:
+        return await message.answer("❌ Сначала привяжите аккаунт.")
+
+    # Используем твой метод (берем топ-5 для компактности в ТГ)
+    top_items = services.get_top_products(db, user.id, limit=5)
+
+    if not top_items:
+        return await message.answer("🛒 Список товаров пока пуст.")
+
+    text = "🔝 **Топ-5 затратных покупок:**\n\n"
+    for i, item in enumerate(top_items, 1):
+        text += f"{i}. {item.name}\n"
+        text += f"   └ 💰 `{item.total_sum:,.2f} ₽` ({item.total_quantity} {item.measure})\n"
+
+    await message.answer(text, parse_mode="Markdown")
