@@ -584,9 +584,9 @@ async def cmd_stats(message: types.Message, db: Session, user: User):
     text = (
         f"📊 **Твоя статистика:**\n\n"
         f"🧾 Всего чеков: `{stats.receipts_count}`\n"
-        f"💰 Общая сумма: `{stats.total_sum:,.2f} ₽`\n"
-        f"💳 Безнал: `{stats.ecash_total_sum:,.2f} ₽`\n"
-        f"💵 Наличные: `{stats.cash_total_sum:,.2f} ₽`"
+        f"💰 Общая сумма: `{stats.total_sum / 100:,.2f} ₽`\n"
+        f"💳 Безнал: `{stats.ecash_total_sum / 100:,.2f} ₽`\n"
+        f"💵 Наличные: `{stats.cash_total_sum / 100:,.2f} ₽`"
     )
     await message.answer(text, parse_mode="Markdown")
 
@@ -606,6 +606,6 @@ async def cmd_top(message: types.Message, db: Session, user: User):
     text = "🔝 **Топ-5 затратных покупок:**\n\n"
     for i, item in enumerate(top_items, 1):
         text += f"{i}. {item.name}\n"
-        text += f"   └ 💰 `{item.total_sum:,.2f} ₽` ({item.total_quantity} {item.measure})\n"
+        text += f"   └ 💰 `{item.total_sum / 100:,.2f} ₽` ({item.total_quantity} {item.measure})\n"
 
     await message.answer(text, parse_mode="Markdown")
