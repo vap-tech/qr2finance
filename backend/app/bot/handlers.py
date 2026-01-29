@@ -59,7 +59,9 @@ async def handle_receipt_json(
 
         # 6. Вызываем твой CRUD метод
         # Передаем db и user.id, которые прокинула мидлварь
-        receipt = crud.create_receipt_full(db, receipt_json, user_id=user.id)
+        receipt = crud.create_receipt_with_backup(
+            db, receipt_json, user_id=user.id, import_method="telegram_bot"
+        )
 
         # 7. Извлекаем данные для красивого ответа (как в твоем API)
         ticket_data = (
