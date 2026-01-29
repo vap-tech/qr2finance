@@ -2,7 +2,7 @@ import logging
 from typing import Any, Awaitable, Callable, Dict
 
 from aiogram import BaseMiddleware
-from aiogram.types import Message, TelegramObject
+from aiogram.types import TelegramObject
 from app.database import SessionLocal  # Твой импорт сессии
 from app.models import User  # Твоя модель пользователя
 from sqlalchemy.orm import Session
@@ -16,6 +16,7 @@ class DbSessionMiddleware(BaseMiddleware):
     """
     Мидлварь для обеспечения хэндлеров сессией БД
     и автоматического поиска пользователя.
+    Поддерживает все типы событий с from_user.
     """
 
     async def __call__(
@@ -26,23 +27,29 @@ class DbSessionMiddleware(BaseMiddleware):
     ) -> Any:
         # 1. Открываем сессию базы данных
         with SessionLocal() as db:
-            db: Session  # Вот здесь мы явно использовали импорт
-            # 2. Проверяем, что событие — это сообщение
-            if isinstance(event, Message) and event.from_user:
-                # Ищем юзера по telegram_id (преобразуем в str, как в модели)
-                user = (
-                    db.query(User)
-                    .filter(User.telegram_id == str(event.from_user.id))
-                    .first()
-                )
+            db: Session
+            user = None
 
-                # Прокидываем данные в хэндлер через словарь data
-                data["db"] = db
-                data["user"] = user
-            else:
-                data["db"] = db
-                data["user"] = None
+            # 2. Пытаемся получить from_user из любого события
+            try:
+                from_user = getattr(event, "from_user", None)
+                if from_user:
+                    # Ищем юзера по telegram_id
+                    user = (
+                        db.query(User)
+                        .filter(User.telegram_id == str(from_user.id))
+                        .first()
+                    )
+            except Exception as e:
+                logger.warning(f"Не удалось получить пользователя: {e}")
 
-            # 3. Выполняем хэндлер
-            return await handler(event, data)
-            # Сессия закроется автоматически при выходе из with
+            # 3. Прокидываем данные в хэндлер
+            data["db"] = db
+            data["user"] = user
+
+            # 4. Выполняем хэндлер
+            try:
+                return await handler(event, data)
+            except Exception as e:
+                logger.error(f"Ошибка в хендлере: {e}")
+                raise
