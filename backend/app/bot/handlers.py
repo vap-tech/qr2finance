@@ -387,6 +387,189 @@ async def callback_receipt_detail(
         await callback.answer("❌ Ошибка", show_alert=True)
 
 
+@router.callback_query(F.data == "stats")
+async def callback_stats(callback: types.CallbackQuery, db: Session, user: User):
+    """Обработка кнопки 'Статистика'"""
+    if not user:
+        return await callback.answer("❌ Сначала привяжите аккаунт.", show_alert=True)
+
+    try:
+        # Вызываем ваш существующий обработчик команды /stats
+        # Или делаем запрос к БД
+        await callback.answer("Загружаем статистику...", show_alert=False)
+
+        # Простой пример статистики
+        total_sum = (
+            db.scalar(
+                select(func.sum(models.Receipt.total_sum)).where(
+                    models.Receipt.user_id == user.id
+                )
+            )
+            or 0
+        )
+
+        total_receipts = (
+            db.scalar(
+                select(func.count(models.Receipt.id)).where(
+                    models.Receipt.user_id == user.id
+                )
+            )
+            or 0
+        )
+
+        text = (
+            f"📊 *Статистика*\n\n"
+            f"• Всего чеков: {total_receipts}\n"
+            f"• Общая сумма: {total_sum / 100:,.2f} ₽\n"
+            f"• Средний чек: {total_sum / total_receipts / 100:,.2f} ₽"
+            if total_receipts > 0
+            else "0 ₽"
+        )
+
+        await callback.message.edit_text(
+            text,
+            parse_mode="Markdown",
+            reply_markup=types.InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        types.InlineKeyboardButton(
+                            text="⬅️ Назад", callback_data="last_receipts"
+                        )
+                    ]
+                ]
+            ),
+        )
+
+    except Exception as e:
+        logger.error(f"Ошибка в callback_stats: {e}")
+        await callback.answer("❌ Ошибка", show_alert=True)
+
+
+@router.callback_query(F.data == "shops")
+async def callback_shops(callback: types.CallbackQuery, db: Session, user: User):
+    """Обработка кнопки 'Магазины'"""
+    if not user:
+        return await callback.answer("❌ Сначала привяжите аккаунт.", show_alert=True)
+
+    try:
+        # Вызываем ваш существующий обработчик команды /shops
+        # Или делаем запрос к БД
+        await callback.answer("Загружаем магазины...", show_alert=False)
+
+        # Пример получения топ магазинов
+        shops_stats = db.execute(
+            select(
+                models.Shop.legal_name,
+                models.Shop.retail_name,
+                func.count(models.Receipt.id).label("receipts_count"),
+                func.sum(models.Receipt.total_sum).label("total_amount"),
+            )
+            .join(models.Receipt, models.Receipt.shop_id == models.Shop.id)
+            .where(models.Receipt.user_id == user.id)
+            .group_by(models.Shop.id)
+            .order_by(desc("total_amount"))
+            .limit(5)
+        ).all()
+
+        if not shops_stats:
+            text = "🏪 *Магазины*\n\nНет данных о магазинах"
+        else:
+            text = "🏪 *Топ-5 магазинов по тратам:*\n\n"
+            for i, (legal_name, retail_name, count, amount) in enumerate(
+                shops_stats, 1
+            ):
+                shop_name = retail_name or legal_name or "Неизвестно"
+                text += (
+                    f"{i}. **{shop_name[:30]}...**\n"
+                    f"   └ 💰 `{amount / 100:,.2f} ₽` ({count} шт.)\n"
+                )
+
+        await callback.message.edit_text(
+            text,
+            parse_mode="Markdown",
+            reply_markup=types.InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        types.InlineKeyboardButton(
+                            text="⬅️ Назад", callback_data="last_receipts"
+                        )
+                    ]
+                ]
+            ),
+        )
+
+    except Exception as e:
+        logger.error(f"Ошибка в callback_shops: {e}")
+        await callback.answer("❌ Ошибка", show_alert=True)
+
+
+@router.callback_query(F.data == "last_receipts")
+async def callback_last_receipts(
+    callback: types.CallbackQuery, db: Session, user: User
+):
+    """Обработка кнопки 'Назад к списку'"""
+    # Просто вызываем исходную команду /last
+    await cmd_last(callback.message, db, user)
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("raw_data_"))
+async def callback_raw_data(callback: types.CallbackQuery, db: Session, user: User):
+    """Показывает сырые данные чека"""
+    if not user:
+        return await callback.answer("❌ Сначала привяжите аккаунт.", show_alert=True)
+
+    try:
+        receipt_id = int(callback.data.split("_")[-1])
+
+        # Получаем бэкап
+        backup = db.execute(
+            select(models.ReceiptRawBackup)
+            .join(
+                models.Receipt, models.Receipt.id == models.ReceiptRawBackup.receipt_id
+            )
+            .where(models.Receipt.id == receipt_id, models.Receipt.user_id == user.id)
+        ).scalar_one_or_none()
+
+        if not backup or not backup.raw_json:
+            return await callback.answer("Сырые данные не найдены", show_alert=True)
+
+        # Ограничиваем вывод (сырые данные могут быть большими)
+        import json
+
+        raw_data_preview = json.dumps(backup.raw_json, ensure_ascii=False, indent=2)[
+            :1500
+        ]
+
+        text = f"📋 *Сырые данные чека*\n\n```json\n{raw_data_preview}\n"
+
+        if len(json.dumps(backup.raw_json)) > 1500:
+            text += "\n... (данные обрезаны)"
+
+        text += "```"
+
+        await callback.message.edit_text(
+            text,
+            parse_mode="Markdown",
+            reply_markup=types.InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        types.InlineKeyboardButton(
+                            text="⬅️ Назад к деталям",
+                            callback_data=f"receipt_detail_{receipt_id}",
+                        )
+                    ]
+                ]
+            ),
+        )
+
+        await callback.answer()
+
+    except Exception as e:
+        logger.error(f"Ошибка в callback_raw_data: {e}")
+        await callback.answer("❌ Ошибка", show_alert=True)
+
+
 # --- Команда /stats: Общая статистика ---
 @router.message(Command("stats"))
 async def cmd_stats(message: types.Message, db: Session, user: User):
