@@ -1,8 +1,15 @@
+import os
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, engine
 from .routers import analytics, auth, receipts, stores, users
+
+load_dotenv()
+api_url = os.getenv("API_URL", "")
+cors = os.getenv("CORS", "http://localhost:3000")
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -11,12 +18,13 @@ app = FastAPI(
     title="Receipt Analyzer API",
     description="API for analyzing shopping receipts",
     version="1.0.0",
+    root_path=api_url,
 )
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React frontend
+    allow_origins=[cors],  # React frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
