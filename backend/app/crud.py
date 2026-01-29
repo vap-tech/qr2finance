@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import desc, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, selectinload
 
 from . import models, schemas
 from .auth import get_password_hash
@@ -356,16 +356,20 @@ def get_recent_receipts(
     query = query.limit(limit)
 
     # Опционально: загружаем связанные данные
+    # ВАЖНО: используем selectinload вместо joinedload для коллекций
     if with_backup:
-        query = query.options(joinedload(models.Receipt.raw_backup))
+        query = query.options(selectinload(models.Receipt.raw_backup))
 
     if with_items:
-        query = query.options(joinedload(models.Receipt.items))
+        query = query.options(selectinload(models.Receipt.items))
 
-    # Выполняем запрос
-    receipts = db.execute(query).scalars().all()
+    # Загружаем магазин всегда (он нам нужен для отображения)
+    query = query.options(selectinload(models.Receipt.shop))
 
-    return list(receipts)
+    # Выполняем запрос - используем unique() для корректной работы
+    result = db.execute(query).unique().scalars().all()
+
+    return list(result)
 
 
 def get_user_receipts(db: Session, user_id: int, skip: int = 0, limit: int = 100):
