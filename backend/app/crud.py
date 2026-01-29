@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging import getLogger
+from typing import List, Optional
 
 from fastapi import HTTPException
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import desc, select
+from sqlalchemy.orm import Session, joinedload
 
 from . import models, schemas
 from .auth import get_password_hash
@@ -316,6 +317,55 @@ def create_receipt_with_backup(
         db.rollback()
         logger.error(f"Ошибка при сохранении чека: {e}")
         raise
+
+
+def get_recent_receipts(
+    db: Session,
+    user_id: int,
+    limit: int = 10,
+    days: Optional[int] = None,
+    with_backup: bool = False,
+    with_items: bool = False,
+) -> List[models.Receipt]:
+    """
+    Получает последние загруженные чеки пользователя.
+
+    Args:
+        db: Сессия БД
+        user_id: ID пользователя
+        limit: Сколько чеков вернуть (по умолчанию 10)
+        days: За последние N дней (если None - за все время)
+        with_backup: Загружать ли сырые данные бэкапа
+        with_items: Загружать ли позиции чеков
+
+    Returns:
+        List[Receipt]: Список чеков, отсортированных по дате загрузки (created_at)
+    """
+    # Базовый запрос
+    query = select(models.Receipt).where(models.Receipt.user_id == user_id)
+
+    # Фильтр по дням
+    if days:
+        date_from = datetime.utcnow() - timedelta(days=days)
+        query = query.where(models.Receipt.created_at >= date_from)
+
+    # Сортировка по дате загрузки (последние сначала)
+    query = query.order_by(desc(models.Receipt.created_at))
+
+    # Лимит
+    query = query.limit(limit)
+
+    # Опционально: загружаем связанные данные
+    if with_backup:
+        query = query.options(joinedload(models.Receipt.raw_backup))
+
+    if with_items:
+        query = query.options(joinedload(models.Receipt.items))
+
+    # Выполняем запрос
+    receipts = db.execute(query).scalars().all()
+
+    return list(receipts)
 
 
 def get_user_receipts(db: Session, user_id: int, skip: int = 0, limit: int = 100):
