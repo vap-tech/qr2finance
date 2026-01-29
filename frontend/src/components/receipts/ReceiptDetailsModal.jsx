@@ -183,7 +183,7 @@ const ReceiptDetailsModal = ({ isOpen, onClose, receipt }) => {
                                   color="gray.500"
                                   fontFamily="monospace"
                                 >
-                                  Штрихкод: {item.gtin}
+                                  GTIN: {item.gtin}
                                 </ChakraText>
                               )}
                             </VStack>

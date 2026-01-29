@@ -71,7 +71,9 @@ async def upload_json_file(
             receipt_json = data
 
         # Вызываем CRUD метод для сохранения
-        receipt = crud.create_receipt_full(db, receipt_json, user_id=current_user.id)
+        receipt = crud.create_receipt_with_backup(
+            db, receipt_json, user_id=current_user.id
+        )
 
         # Получаем данные для ответа
         ticket_data = (

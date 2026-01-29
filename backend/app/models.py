@@ -1,3 +1,5 @@
+import hashlib
+import json
 from datetime import datetime
 from typing import List, Optional
 
@@ -114,89 +116,114 @@ class Receipt(Base):
     items: Mapped[List["ReceiptItem"]] = relationship(
         back_populates="receipt", cascade="all, delete-orphan"
     )
-    raw_backup: Mapped["ReceiptRawBackup"] = relationship(
+    raw_backup: Mapped[Optional["ReceiptRawBackup"]] = relationship(
         "ReceiptRawBackup",
         back_populates="receipt",
         cascade="all, delete-orphan",
         uselist=False,
-        lazy="selectin",  # или "joined" для всегда подгружаемого бэкапа
+        lazy="selectin",  # Не грузим автоматически
     )
 
 
 class ReceiptRawBackup(Base):
-    """Сырые JSON-данные чека для бэкапа и будущих расширений"""
+    """Сырые данные чеков с контролем целостности через хэш"""
 
     __tablename__ = "receipt_raw_backups"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    raw_data: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, comment="Полные сырые данные чека в оригинальном формате"
+
+    # Сырые данные
+    raw_json: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, comment="Сырые JSON данные в оригинальном формате"
     )
-    source_format: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        default="fiscal",
-        comment="Формат данных: fiscal, ofd, retail, etc.",
-    )
+
+    # Хэш SHA256 для контроля целостности и поиска дубликатов
     source_hash: Mapped[str] = mapped_column(
         String(64),
-        unique=True,
+        unique=True,  # Гарантируем уникальность чеков
         nullable=False,
-        comment="SHA256 хэш сырых данных для предотвращения дубликатов",
+        index=True,  # Индекс для быстрого поиска
+        comment="SHA256 хэш от json.dumps(raw_json, sort_keys=True)",
     )
+
+    # Тип источника
+    source_type: Mapped[str] = mapped_column(
+        String(50),
+        default="fiscal_mobile",
+        nullable=False,
+        comment="fiscal_mobile - приложение ФНС, fiscal_direct - прямые фискальные данные, etc.",
+    )
+
+    # Детали импорта
+    import_method: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        nullable=True,
+        comment="Как попали данные: mobile_scan, api, file_upload, manual",
+    )
+
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+
     receipt_id: Mapped[int] = mapped_column(
         ForeignKey("receipts.id"),
         unique=True,  # Один чек - один бэкап
         nullable=False,
-        comment="Ссылка на обработанный чек в основной таблице",
     )
+
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        comment="Время создания записи в бэкапе",
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        onupdate=func.now(),
-        nullable=True,
-        comment="Время последнего обновления (если данные менялись)",
+        DateTime(timezone=True), server_default=func.now()
     )
 
-    # Признаки обработки
-    is_processed: Mapped[bool] = mapped_column(
-        Boolean, default=True, comment="Данные обработаны в основную таблицу"
-    )
-    processing_version: Mapped[int] = mapped_column(
-        Integer, default=1, comment="Версия обработчика, который создал запись"
-    )
-    has_errors: Mapped[bool] = mapped_column(
-        Boolean, default=False, comment="Были ли ошибки при обработке"
-    )
-    error_details: Mapped[Optional[dict]] = mapped_column(
-        JSONB, nullable=True, comment="Детали ошибок обработки"
-    )
-
-    # Опциональные метаданные для быстрого поиска
+    # Для отладки
     metadata_json: Mapped[Optional[dict]] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Извлеченные метаданные для индексации (дата, сумма, ФН и т.д.)",
+        comment="Метаданные: размер данных, кол-во товаров, версия формата",
     )
 
     # Связи
-    user: Mapped["User"] = relationship("User", lazy="selectin")
     receipt: Mapped["Receipt"] = relationship("Receipt", back_populates="raw_backup")
+    user: Mapped["User"] = relationship("User")
 
     def __init__(self, **kwargs):
-        # Автоматически вычисляем хэш если переданы raw_data
-        if "raw_data" in kwargs and "source_hash" not in kwargs:
-            import hashlib
-            import json
+        # Автоматически вычисляем хэш при создании
+        if "raw_json" in kwargs and "source_hash" not in kwargs:
+            kwargs["source_hash"] = self._compute_hash(kwargs["raw_json"])
 
-            raw_str = json.dumps(kwargs["raw_data"], sort_keys=True, ensure_ascii=False)
-            kwargs["source_hash"] = hashlib.sha256(raw_str.encode("utf-8")).hexdigest()
+        # Автоматически заполняем метаданные
+        if "raw_json" in kwargs and "metadata_json" not in kwargs:
+            kwargs["metadata_json"] = self._extract_metadata(kwargs["raw_json"])
+
         super().__init__(**kwargs)
+
+    @staticmethod
+    def _compute_hash(data: dict) -> str:
+        """Вычисляет SHA256 хэш от JSON"""
+        # sort_keys=True для детерминированного хэша
+        json_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
+        return hashlib.sha256(json_str.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _extract_metadata(data: dict) -> dict:
+        """Извлекает метаданные из сырых данных"""
+        receipt = data.get("ticket", {}).get("document", {}).get("receipt", {})
+        items = receipt.get("items", [])
+
+        return {
+            "data_size_bytes": len(json.dumps(data).encode("utf-8")),
+            "items_count": len(items),
+            "total_sum": receipt.get("totalSum"),
+            "has_products_with_codes": any("productCodeData" in item for item in items),
+            "timestamp": data.get("createdAt"),
+        }
+
+    def verify_integrity(self) -> bool:
+        """Проверяет целостность данных"""
+        current_hash = self._compute_hash(self.raw_json)
+        return current_hash == self.source_hash
+
+    def update_hash(self) -> None:
+        """Пересчитывает хэш (если данные изменились)"""
+        self.source_hash = self._compute_hash(self.raw_json)
 
 
 class ReceiptItem(Base):
