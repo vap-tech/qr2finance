@@ -108,7 +108,9 @@ async def cmd_shops(message: types.Message, db: Session, user: User):
     text = "🏪 **Топ-5 магазинов по тратам:**\n\n"
     for i, shop in enumerate(shops_stats[:5], 1):
         text += f"{i}. **{shop.retail_name or shop.legal_name}**\n"
-        text += f"   └ 💰 `{shop.total_amount:,.2f} ₽` ({shop.receipts_count} шт.)\n"
+        text += (
+            f"   └ 💰 `{shop.total_amount / 100:,.2f} ₽` ({shop.receipts_count} шт.)\n"
+        )
 
     await message.answer(text, parse_mode="Markdown")
 
