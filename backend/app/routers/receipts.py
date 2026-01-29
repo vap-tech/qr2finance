@@ -22,7 +22,8 @@ def create_receipt(
     """
     Создание чека вручную через передачу JSON-тела запроса.
     """
-    return crud.create_receipt_full(db, receipt_data, user_id=current_user.id)
+
+    return crud.create_receipt_with_backup(db, receipt_data, user_id=current_user.id)
 
 
 @router.get("/", response_model=List[schemas.Receipt])

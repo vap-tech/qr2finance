@@ -85,7 +85,7 @@ def get_or_create_cashier(db: Session, cashier_data: schemas.CashierCreate):
     return cashier
 
 
-# --- RECEIPT CRUD (ГЛАВНАЯ ЛОГИКА) ---
+# --- RECEIPT CRUD (ГЛАВНАЯ ЛОГИКА) --- UNUSED
 def create_receipt_full(db: Session, receipt_data: dict, user_id: int):
     """
     Принимает сырой словарь (parsed JSON) или схему и сохраняет все связи.
