@@ -10,6 +10,7 @@ from .routers import analytics, auth, receipts, stores, users
 load_dotenv()
 api_url = os.getenv("API_URL", "")
 cors = os.getenv("CORS", "http://localhost:3000")
+is_prod = os.getenv("IS_PROD") == "true"
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -19,6 +20,9 @@ app = FastAPI(
     description="API for analyzing shopping receipts",
     version="1.0.0",
     root_path=api_url,
+    docs_url=None if is_prod else "/docs",
+    redoc_url=None if is_prod else "/redoc",
+    openapi_url=None if is_prod else "/openapi.json",
 )
 
 # CORS middleware
