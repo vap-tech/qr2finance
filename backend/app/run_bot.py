@@ -35,6 +35,7 @@ async def main():
     # его использует сама мидлварь внутри себя
     # # Попробуй зарегистрировать именно на message
     dp.message.outer_middleware(DbSessionMiddleware())
+    dp.callback_query.outer_middleware(DbSessionMiddleware())
 
     # 3. Регистрация роутера с хэндлерами
     dp.include_router(router)
