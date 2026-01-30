@@ -1,0 +1,92 @@
+[
+  {
+    "_id": "696ba1c577fd7093c4f2742b",
+    "createdAt": "2026-01-17T14:50:45+00:00",
+    "ticket": {
+      "document": {
+        "receipt": {
+          "cashTotalSum": 0,
+          "code": 3,
+          "creditSum": 0,
+          "dateTime": "2026-01-17T17:34:00",
+          "ecashTotalSum": 54108,
+          "fiscalDocumentFormatVer": 4,
+          "fiscalDocumentNumber": 3749,
+          "fiscalDriveNumber": "7380440801980824",
+          "fiscalSign": 4258118495,
+          "fnsUrl": "www.nalog.gov.ru",
+          "items": [
+            {
+              "name": "BURN Нап энерг Цитрус энергия б/сах 0,44",
+              "nds": 1,
+              "paymentType": 4,
+              "price": 11999,
+              "productType": 33,
+              "productCodeData": {
+                "gtin": 5061013964012,
+                "rawProductCode": "0105061013964012215Lx_x_FXtsQtw",
+                "productIdType": 6,
+                "sernum": "5Lx_x_FXtsQtw"
+              },
+              "quantity": 1,
+              "sum": 11999
+            },
+            {
+              "name": "ЯБЛОКИ Гренни Смит 1кг",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 16999,
+              "productType": 1,
+              "quantity": 0.504,
+              "sum": 8567
+            },
+            {
+              "name": "ЯБЛОКИ новый урожай 1кг",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 11499,
+              "productType": 1,
+              "quantity": 0.83,
+              "sum": 9544
+            },
+            {
+              "name": "САЛАТ листовой в горшочке",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 7999,
+              "productType": 1,
+              "productCodeDataError": "not supported product type 3",
+              "quantity": 1,
+              "sum": 7999
+            },
+            {
+              "name": "ТОМАТЫ черри 250г",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 15999,
+              "productType": 1,
+              "productCodeDataError": "not supported product type 3",
+              "quantity": 1,
+              "sum": 15999
+            }
+          ],
+          "kktRegId": "0009601940012170    ",
+          "nds10": 3828,
+          "nds18": 2000,
+          "operationType": 1,
+          "prepaidSum": 0,
+          "provisionSum": 0,
+          "requestNumber": 32,
+          "retailPlace": "Магазин  Магнит  Мантия",
+          "retailPlaceAddress": "396370, Воронежская обл, Репьевский р-н, Репьёвка с, Советская ул, дом № 9",
+          "shiftNumber": 65,
+          "taxationType": 1,
+          "appliedTaxationType": 1,
+          "totalSum": 54108,
+          "user": "АКЦИОНЕРНОЕ ОБЩЕСТВО \"ТАНДЕР\"",
+          "userInn": "2310031475  "
+        }
+      }
+    }
+  }
+]
