@@ -164,6 +164,36 @@ class TokenData(BaseModel):
     user_id: Optional[str] = None
 
 
+# --- СХЕМЫ ДЛЯ ITEMS (UI шаблон) ---
+class ItemBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+
+
+class ItemCreate(ItemBase):
+    pass
+
+
+class ItemUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+
+
+class ItemPublic(ItemBase):
+    id: str
+    owner_id: str
+    created_at: Optional[str] = None
+
+
+class ItemsPublic(BaseModel):
+    data: List[ItemPublic]
+    count: int
+
+
+class Message(BaseModel):
+    message: str
+
+
 # Аналитика
 class TotalSums(BaseModel):
     total_sum: int

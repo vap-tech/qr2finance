@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, engine
-from .routers import analytics, auth, receipts, stores, users
+from .routers import analytics, auth, items, receipts, stores, users
 
 load_dotenv()
 api_url = os.getenv("API_URL", "")
@@ -36,10 +36,12 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(auth.login_router)
 app.include_router(receipts.router)
 app.include_router(analytics.router)
 app.include_router(stores.router)
 app.include_router(users.router)
+app.include_router(items.router)
 
 
 @app.get("/")
