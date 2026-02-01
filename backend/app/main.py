@@ -1,54 +1,33 @@
-import os
-
-from dotenv import load_dotenv
+import sentry_sdk
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
+from starlette.middleware.cors import CORSMiddleware
 
-from .database import Base, engine
-from .routers import analytics, auth, items, receipts, stores, users
+from app.api.main import api_router
+from app.core.config import settings
 
-load_dotenv()
-api_url = os.getenv("API_URL", "")
-cors = os.getenv("CORS", "http://localhost:3000")
-is_prod = os.getenv("IS_PROD") == "true"
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+def custom_generate_unique_id(route: APIRoute) -> str:
+    return f"{route.tags[0]}-{route.name}"
+
+
+if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
+    sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
 
 app = FastAPI(
-    title="Receipt Analyzer API",
-    description="API for analyzing shopping receipts",
-    version="1.0.0",
-    root_path=api_url,
-    docs_url=None if is_prod else "/docs",
-    redoc_url=None if is_prod else "/redoc",
-    openapi_url=None if is_prod else "/openapi.json",
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    generate_unique_id_function=custom_generate_unique_id,
 )
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[cors],  # React frontend
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Set all CORS enabled origins
+if settings.all_cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.all_cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(auth.login_router)
-app.include_router(receipts.router)
-app.include_router(analytics.router)
-app.include_router(stores.router)
-app.include_router(users.router)
-app.include_router(items.router)
-
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to Receipt Analyzer API"}
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+app.include_router(api_router, prefix=settings.API_V1_STR)
