@@ -1,20 +1,21 @@
-import type { ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef } from "@tanstack/react-table";
+import { Check, X } from "lucide-react";
 
-import type { UserPublic } from "@/client"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
-import { UserActionsMenu } from "./UserActionsMenu"
+import type { UserPublic } from "@/client";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { UserActionsMenu } from "./UserActionsMenu";
 
 export type UserTableData = UserPublic & {
-  isCurrentUser: boolean
-}
+  isCurrentUser: boolean;
+};
 
 export const columns: ColumnDef<UserTableData>[] = [
   {
     accessorKey: "full_name",
     header: "Full Name",
     cell: ({ row }) => {
-      const fullName = row.original.full_name
+      const fullName = row.original.full_name;
       return (
         <div className="flex items-center gap-2">
           <span
@@ -28,7 +29,7 @@ export const columns: ColumnDef<UserTableData>[] = [
             </Badge>
           )}
         </div>
-      )
+      );
     },
   },
   {
@@ -37,6 +38,30 @@ export const columns: ColumnDef<UserTableData>[] = [
     cell: ({ row }) => (
       <span className="text-muted-foreground">{row.original.email}</span>
     ),
+  },
+  {
+    accessorKey: "telegram_id",
+    header: "Telegram id",
+    cell: ({ row }) => {
+      const telegramId = row.original.telegram_id;
+      return (
+        <div className="flex items-center gap-2">
+          {telegramId ? (
+            <Check className="h-4 w-4 text-green-600" />
+          ) : (
+            <X className="h-4 w-4 text-red-600" />
+          )}
+          <span
+            className={cn(
+              "font-medium",
+              !telegramId && "text-muted-foreground",
+            )}
+          >
+            {telegramId || "N/A"}
+          </span>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "is_superuser",
@@ -73,4 +98,4 @@ export const columns: ColumnDef<UserTableData>[] = [
       </div>
     ),
   },
-]
+];

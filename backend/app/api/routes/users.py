@@ -42,10 +42,12 @@ def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     count_statement = select(func.count()).select_from(User)
     count = session.exec(count_statement).one()
 
-    statement = select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)
+    statement = select(User).order_by(User.created_at.desc()).offset(skip).limit(limit)  # type: ignore
     users = session.exec(statement).all()
 
-    return UsersPublic(data=users, count=count)
+    return UsersPublic(
+        data=[UserPublic.model_validate(u) for u in users], count=count
+    )  # type ignore
 
 
 @router.post(

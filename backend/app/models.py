@@ -13,6 +13,7 @@ def get_datetime_utc() -> datetime:
 # Shared properties
 class UserBase(SQLModel):
     email: EmailStr = Field(unique=True, index=True, max_length=255)
+    telegram_id: str | None = Field(default=None, max_length=255)
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
@@ -37,6 +38,7 @@ class UserUpdate(UserBase):
 
 class UserUpdateMe(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
+    telegram_id: str | None = Field(default=None, max_length=255)
     email: EmailStr | None = Field(default=None, max_length=255)
 
 
@@ -49,7 +51,7 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
-    created_at: datetime | None = Field(
+    created_at: datetime = Field(
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
