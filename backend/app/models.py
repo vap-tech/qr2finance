@@ -242,7 +242,7 @@ class Receipt(SQLModel, table=True):
     shop: "Shop" = Relationship(back_populates="receipts")
     cashier_id: uuid.UUID = Field(foreign_key="cashier.id", nullable=True)
     cashier: Cashier | None = Relationship(back_populates="receipts")
-    raw_backup: "ReceiptRawBackup | None" = Relationship(
+    raw_backup: "ReceiptRawBackup" = Relationship(
         back_populates="receipt",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan",
