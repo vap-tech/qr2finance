@@ -11,7 +11,7 @@ Telegram-бот для автоматического учета расходо�
 - Python + aiogram
 - PostgreSQL + Redis
 - API ФНС России
-- Podman для контейнеризации
+- Podman | Docker для контейнеризации
 
 ## 📄 Лицензия
 AGPL-3.0 License - смотрите файл [LICENSE](LICENSE)
