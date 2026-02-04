@@ -2,55 +2,12 @@ from datetime import datetime, timedelta
 from logging import getLogger
 from typing import List, Optional
 
-from fastapi import HTTPException
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session, selectinload
 
 from . import models, schemas
-from .auth import get_password_hash
 
 logger = getLogger(__name__)
-
-
-# --- USER CRUD ---
-def create_user(db: Session, user: schemas.UserCreate):
-    hashed_password = get_password_hash(user.password)
-
-    # Извлекаем все данные кроме пароля в виде обычного словаря
-    user_data = user.model_dump(exclude={"password"})
-
-    db_user = models.User(**user_data, password_hash=hashed_password)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
-
-
-def set_user_telegram_id(
-    db: Session, user: models.User, telegram_id: str
-) -> models.User:
-    # 1. Ищем юзера в базе
-    query = select(models.User).where(models.User.id == user.id)
-    db_user = db.execute(query).scalar_one_or_none()
-
-    if not db_user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-
-    # 2. Обновляем поле
-    db_user.telegram_id = telegram_id
-
-    # 3. Сохраняем изменения
-    db.commit()
-    db.refresh(db_user)
-
-    return db_user
-
-
-def get_user_by_email(db: Session, email: str):
-    # В SQLAlchemy 2.0 рекомендуется использовать select()
-    return db.execute(
-        select(models.User).where(models.User.email == email)
-    ).scalar_one_or_none()
 
 
 # --- SHOP CRUD (с логикой уникальности по ИНН) ---
