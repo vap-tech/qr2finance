@@ -1,0 +1,343 @@
+from datetime import datetime, timedelta
+from logging import getLogger
+from typing import List, Optional
+
+from sqlalchemy import desc, select
+from sqlalchemy.orm import Session, selectinload
+
+from . import models, schemas
+
+logger = getLogger(__name__)
+
+
+# --- SHOP CRUD (с логикой уникальности по ИНН) ---
+def get_or_create_shop(db: Session, shop_data: schemas.ShopCreate):
+    shop = db.execute(
+        select(models.Shop).where(models.Shop.inn == shop_data.inn)
+    ).scalar_one_or_none()
+
+    if not shop:
+        shop = models.Shop(**shop_data.model_dump())
+        db.add(shop)
+        db.flush()  # Получаем ID, но не фиксируем транзакцию окончательно
+    return shop
+
+
+# --- CASHIER CRUD (с логикой уникальности по ИНН/Имени) ---
+def get_or_create_cashier(db: Session, cashier_data: schemas.CashierCreate):
+    if not cashier_data.name and not cashier_data.inn:
+        return None
+
+    query = select(models.Cashier)
+    if cashier_data.inn:
+        query = query.where(models.Cashier.inn == cashier_data.inn)
+    else:
+        query = query.where(models.Cashier.name == cashier_data.name)
+
+    cashier = db.execute(query).scalar_one_or_none()
+
+    if not cashier:
+        cashier = models.Cashier(**cashier_data.model_dump())
+        db.add(cashier)
+        db.flush()
+    return cashier
+
+
+# --- RECEIPT CRUD (ГЛАВНАЯ ЛОГИКА) --- UNUSED
+def create_receipt_full(db: Session, receipt_data: dict, user_id: int):
+    """
+    Принимает сырой словарь (parsed JSON) или схему и сохраняет все связи.
+    """
+    # 1. Проверяем, не существует ли уже такой чек (по external_id)
+    existing_receipt = db.execute(
+        select(models.Receipt).where(models.Receipt.external_id == receipt_data["_id"])
+    ).scalar_one_or_none()
+
+    if existing_receipt:
+        return existing_receipt
+
+    ticket: dict = receipt_data["ticket"]["document"]["receipt"]
+
+    # 2. Обрабатываем магазин
+    shop = get_or_create_shop(
+        db,
+        schemas.ShopCreate(
+            legal_name=ticket["user"],
+            inn=ticket["userInn"].strip(),
+            retail_name=ticket.get("retailPlace"),
+            address=ticket.get("retailPlaceAddress"),
+        ),
+    )
+
+    # 3. Обрабатываем кассира
+    cashier = get_or_create_cashier(
+        db,
+        schemas.CashierCreate(
+            name=ticket.get("operator"), inn=ticket.get("operatorInn")
+        ),
+    )
+
+    # 4. Создаем чек
+    db_receipt = models.Receipt(
+        external_id=receipt_data["_id"],
+        created_at=datetime.fromisoformat(receipt_data["createdAt"]),
+        date_time=datetime.fromisoformat(ticket["dateTime"]),
+        cash_total_sum=ticket["cashTotalSum"],
+        code=ticket["code"],
+        credit_sum=ticket["creditSum"],
+        ecash_total_sum=ticket["ecashTotalSum"],
+        total_sum=ticket["totalSum"],
+        fiscal_document_format_ver=ticket["fiscalDocumentFormatVer"],
+        fiscal_drive_number=ticket["fiscalDriveNumber"],
+        fiscal_document_number=ticket["fiscalDocumentNumber"],
+        fiscal_sign=ticket["fiscalSign"],
+        shift_number=ticket.get("shiftNumber"),
+        prepaid_sum=ticket.get("prepaidSum"),
+        provision_sum=ticket.get("provisionSum"),
+        kkt_reg_id=ticket.get("kktRegId"),
+        nds_10=ticket.get("nds10"),
+        nds_18=ticket.get("nds18"),
+        operation_type=ticket.get("operationType"),
+        request_number=ticket.get("requestNumber"),
+        taxation_type=ticket.get("taxationType"),
+        applied_taxation_type=ticket.get("appliedTaxationType"),
+        user_id=user_id,
+        shop_id=shop.id,
+        cashier_id=cashier.id if cashier else None,
+    )
+    db.add(db_receipt)
+    db.flush()
+
+    # 5. Добавляем позиции (Items)
+    for item in ticket["items"]:
+        # Логика определения единицы измерения (кг vs шт)
+        quantity = item["quantity"]
+        measure = (
+            "кг"
+            if (not float(quantity).is_integer() or "кг" in item["name"].lower())
+            else "шт"
+        )
+
+        db_item = models.ReceiptItem(
+            receipt_id=db_receipt.id,
+            name=item["name"],
+            price=item["price"],
+            quantity=quantity,
+            sum=item["sum"],
+            measure=measure,
+            product_type=item.get("productType"),
+            gtin=item.get("productCodeData", {}).get("gtin"),
+            raw_product_code=item.get("productCodeData", {}).get("rawProductCode"),
+        )
+        db.add(db_item)
+
+    db.commit()
+    db.refresh(db_receipt)
+    return db_receipt
+
+
+def create_receipt_with_backup(
+    db: Session,
+    raw_receipt_json: dict,
+    user_id: int,
+    source_type: str = "fiscal_mobile",
+    import_method: str = "mobile_scan",
+) -> models.Receipt:
+    """
+    Сохраняет чек и бэкап с контролем дубликатов через хэш.
+    Возвращает None если чек уже существует.
+    """
+    # 1. Сразу вычисляем хэш для проверки дубликатов
+    source_hash = models.ReceiptRawBackup._compute_hash(raw_receipt_json)
+
+    # 2. Проверяем, нет ли уже такого чека (по хэшу)
+    existing_backup = db.execute(
+        select(models.ReceiptRawBackup).where(
+            models.ReceiptRawBackup.source_hash == source_hash
+        )
+    ).scalar_one_or_none()
+
+    if existing_backup:
+        # Чек уже существует, возвращаем связанный чек
+        logger.info(f"Чек уже существует, hash={source_hash[:16]}...")
+        return existing_backup.receipt
+
+    # 3. Проверяем по external_id (дополнительная защита)
+    external_id = raw_receipt_json.get("_id")
+    if external_id:
+        existing_receipt = db.execute(
+            select(models.Receipt).where(models.Receipt.external_id == external_id)
+        ).scalar_one_or_none()
+
+        if existing_receipt:
+            logger.info(f"Чек уже существует, external_id={external_id}")
+            return existing_receipt
+
+    # 4. Парсим и создаем чек
+    try:
+        ticket = raw_receipt_json["ticket"]["document"]["receipt"]
+
+        # Магазин
+        shop = get_or_create_shop(
+            db,
+            schemas.ShopCreate(
+                legal_name=ticket["user"],
+                inn=ticket["userInn"].strip(),
+                retail_name=ticket.get("retailPlace"),
+                address=ticket.get("retailPlaceAddress"),
+            ),
+        )
+
+        # Кассир
+        cashier = get_or_create_cashier(
+            db,
+            schemas.CashierCreate(
+                name=ticket.get("operator"), inn=ticket.get("operatorInn")
+            ),
+        )
+
+        # Создаем чек
+        db_receipt = models.Receipt(
+            external_id=external_id,
+            created_at=datetime.fromisoformat(raw_receipt_json["createdAt"]),
+            date_time=datetime.fromisoformat(ticket["dateTime"]),
+            cash_total_sum=ticket["cashTotalSum"],
+            code=ticket["code"],
+            credit_sum=ticket["creditSum"],
+            ecash_total_sum=ticket["ecashTotalSum"],
+            total_sum=ticket["totalSum"],
+            fiscal_document_format_ver=ticket["fiscalDocumentFormatVer"],
+            fiscal_drive_number=ticket["fiscalDriveNumber"],
+            fiscal_document_number=ticket["fiscalDocumentNumber"],
+            fiscal_sign=ticket["fiscalSign"],
+            shift_number=ticket.get("shiftNumber"),
+            prepaid_sum=ticket.get("prepaidSum"),
+            provision_sum=ticket.get("provisionSum"),
+            kkt_reg_id=ticket.get("kktRegId"),
+            nds_10=ticket.get("nds10"),
+            nds_18=ticket.get("nds18"),
+            operation_type=ticket.get("operationType"),
+            request_number=ticket.get("requestNumber"),
+            taxation_type=ticket.get("taxationType"),
+            applied_taxation_type=ticket.get("appliedTaxationType"),
+            user_id=user_id,
+            shop_id=shop.id,
+            cashier_id=cashier.id if cashier else None,
+        )
+        db.add(db_receipt)
+        db.flush()  # Получаем id
+
+        # 5. Создаем бэкап
+        backup = models.ReceiptRawBackup(
+            raw_json=raw_receipt_json,
+            source_hash=source_hash,  # Уже вычисленный хэш
+            source_type=source_type,
+            import_method=import_method,
+            user_id=user_id,
+            receipt_id=db_receipt.id,
+        )
+        db.add(backup)
+
+        # 6. Позиции чека
+        for item in ticket["items"]:
+            quantity = item["quantity"]
+            measure = (
+                "кг"
+                if (not float(quantity).is_integer() or "кг" in item["name"].lower())
+                else "шт"
+            )
+
+            db_item = models.ReceiptItem(
+                receipt_id=db_receipt.id,
+                name=item["name"],
+                price=item["price"],
+                quantity=quantity,
+                sum=item["sum"],
+                measure=measure,
+                product_type=item.get("productType"),
+                gtin=item.get("productCodeData", {}).get("gtin"),
+                raw_product_code=item.get("productCodeData", {}).get("rawProductCode"),
+            )
+            db.add(db_item)
+
+        db.commit()
+        db.refresh(db_receipt)
+
+        # 7. Проверяем целостность (для уверенности)
+        if not backup.verify_integrity():
+            logger.warning(f"Целостность данных нарушена для чека {db_receipt.id}")
+            # Можно отправить алерт или записать в лог
+
+        return db_receipt
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Ошибка при сохранении чека: {e}")
+        raise
+
+
+def get_recent_receipts(
+    db: Session,
+    user_id: int,
+    limit: int = 10,
+    days: Optional[int] = None,
+    with_backup: bool = False,
+    with_items: bool = False,
+) -> List[models.Receipt]:
+    """
+    Получает последние загруженные чеки пользователя.
+
+    Args:
+        db: Сессия БД
+        user_id: ID пользователя
+        limit: Сколько чеков вернуть (по умолчанию 10)
+        days: За последние N дней (если None - за все время)
+        with_backup: Загружать ли сырые данные бэкапа
+        with_items: Загружать ли позиции чеков
+
+    Returns:
+        List[Receipt]: Список чеков, отсортированных по дате загрузки (created_at)
+    """
+    # Базовый запрос
+    query = select(models.Receipt).where(models.Receipt.user_id == user_id)
+
+    # Фильтр по дням
+    if days:
+        date_from = datetime.utcnow() - timedelta(days=days)
+        query = query.where(models.Receipt.created_at >= date_from)
+
+    # Сортировка по дате загрузки (последние сначала)
+    query = query.order_by(desc(models.Receipt.created_at))
+
+    # Лимит
+    query = query.limit(limit)
+
+    # Опционально: загружаем связанные данные
+    # ВАЖНО: используем selectinload вместо joinedload для коллекций
+    if with_backup:
+        query = query.options(selectinload(models.Receipt.raw_backup))
+
+    if with_items:
+        query = query.options(selectinload(models.Receipt.items))
+
+    # Загружаем магазин всегда (он нам нужен для отображения)
+    query = query.options(selectinload(models.Receipt.shop))
+
+    # Выполняем запрос - используем unique() для корректной работы
+    result = db.execute(query).unique().scalars().all()
+
+    return list(result)
+
+
+def get_user_receipts(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    return (
+        db.execute(
+            select(models.Receipt)
+            .where(models.Receipt.user_id == user_id)
+            .offset(skip)
+            .limit(limit)
+            .order_by(models.Receipt.date_time.desc())
+        )
+        .scalars()
+        .all()
+    )
