@@ -173,13 +173,33 @@ class NewPassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 
-class Cashier(SQLModel, table=True):
-    """Cashier database model."""
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+class CashierBase(SQLModel):
     name: str = Field(sa_type=String)
     inn: str = Field(sa_type=String, unique=True)
+
+
+class CashierCreate(CashierBase):
+    pass
+
+
+class CashierUpdate(CashierBase):
+    pass
+
+
+class Cashier(CashierBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     receipts: list["Receipt"] = Relationship(back_populates="cashier")
+
+
+class CashierPublic(CashierBase):
+    id: uuid.UUID
+
+
+class CashiersPublic(SQLModel):
+    """Paginated list of public cashiers."""
+
+    data: list[CashierPublic]
+    count: int
 
 
 class ShopCategory(SQLModel, table=True):
