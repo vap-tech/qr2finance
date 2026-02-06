@@ -23,26 +23,6 @@ def get_or_create_shop(db: Session, shop_data: schemas.ShopCreate):
     return shop
 
 
-# --- CASHIER CRUD (с логикой уникальности по ИНН/Имени) ---
-def get_or_create_cashier(db: Session, cashier_data: schemas.CashierCreate):
-    if not cashier_data.name and not cashier_data.inn:
-        return None
-
-    query = select(models.Cashier)
-    if cashier_data.inn:
-        query = query.where(models.Cashier.inn == cashier_data.inn)
-    else:
-        query = query.where(models.Cashier.name == cashier_data.name)
-
-    cashier = db.execute(query).scalar_one_or_none()
-
-    if not cashier:
-        cashier = models.Cashier(**cashier_data.model_dump())
-        db.add(cashier)
-        db.flush()
-    return cashier
-
-
 # --- RECEIPT CRUD (ГЛАВНАЯ ЛОГИКА) --- UNUSED
 def create_receipt_full(db: Session, receipt_data: dict, user_id: int):
     """
