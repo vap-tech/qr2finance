@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app import crud, models, schemas
-from app.crud import set_user_telegram_id
+from app import models, schemas, servises
+from app.servises import set_user_telegram_id
 
 from ..database import get_db
 from ..dependencies import get_current_user
@@ -28,13 +28,13 @@ def set_telegram_id(
     status_code=status.HTTP_201_CREATED,
 )
 def signup(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=str(user.email))
+    db_user = servises.get_user_by_email(db, email=str(user.email))
     if db_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    return crud.create_user(db=db, user=user)
+    return servises.create_user(db=db, user=user)
 
 
 # POST /set_telegram_id/
