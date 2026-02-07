@@ -1,0 +1,53 @@
+[
+  {
+    "_id": "6986e4f667ebf4530e078581",
+    "createdAt": "2026-02-07T07:08:38+00:00",
+    "ticket": {
+      "document": {
+        "receipt": {
+          "cashTotalSum": 0,
+          "code": 3,
+          "creditSum": 0,
+          "dateTime": "2026-02-07T10:07:00",
+          "ecashTotalSum": 12999,
+          "fiscalDocumentFormatVer": 4,
+          "fiscalDocumentNumber": 4795,
+          "fiscalDriveNumber": "7380440801980824",
+          "fiscalSign": 481810454,
+          "fnsUrl": "www.nalog.gov.ru",
+          "items": [
+            {
+              "name": "BURN Напиток энергет персик/манго б/сах ",
+              "nds": 1,
+              "paymentType": 4,
+              "price": 12999,
+              "productType": 33,
+              "productCodeData": {
+                "gtin": 5060608748358,
+                "rawProductCode": "0105060608748358215h_Qs&INXuJgR",
+                "productIdType": 6,
+                "sernum": "5h_Qs&INXuJgR"
+              },
+              "quantity": 1,
+              "sum": 12999
+            }
+          ],
+          "kktRegId": "0009601940012170    ",
+          "nds18": 2167,
+          "operationType": 1,
+          "prepaidSum": 0,
+          "provisionSum": 0,
+          "requestNumber": 4,
+          "retailPlace": "Магазин  Магнит  Мантия",
+          "retailPlaceAddress": "396370, Воронежская обл, Репьевский р-н, Репьёвка с, Советская ул, дом № 9",
+          "shiftNumber": 86,
+          "taxationType": 1,
+          "appliedTaxationType": 1,
+          "totalSum": 12999,
+          "user": "АКЦИОНЕРНОЕ ОБЩЕСТВО \"ТАНДЕР\"",
+          "userInn": "2310031475  "
+        }
+      }
+    }
+  }
+]
