@@ -10,19 +10,6 @@ from . import models, schemas
 logger = getLogger(__name__)
 
 
-# --- SHOP CRUD (с логикой уникальности по ИНН) ---
-def get_or_create_shop(db: Session, shop_data: schemas.ShopCreate):
-    shop = db.execute(
-        select(models.Shop).where(models.Shop.inn == shop_data.inn)
-    ).scalar_one_or_none()
-
-    if not shop:
-        shop = models.Shop(**shop_data.model_dump())
-        db.add(shop)
-        db.flush()  # Получаем ID, но не фиксируем транзакцию окончательно
-    return shop
-
-
 # --- RECEIPT CRUD (ГЛАВНАЯ ЛОГИКА) --- UNUSED
 def create_receipt_full(db: Session, receipt_data: dict, user_id: int):
     """
