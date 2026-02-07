@@ -151,6 +151,14 @@ class Message(SQLModel):
     message: str
 
 
+# Health check payload
+class HealthCheck(SQLModel):
+    """Health check response."""
+
+    app: bool
+    database: bool
+
+
 # JSON payload containing access token
 class Token(SQLModel):
     """Access token payload."""
@@ -210,19 +218,42 @@ class ShopCategory(SQLModel, table=True):
     shops: list["Shop"] = Relationship(back_populates="category")
 
 
-class Shop(SQLModel, table=True):
-    """Shop database model."""
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+class ShopBase(SQLModel):
     legal_name: str = Field(sa_type=String, nullable=True)
     inn: str = Field(sa_type=String, index=True)
     retail_name: str = Field(sa_type=String, nullable=True)
     address: str = Field(sa_type=String, nullable=True)
+
+
+class ShopCreate(ShopBase):
+    pass
+
+
+class ShopUpdate(ShopBase):
+    is_favorite: bool = Field(sa_type=Boolean, default=False)
+    notes: str | None = Field(sa_type=String, nullable=True)
+
+
+class Shop(ShopUpdate, table=True):
+    """Shop database model."""
+
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     category_id: uuid.UUID | None = Field(foreign_key="shopcategory.id", nullable=True)
     category: ShopCategory | None = Relationship(back_populates="shops")
-    is_favorite: bool = Field(sa_type=Boolean, default=False)
-    notes: str = Field(sa_type=String, nullable=True)
     receipts: list["Receipt"] = Relationship(back_populates="shop")
+
+
+class ShopPublic(ShopUpdate):
+    id: uuid.UUID
+    category_id: uuid.UUID | None
+    category: ShopCategory | None
+
+
+class ShopsPublic(SQLModel):
+    """Paginated list of public shops."""
+
+    data: list[ShopPublic]
+    count: int
 
 
 class Receipt(SQLModel, table=True):
