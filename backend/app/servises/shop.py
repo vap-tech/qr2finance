@@ -40,12 +40,11 @@ def get_or_create_shop(
             set_={
                 "is_active": True,
             },
-            where=(Shop.is_active.is_(False)),  # type: ignore
         )
         .returning(Shop.id)  # type: ignore
     )  # type: ignore
 
-    shop_id = session.exec(stmt).one()
+    shop_id = session.exec(stmt).scalar_one()
     session.flush()  # commit пусть делает вызывающий
     return session.exec(select(Shop).where(Shop.id == shop_id)).one()
 

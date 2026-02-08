@@ -221,6 +221,23 @@ class CashiersPublic(SQLModel):
 
 
 # --- Shop ---
+class ShopCategoryLink(SQLModel, table=True):
+    """
+    Link-таблица M:N. Primary key на (shop_id, category_id) => нет дублей.
+    owner_id добавлен, чтобы быстро проверять tenant и делать индексы.
+    """
+
+    __tablename__ = "shop_category_links"  # type: ignore
+    owner_id: uuid.UUID = Field(index=True)
+    shop_id: uuid.UUID = Field(foreign_key="shops.id", primary_key=True)
+    category_id: uuid.UUID = Field(foreign_key="shop_categories.id", primary_key=True)
+    is_active: bool = Field(default=True, index=True)
+    __table_args__ = (
+        Index("ix_shop_cat_link_owner_shop", "owner_id", "shop_id"),
+        Index("ix_shop_cat_link_owner_cat", "owner_id", "category_id"),
+    )
+
+
 class Shop(SQLModel, table=True):
     __tablename__ = "shops"  # type: ignore
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -230,10 +247,11 @@ class Shop(SQLModel, table=True):
     is_favorite: bool = Field(default=False, sa_type=Boolean, index=True)
     notes: str | None = Field(default=None, sa_type=String)
     is_active: bool = Field(default=True, index=True)
+    receipts: list["Receipt"] = Relationship(back_populates="shop")
     # many-to-many
     categories: list["ShopCategory"] = Relationship(
         back_populates="shops",
-        link_model="ShopCategoryLink",
+        link_model=ShopCategoryLink,
     )
     __table_args__ = (
         UniqueConstraint(
@@ -251,28 +269,11 @@ class ShopCategory(SQLModel, table=True):
     is_active: bool = Field(default=True, index=True)
     shops: list[Shop] = Relationship(
         back_populates="categories",
-        link_model="ShopCategoryLink",
+        link_model=ShopCategoryLink,
     )
     __table_args__ = (
         UniqueConstraint("owner_id", "name", name="uq_shop_categories_owner_name"),
         Index("ix_shop_categories_owner_name", "owner_id", "name"),
-    )
-
-
-class ShopCategoryLink(SQLModel, table=True):
-    """
-    Link-таблица M:N. Primary key на (shop_id, category_id) => нет дублей.
-    owner_id добавлен, чтобы быстро проверять tenant и делать индексы.
-    """
-
-    __tablename__ = "shop_category_links"  # type: ignore
-    owner_id: uuid.UUID = Field(index=True)
-    shop_id: uuid.UUID = Field(foreign_key="shops.id", primary_key=True)
-    category_id: uuid.UUID = Field(foreign_key="shop_categories.id", primary_key=True)
-    is_active: bool = Field(default=True, index=True)
-    __table_args__ = (
-        Index("ix_shop_cat_link_owner_shop", "owner_id", "shop_id"),
-        Index("ix_shop_cat_link_owner_cat", "owner_id", "category_id"),
     )
 
 
@@ -309,7 +310,7 @@ class ShopPublic(SQLModel):
     is_favorite: bool
     notes: str | None
     is_active: bool
-    category_ids: list[uuid.UUID]
+    category_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
 class ShopsPublic(SQLModel):
@@ -357,7 +358,7 @@ class Receipt(SQLModel, table=True):
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
     )
     owner: User | None = Relationship(back_populates="receipts")
-    shop_id: uuid.UUID = Field(foreign_key="shop.id", nullable=False)
+    shop_id: uuid.UUID = Field(foreign_key="shops.id", index=True)
     shop: "Shop" = Relationship(back_populates="receipts")
     cashier_id: uuid.UUID = Field(foreign_key="cashier.id", nullable=True)
     cashier: Cashier | None = Relationship(back_populates="receipts")

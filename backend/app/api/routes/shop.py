@@ -94,7 +94,7 @@ def create_shop(
     shop_in: ShopCreate,
 ) -> Any:
     """
-    Create new shop (always owned by current_user, even for superuser unless ты хочешь иначе).
+    Create new shop (always owned by current_user, even for superuser unless).
     """
     shop = get_or_create_shop(
         session=session, owner_id=current_user.id, shop_in=shop_in
