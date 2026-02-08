@@ -4,7 +4,17 @@ import uuid
 from datetime import datetime, timezone
 
 from pydantic import EmailStr
-from sqlalchemy import JSON, BigInteger, Boolean, DateTime, Float, Integer, String
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    DateTime,
+    Float,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -210,52 +220,97 @@ class CashiersPublic(SQLModel):
     count: int
 
 
+# --- Shop ---
+class Shop(SQLModel, table=True):
+    __tablename__ = "shops"  # type: ignore
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(index=True)
+    retail_name: str | None = Field(default=None, sa_type=String, index=True)
+    address: str | None = Field(default=None, sa_type=String)
+    is_favorite: bool = Field(default=False, sa_type=Boolean, index=True)
+    notes: str | None = Field(default=None, sa_type=String)
+    is_active: bool = Field(default=True, index=True)
+    # many-to-many
+    categories: list["ShopCategory"] = Relationship(
+        back_populates="shops",
+        link_model="ShopCategoryLink",
+    )
+
+
 class ShopCategory(SQLModel, table=True):
-    """Shop category database model."""
-
+    __tablename__ = "shop_categories"  # type: ignore
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    name: str = Field(sa_type=String)
-    shops: list["Shop"] = Relationship(back_populates="category")
+    owner_id: uuid.UUID = Field(index=True)
+    name: str = Field(sa_type=String, index=True)
+    is_active: bool = Field(default=True, index=True)
+    shops: list[Shop] = Relationship(
+        back_populates="categories",
+        link_model="ShopCategoryLink",
+    )
+    __table_args__ = (
+        UniqueConstraint("owner_id", "name", name="uq_shop_categories_owner_name"),
+        Index("ix_shop_categories_owner_name", "owner_id", "name"),
+    )
 
 
-class ShopBase(SQLModel):
-    legal_name: str = Field(sa_type=String, nullable=True)
-    inn: str = Field(sa_type=String, index=True)
-    retail_name: str = Field(sa_type=String, nullable=True)
-    address: str = Field(sa_type=String, nullable=True)
+class ShopCategoryLink(SQLModel, table=True):
+    """
+    Link-таблица M:N. Primary key на (shop_id, category_id) => нет дублей.
+    owner_id добавлен, чтобы быстро проверять tenant и делать индексы.
+    """
+
+    __tablename__ = "shop_category_links"  # type: ignore
+    owner_id: uuid.UUID = Field(index=True)
+    shop_id: uuid.UUID = Field(foreign_key="shops.id", primary_key=True)
+    category_id: uuid.UUID = Field(foreign_key="shop_categories.id", primary_key=True)
+    is_active: bool = Field(default=True, index=True)
+    __table_args__ = (
+        Index("ix_shop_cat_link_owner_shop", "owner_id", "shop_id"),
+        Index("ix_shop_cat_link_owner_cat", "owner_id", "category_id"),
+    )
 
 
-class ShopCreate(ShopBase):
-    pass
+# --- Shop schemas ---
+class ShopCategoryCreate(SQLModel):
+    name: str
 
 
-class ShopUpdate(ShopBase):
-    is_favorite: bool = Field(sa_type=Boolean, default=False)
-    notes: str | None = Field(sa_type=String, nullable=True)
-
-
-class Shop(ShopUpdate, table=True):
-    """Shop database model."""
-
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    category_id: uuid.UUID | None = Field(foreign_key="shopcategory.id", nullable=True)
-    category: ShopCategory | None = Relationship(back_populates="shops")
-    receipts: list["Receipt"] = Relationship(back_populates="shop")
-
-
-class ShopPublic(ShopUpdate):
+class ShopCategoryRead(SQLModel):
     id: uuid.UUID
-    category_id: uuid.UUID | None
-    category: ShopCategory | None
+    name: str
+    is_active: bool
 
 
-class ShopsPublic(SQLModel):
-    """Paginated list of public shops."""
+class ShopCreate(SQLModel):
+    retail_name: str | None = None
+    address: str | None = None
+    is_favorite: bool = False
+    notes: str | None = None
 
-    data: list[ShopPublic]
-    count: int
+
+class ShopUpdate(SQLModel):
+    retail_name: str | None = None
+    address: str | None = None
+    is_favorite: bool | None = None
+    notes: str | None = None
+    is_active: bool | None = None
 
 
+class ShopRead(SQLModel):
+    id: uuid.UUID
+    retail_name: str | None
+    address: str | None
+    is_favorite: bool
+    notes: str | None
+    is_active: bool
+    category_ids: list[uuid.UUID]
+
+
+class SetShopCategories(SQLModel):
+    category_ids: list[uuid.UUID]
+
+
+# --- Receipts ---
 class Receipt(SQLModel, table=True):
     """Receipt database model."""
 
