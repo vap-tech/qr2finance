@@ -65,7 +65,7 @@ def get_shop_read(
         )
     ).all()
 
-    return ShopPubllic(
+    return ShopPublic(
         id=shop.id,
         retail_name=shop.retail_name,
         address=shop.address,
