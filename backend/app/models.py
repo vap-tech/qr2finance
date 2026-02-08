@@ -302,7 +302,7 @@ class ShopUpdate(SQLModel):
     is_active: bool | None = None
 
 
-class ShopRead(SQLModel):
+class ShopPublic(SQLModel):
     id: uuid.UUID
     retail_name: str | None
     address: str | None
@@ -310,6 +310,13 @@ class ShopRead(SQLModel):
     notes: str | None
     is_active: bool
     category_ids: list[uuid.UUID]
+
+
+class ShopsPublic(SQLModel):
+    """Paginated list of public shops."""
+
+    data: list[ShopPublic]
+    count: int
 
 
 class SetShopCategories(SQLModel):

@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import Session, select
 
-from app.models import Shop, ShopCategory, ShopCategoryLink, ShopCreate, ShopRead
+from app.models import Shop, ShopCategory, ShopCategoryLink, ShopCreate, ShopPublic
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def get_or_create_shop(
 
 def get_shop_read(
     session: Session, *, owner_id: uuid.UUID, shop_id: uuid.UUID
-) -> ShopRead:
+) -> ShopPublic:
     shop = session.exec(
         select(Shop).where(Shop.id == shop_id, Shop.owner_id == owner_id)
     ).one()
@@ -65,7 +65,7 @@ def get_shop_read(
         )
     ).all()
 
-    return ShopRead(
+    return ShopPubllic(
         id=shop.id,
         retail_name=shop.retail_name,
         address=shop.address,
