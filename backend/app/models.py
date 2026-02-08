@@ -225,8 +225,8 @@ class Shop(SQLModel, table=True):
     __tablename__ = "shops"  # type: ignore
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(index=True)
-    retail_name: str | None = Field(default=None, sa_type=String, index=True)
-    address: str | None = Field(default=None, sa_type=String)
+    retail_name: str = Field(sa_type=String, nullable=False, index=True)
+    address: str = Field(sa_type=String, nullable=False)
     is_favorite: bool = Field(default=False, sa_type=Boolean, index=True)
     notes: str | None = Field(default=None, sa_type=String)
     is_active: bool = Field(default=True, index=True)
@@ -234,6 +234,12 @@ class Shop(SQLModel, table=True):
     categories: list["ShopCategory"] = Relationship(
         back_populates="shops",
         link_model="ShopCategoryLink",
+    )
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_id", "retail_name", "address", name="uq_shops_owner_retail_address"
+        ),
+        Index("ix_shops_owner_retail", "owner_id", "retail_name"),
     )
 
 
