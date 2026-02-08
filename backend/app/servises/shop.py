@@ -37,9 +37,9 @@ def get_or_create_shop(
             # constraint="uq_shops_owner_retail_address",
             index_elements=[Shop.owner_id, Shop.retail_name, Shop.address],  # type: ignore
             set_={
-                # ничего “бизнесового” не перетираем, максимум оживляем
                 "is_active": True,
             },
+            where=(Shop.is_active.is_(False)),  # type: ignore
         )
         .returning(Shop.id)  # type: ignore
     )  # type: ignore
@@ -82,6 +82,9 @@ def set_shop_categories(
     shop_id: uuid.UUID,
     category_ids: list[uuid.UUID],
 ) -> None:
+    # dedupe, keep order
+    category_ids = list(dict.fromkeys(category_ids))
+
     # 1) Проверяем, что shop принадлежит owner
     shop_exists = session.exec(
         select(Shop.id).where(Shop.id == shop_id, Shop.owner_id == owner_id)
