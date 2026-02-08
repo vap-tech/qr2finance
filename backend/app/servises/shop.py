@@ -35,7 +35,8 @@ def get_or_create_shop(
         .on_conflict_do_update(
             # лучше по constraint:
             # constraint="uq_shops_owner_retail_address",
-            index_elements=[Shop.owner_id, Shop.retail_name, Shop.address],  # type: ignore
+            constraint="uq_shops_owner_retail_address",
+            # index_elements=[Shop.owner_id, Shop.retail_name, Shop.address],
             set_={
                 "is_active": True,
             },
@@ -45,7 +46,7 @@ def get_or_create_shop(
     )  # type: ignore
 
     shop_id = session.exec(stmt).one()
-    session.flush()  # commit пусть делает вызывающий, если ты хочешь “без коммита”
+    session.flush()  # commit пусть делает вызывающий
     return session.exec(select(Shop).where(Shop.id == shop_id)).one()
 
 
