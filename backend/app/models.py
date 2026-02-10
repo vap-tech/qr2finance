@@ -282,10 +282,26 @@ class ShopCategoryCreate(SQLModel):
     name: str
 
 
-class ShopCategoryRead(SQLModel):
+class ShopCategoryPublic(SQLModel):
     id: uuid.UUID
     name: str
     is_active: bool
+
+
+class ShopCategorysPublic(SQLModel):
+    """Paginated list of public shops categorys."""
+
+    data: list[ShopCategoryPublic]
+    count: int
+
+
+class ShopCategoryUpdate(SQLModel):
+    name: str | None = None
+    is_active: bool | None = None
+
+
+class SetShopCategories(SQLModel):
+    category_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
 class ShopCreate(SQLModel):
@@ -303,25 +319,24 @@ class ShopUpdate(SQLModel):
     is_active: bool | None = None
 
 
-class ShopPublic(SQLModel):
+class ShopRead(SQLModel):
     id: uuid.UUID
     retail_name: str | None
     address: str | None
     is_favorite: bool
     notes: str | None
     is_active: bool
+
+
+class ShopPublic(ShopRead):
     category_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
 class ShopsPublic(SQLModel):
     """Paginated list of public shops."""
 
-    data: list[ShopPublic]
+    data: list[ShopRead]
     count: int
-
-
-class SetShopCategories(SQLModel):
-    category_ids: list[uuid.UUID]
 
 
 # --- Receipts ---

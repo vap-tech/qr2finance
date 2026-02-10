@@ -5,10 +5,19 @@ from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
-from app.models import Message, Shop, ShopCreate, ShopPublic, ShopsPublic, ShopUpdate
+from app.models import (
+    Message,
+    SetShopCategories,
+    Shop,
+    ShopCreate,
+    ShopPublic,
+    ShopsPublic,
+    ShopUpdate,
+)
 from app.servises.shop import (
     get_or_create_shop,
     get_shop_read,
+    set_shop_categories,
 )
 
 router = APIRouter(prefix="/shops", tags=["shops"])
@@ -154,3 +163,32 @@ def delete_shop(
     session.commit()
 
     return Message(message="Shop deleted successfully")
+
+
+@router.put("/{id}/categories", response_model=ShopPublic)
+def replace_shop_categories(
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    body: SetShopCategories,
+) -> Any:
+    """
+    Replace shop categories (idempotent).
+    """
+    # 1) Получаем магазин с учётом прав
+    shop = _get_shop_or_404(session, current_user, id)
+
+    try:
+        # owner_id берём у магазина
+        # (суперюзер может менять чужие)
+        set_shop_categories(
+            session=session,
+            owner_id=shop.owner_id,
+            shop_id=shop.id,
+            category_ids=body.category_ids,
+        )
+    except ValueError as e:
+        # проброс из сервайсез логики
+        raise HTTPException(status_code=422, detail=str(e))
+
+    return get_shop_read(session=session, owner_id=shop.owner_id, shop_id=shop.id)

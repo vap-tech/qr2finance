@@ -2,7 +2,7 @@ import logging
 import uuid
 
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select, update
 
 from app.models import Shop, ShopCategory, ShopCategoryLink, ShopCreate, ShopPublic
 
@@ -60,7 +60,7 @@ def get_shop_read(
         select(ShopCategoryLink.category_id).where(
             ShopCategoryLink.owner_id == owner_id,
             ShopCategoryLink.shop_id == shop_id,
-            ShopCategoryLink.is_active.is_(True),  # type: ignore
+            col(ShopCategoryLink.is_active).is_(True),
         )
     ).all()
 
@@ -85,14 +85,7 @@ def set_shop_categories(
     # dedupe, keep order
     category_ids = list(dict.fromkeys(category_ids))
 
-    # 1) Проверяем, что shop принадлежит owner
-    shop_exists = session.exec(
-        select(Shop.id).where(Shop.id == shop_id, Shop.owner_id == owner_id)
-    ).first()
-    if not shop_exists:
-        raise ValueError("Shop not found")
-
-    # 2) Проверяем, что все категории принадлежат owner от греха
+    # 1) Проверяем, что все категории принадлежат owner от греха
     if category_ids:
         rows = session.exec(
             select(ShopCategory.id).where(
@@ -104,19 +97,19 @@ def set_shop_categories(
         found = set(rows)
         missing = [cid for cid in category_ids if cid not in found]
         if missing:
-            logger.info("Some categories not found: %s", missing)
+            raise ValueError(f"Some categories not found: {missing}")
 
-    # 3) Деактивируем все связи магазина
+    # 2) Деактивируем все связи магазина
     session.exec(
-        """
-        UPDATE shop_category_links
-        SET is_active = false
-        WHERE owner_id = :owner_id AND shop_id = :shop_id
-        """,
-        {"owner_id": owner_id, "shop_id": shop_id},
+        update(ShopCategoryLink)
+        .where(
+            col(ShopCategoryLink.owner_id) == owner_id,
+            col(ShopCategoryLink.shop_id) == shop_id,
+        )
+        .values(is_active=False)
     )  # type: ignore
 
-    # 4) Upsert для переданных категорий
+    # 3) Upsert для переданных категорий
     #    Важно: используем INSERT .. ON CONFLICT по (shop_id, category_id)
     if category_ids:
         values = [
