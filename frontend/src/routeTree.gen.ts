@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutShopsRouteImport } from './routes/_layout/shops'
+import { Route as LayoutShopCategoriesRouteImport } from './routes/_layout/shop-categories'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
@@ -54,6 +55,11 @@ const LayoutShopsRoute = LayoutShopsRouteImport.update({
   path: '/shops',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutShopCategoriesRoute = LayoutShopCategoriesRouteImport.update({
+  id: '/shop-categories',
+  path: '/shop-categories',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/shop-categories': typeof LayoutShopCategoriesRoute
   '/shops': typeof LayoutShopsRoute
 }
 export interface FileRoutesByTo {
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/admin': typeof LayoutAdminRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
+  '/shop-categories': typeof LayoutShopCategoriesRoute
   '/shops': typeof LayoutShopsRoute
   '/': typeof LayoutIndexRoute
 }
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/shop-categories': typeof LayoutShopCategoriesRoute
   '/_layout/shops': typeof LayoutShopsRoute
   '/_layout/': typeof LayoutIndexRoute
 }
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/items'
     | '/settings'
+    | '/shop-categories'
     | '/shops'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/items'
     | '/settings'
+    | '/shop-categories'
     | '/shops'
     | '/'
   id:
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_layout/admin'
     | '/_layout/items'
     | '/_layout/settings'
+    | '/_layout/shop-categories'
     | '/_layout/shops'
     | '/_layout/'
   fileRoutesById: FileRoutesById
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutShopsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/shop-categories': {
+      id: '/_layout/shop-categories'
+      path: '/shop-categories'
+      fullPath: '/shop-categories'
+      preLoaderRoute: typeof LayoutShopCategoriesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
@@ -229,6 +248,7 @@ interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutShopCategoriesRoute: typeof LayoutShopCategoriesRoute
   LayoutShopsRoute: typeof LayoutShopsRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
@@ -237,6 +257,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutShopCategoriesRoute: LayoutShopCategoriesRoute,
   LayoutShopsRoute: LayoutShopsRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }

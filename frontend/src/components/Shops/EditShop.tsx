@@ -1,13 +1,13 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Pencil } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
 
-import { type ShopRead, ShopsService } from "@/client";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { ShopCategoriesService, type ShopRead, ShopsService } from "@/client"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogClose,
@@ -16,8 +16,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+} from "@/components/ui/dialog"
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import {
   Form,
   FormControl,
@@ -25,11 +25,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { LoadingButton } from "@/components/ui/loading-button";
-import useCustomToast from "@/hooks/useCustomToast";
-import { handleError } from "@/utils";
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { LoadingButton } from "@/components/ui/loading-button"
+import useCustomToast from "@/hooks/useCustomToast"
+import { handleError } from "@/utils"
 
 const formSchema = z.object({
   retail_name: z.string().min(1, { message: "Retail name is required" }),
@@ -37,19 +37,64 @@ const formSchema = z.object({
   notes: z.string().optional(),
   is_favorite: z.boolean(),
   is_active: z.boolean(),
-});
+})
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof formSchema>
 
 interface EditShopProps {
-  shop: ShopRead;
-  onSuccess: () => void;
+  shop: ShopRead
+  onSuccess: () => void
+}
+
+const areSameIds = (left: string[], right: string[]) => {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  const leftSet = new Set(left)
+  if (leftSet.size !== right.length) {
+    return false
+  }
+
+  return right.every((id) => leftSet.has(id))
 }
 
 const EditShop = ({ shop, onSuccess }: EditShopProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const { showSuccessToast, showErrorToast } = useCustomToast();
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
+  const [initialCategoryIds, setInitialCategoryIds] = useState<string[]>([])
+  const [categoriesInitialized, setCategoriesInitialized] = useState(false)
+
+  const queryClient = useQueryClient()
+  const { showSuccessToast, showErrorToast } = useCustomToast()
+
+  const shopDetailsQuery = useQuery({
+    queryKey: ["shop", shop.id],
+    queryFn: () => ShopsService.readShop({ id: shop.id }),
+    enabled: isOpen,
+  })
+
+  const categoriesQuery = useQuery({
+    queryKey: ["shop-categories", "all"],
+    queryFn: () => ShopCategoriesService.readShopCategories({ skip: 0, limit: 100 }),
+    enabled: isOpen,
+  })
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCategoriesInitialized(false)
+      return
+    }
+
+    if (!shopDetailsQuery.data || categoriesInitialized) {
+      return
+    }
+
+    const ids = shopDetailsQuery.data.category_ids ?? []
+    setSelectedCategoryIds(ids)
+    setInitialCategoryIds(ids)
+    setCategoriesInitialized(true)
+  }, [isOpen, categoriesInitialized, shopDetailsQuery.data])
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -62,28 +107,70 @@ const EditShop = ({ shop, onSuccess }: EditShopProps) => {
       is_favorite: shop.is_favorite,
       is_active: shop.is_active,
     },
-  });
+  })
 
   const mutation = useMutation({
-    mutationFn: (data: FormData) =>
-      ShopsService.updateShop({ id: shop.id, requestBody: data }),
+    mutationFn: async (data: FormData) => {
+      await ShopsService.updateShop({ id: shop.id, requestBody: data })
+
+      if (!categoriesInitialized) {
+        return
+      }
+
+      const categoriesChanged = !areSameIds(
+        selectedCategoryIds,
+        initialCategoryIds,
+      )
+
+      if (!categoriesChanged) {
+        return
+      }
+
+      await ShopsService.replaceShopCategories({
+        id: shop.id,
+        requestBody: { category_ids: selectedCategoryIds },
+      })
+    },
     onSuccess: () => {
-      showSuccessToast("Shop updated successfully");
-      setIsOpen(false);
-      onSuccess();
+      showSuccessToast("Shop updated successfully")
+      setIsOpen(false)
+      onSuccess()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["shops"] });
+      queryClient.invalidateQueries({ queryKey: ["shops"] })
+      queryClient.invalidateQueries({ queryKey: ["shop", shop.id] })
     },
-  });
+  })
+
+  const toggleCategory = (categoryId: string, checked: boolean) => {
+    setSelectedCategoryIds((prev) => {
+      if (checked) {
+        if (prev.includes(categoryId)) {
+          return prev
+        }
+
+        return [...prev, categoryId]
+      }
+
+      return prev.filter((id) => id !== categoryId)
+    })
+  }
 
   const onSubmit = (data: FormData) => {
-    mutation.mutate(data);
-  };
+    mutation.mutate(data)
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open)
+        if (!open) {
+          setCategoriesInitialized(false)
+        }
+      }}
+    >
       <DropdownMenuItem
         onSelect={(e) => e.preventDefault()}
         onClick={() => setIsOpen(true)}
@@ -97,7 +184,7 @@ const EditShop = ({ shop, onSuccess }: EditShopProps) => {
             <DialogHeader>
               <DialogTitle>Edit Shop</DialogTitle>
               <DialogDescription>
-                Update the shop details below.
+                Update the shop details and assigned categories.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -178,6 +265,58 @@ const EditShop = ({ shop, onSuccess }: EditShopProps) => {
                   </FormItem>
                 )}
               />
+
+              <div className="space-y-2">
+                <FormLabel>Categories</FormLabel>
+
+                {(shopDetailsQuery.isPending || categoriesQuery.isPending) && (
+                  <p className="text-sm text-muted-foreground">Loading categories...</p>
+                )}
+
+                {(shopDetailsQuery.isError || categoriesQuery.isError) && (
+                  <p className="text-sm text-destructive">
+                    Failed to load categories for this shop.
+                  </p>
+                )}
+
+                {!shopDetailsQuery.isPending &&
+                  !categoriesQuery.isPending &&
+                  !shopDetailsQuery.isError &&
+                  !categoriesQuery.isError && (
+                    <>
+                      {categoriesQuery.data?.data.length ? (
+                        <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
+                          {categoriesQuery.data.data.map((category) => {
+                            const checked = selectedCategoryIds.includes(category.id)
+
+                            return (
+                              <div
+                                key={category.id}
+                                className="flex items-center gap-3"
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(nextChecked) =>
+                                    toggleCategory(category.id, nextChecked === true)
+                                  }
+                                />
+                                <span className="text-sm">{category.name}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No active categories available.
+                        </p>
+                      )}
+
+                      <p className="text-xs text-muted-foreground">
+                        Selected: {selectedCategoryIds.length}
+                      </p>
+                    </>
+                  )}
+              </div>
             </div>
 
             <DialogFooter>
@@ -194,7 +333,7 @@ const EditShop = ({ shop, onSuccess }: EditShopProps) => {
         </Form>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}
 
-export default EditShop;
+export default EditShop

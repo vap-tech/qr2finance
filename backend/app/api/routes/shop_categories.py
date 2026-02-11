@@ -12,6 +12,7 @@ from app.models import (
     ShopCategorysPublic,
     ShopCategoryUpdate,
 )
+from app.servises.shop_category import get_or_create_shop_category
 
 router = APIRouter(prefix="/shop-categories", tags=["shop-categories"])
 
@@ -37,9 +38,7 @@ def read_shop_categories(
     """
     Retrieve shop categories (paginated).
     """
-    base_query = _category_base_query(current_user).where(
-        col(ShopCategory.is_active).is_(True)
-    )
+    base_query = _category_base_query(current_user)
 
     if q := (q.strip() if q else None):
         base_query = base_query.where(col(ShopCategory.name).ilike(f"%{q}%"))
@@ -79,8 +78,11 @@ def read_shop_categorie(
 def create_category(
     session: SessionDep, current_user: CurrentUser, cat_in: ShopCategoryCreate
 ) -> Any:
-    cat = ShopCategory(
-        owner_id=current_user.id, name=cat_in.name.strip(), is_active=True
+    cat = get_or_create_shop_category(
+        session=session,
+        owner_id=current_user.id,
+        is_superuser=current_user.is_superuser,
+        cat_in=cat_in,
     )
     session.add(cat)
     session.commit()
