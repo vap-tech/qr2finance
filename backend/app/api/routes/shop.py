@@ -62,7 +62,7 @@ def read_shops(
     """
     Retrieve shops (superuser: all, user: own).
     """
-    base = _shop_query_for_user(current_user).where(Shop.is_active.is_(True))  # type: ignore[attr-defined]
+    base = _shop_query_for_user(current_user)
 
     count_statement = select(func.count()).select_from(base.subquery())
     count = session.exec(count_statement).one()
