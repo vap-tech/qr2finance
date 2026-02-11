@@ -57,6 +57,79 @@ export const Body_login_login_access_tokenSchema = {
     title: 'Body_login-login_access_token'
 } as const;
 
+export const CashierCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        inn: {
+            type: 'string',
+            title: 'Inn'
+        }
+    },
+    type: 'object',
+    required: ['name', 'inn'],
+    title: 'CashierCreate'
+} as const;
+
+export const CashierPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        inn: {
+            type: 'string',
+            title: 'Inn'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        }
+    },
+    type: 'object',
+    required: ['name', 'inn', 'id'],
+    title: 'CashierPublic'
+} as const;
+
+export const CashierUpdateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        inn: {
+            type: 'string',
+            title: 'Inn'
+        }
+    },
+    type: 'object',
+    required: ['name', 'inn'],
+    title: 'CashierUpdate'
+} as const;
+
+export const CashiersPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/CashierPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'CashiersPublic',
+    description: 'Paginated list of public cashiers.'
+} as const;
+
 export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
@@ -69,6 +142,23 @@ export const HTTPValidationErrorSchema = {
     },
     type: 'object',
     title: 'HTTPValidationError'
+} as const;
+
+export const HealthCheckSchema = {
+    properties: {
+        app: {
+            type: 'boolean',
+            title: 'App'
+        },
+        database: {
+            type: 'boolean',
+            title: 'Database'
+        }
+    },
+    type: 'object',
+    required: ['app', 'database'],
+    title: 'HealthCheck',
+    description: 'Health check response.'
 } as const;
 
 export const ItemCreateSchema = {
@@ -94,7 +184,8 @@ export const ItemCreateSchema = {
     },
     type: 'object',
     required: ['title'],
-    title: 'ItemCreate'
+    title: 'ItemCreate',
+    description: 'Item creation payload.'
 } as const;
 
 export const ItemPublicSchema = {
@@ -142,7 +233,8 @@ export const ItemPublicSchema = {
     },
     type: 'object',
     required: ['title', 'id', 'owner_id'],
-    title: 'ItemPublic'
+    title: 'ItemPublic',
+    description: 'Public item representation.'
 } as const;
 
 export const ItemUpdateSchema = {
@@ -174,7 +266,8 @@ export const ItemUpdateSchema = {
         }
     },
     type: 'object',
-    title: 'ItemUpdate'
+    title: 'ItemUpdate',
+    description: 'Item update payload (fields optional).'
 } as const;
 
 export const ItemsPublicSchema = {
@@ -193,7 +286,8 @@ export const ItemsPublicSchema = {
     },
     type: 'object',
     required: ['data', 'count'],
-    title: 'ItemsPublic'
+    title: 'ItemsPublic',
+    description: 'Paginated list of public items.'
 } as const;
 
 export const MessageSchema = {
@@ -205,7 +299,8 @@ export const MessageSchema = {
     },
     type: 'object',
     required: ['message'],
-    title: 'Message'
+    title: 'Message',
+    description: 'Generic message response.'
 } as const;
 
 export const NewPasswordSchema = {
@@ -223,7 +318,8 @@ export const NewPasswordSchema = {
     },
     type: 'object',
     required: ['token', 'new_password'],
-    title: 'NewPassword'
+    title: 'NewPassword',
+    description: 'Password reset payload.'
 } as const;
 
 export const PrivateUserCreateSchema = {
@@ -251,6 +347,346 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
+export const SetShopCategoriesSchema = {
+    properties: {
+        category_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Category Ids'
+        }
+    },
+    type: 'object',
+    title: 'SetShopCategories'
+} as const;
+
+export const ShopCategoryCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'ShopCategoryCreate'
+} as const;
+
+export const ShopCategoryPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'is_active'],
+    title: 'ShopCategoryPublic'
+} as const;
+
+export const ShopCategoryUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    title: 'ShopCategoryUpdate'
+} as const;
+
+export const ShopCategorysPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ShopCategoryPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ShopCategorysPublic',
+    description: 'Paginated list of public shops categorys.'
+} as const;
+
+export const ShopCreateSchema = {
+    properties: {
+        retail_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Retail Name'
+        },
+        address: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Address'
+        },
+        is_favorite: {
+            type: 'boolean',
+            title: 'Is Favorite',
+            default: false
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        }
+    },
+    type: 'object',
+    title: 'ShopCreate'
+} as const;
+
+export const ShopPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        retail_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Retail Name'
+        },
+        address: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Address'
+        },
+        is_favorite: {
+            type: 'boolean',
+            title: 'Is Favorite'
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        },
+        category_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Category Ids'
+        }
+    },
+    type: 'object',
+    required: ['id', 'retail_name', 'address', 'is_favorite', 'notes', 'is_active'],
+    title: 'ShopPublic'
+} as const;
+
+export const ShopReadSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        retail_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Retail Name'
+        },
+        address: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Address'
+        },
+        is_favorite: {
+            type: 'boolean',
+            title: 'Is Favorite'
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    required: ['id', 'retail_name', 'address', 'is_favorite', 'notes', 'is_active'],
+    title: 'ShopRead'
+} as const;
+
+export const ShopUpdateSchema = {
+    properties: {
+        retail_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Retail Name'
+        },
+        address: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Address'
+        },
+        is_favorite: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Favorite'
+        },
+        notes: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Notes'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    title: 'ShopUpdate'
+} as const;
+
+export const ShopsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ShopRead'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ShopsPublic',
+    description: 'Paginated list of public shops.'
+} as const;
+
 export const TokenSchema = {
     properties: {
         access_token: {
@@ -265,7 +701,8 @@ export const TokenSchema = {
     },
     type: 'object',
     required: ['access_token'],
-    title: 'Token'
+    title: 'Token',
+    description: 'Access token payload.'
 } as const;
 
 export const UpdatePasswordSchema = {
@@ -285,7 +722,8 @@ export const UpdatePasswordSchema = {
     },
     type: 'object',
     required: ['current_password', 'new_password'],
-    title: 'UpdatePassword'
+    title: 'UpdatePassword',
+    description: 'Password change payload.'
 } as const;
 
 export const UserCreateSchema = {
@@ -295,6 +733,18 @@ export const UserCreateSchema = {
             maxLength: 255,
             format: 'email',
             title: 'Email'
+        },
+        telegram_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram Id'
         },
         is_active: {
             type: 'boolean',
@@ -327,7 +777,8 @@ export const UserCreateSchema = {
     },
     type: 'object',
     required: ['email', 'password'],
-    title: 'UserCreate'
+    title: 'UserCreate',
+    description: 'User creation payload with password.'
 } as const;
 
 export const UserPublicSchema = {
@@ -337,6 +788,18 @@ export const UserPublicSchema = {
             maxLength: 255,
             format: 'email',
             title: 'Email'
+        },
+        telegram_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram Id'
         },
         is_active: {
             type: 'boolean',
@@ -380,7 +843,8 @@ export const UserPublicSchema = {
     },
     type: 'object',
     required: ['email', 'id'],
-    title: 'UserPublic'
+    title: 'UserPublic',
+    description: 'Public user representation.'
 } as const;
 
 export const UserRegisterSchema = {
@@ -412,7 +876,8 @@ export const UserRegisterSchema = {
     },
     type: 'object',
     required: ['email', 'password'],
-    title: 'UserRegister'
+    title: 'UserRegister',
+    description: 'User self-registration payload.'
 } as const;
 
 export const UserUpdateSchema = {
@@ -429,6 +894,18 @@ export const UserUpdateSchema = {
                 }
             ],
             title: 'Email'
+        },
+        telegram_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram Id'
         },
         is_active: {
             type: 'boolean',
@@ -467,7 +944,8 @@ export const UserUpdateSchema = {
         }
     },
     type: 'object',
-    title: 'UserUpdate'
+    title: 'UserUpdate',
+    description: 'User update payload (all fields optional).'
 } as const;
 
 export const UserUpdateMeSchema = {
@@ -484,6 +962,18 @@ export const UserUpdateMeSchema = {
             ],
             title: 'Full Name'
         },
+        telegram_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 255
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Telegram Id'
+        },
         email: {
             anyOf: [
                 {
@@ -499,7 +989,8 @@ export const UserUpdateMeSchema = {
         }
     },
     type: 'object',
-    title: 'UserUpdateMe'
+    title: 'UserUpdateMe',
+    description: 'User self-update payload.'
 } as const;
 
 export const UsersPublicSchema = {
@@ -518,7 +1009,8 @@ export const UsersPublicSchema = {
     },
     type: 'object',
     required: ['data', 'count'],
-    title: 'UsersPublic'
+    title: 'UsersPublic',
+    description: 'Paginated list of public users.'
 } as const;
 
 export const ValidationErrorSchema = {
