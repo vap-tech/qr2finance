@@ -1,19 +1,23 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
-import { Search } from "lucide-react"
-import { Suspense } from "react"
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import type { PaginationState } from "@tanstack/react-table";
+import { Search } from "lucide-react";
+import { Suspense, useState } from "react";
 
-import { ItemsService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
-import AddItem from "@/components/Items/AddItem"
-import { columns } from "@/components/Items/columns"
-import PendingItems from "@/components/Pending/PendingItems"
+import { ItemsService } from "@/client";
+import { DataTable } from "@/components/Common/DataTable";
+import AddItem from "@/components/Items/AddItem";
+import { columns } from "@/components/Items/columns";
+import PendingItems from "@/components/Pending/PendingItems";
 
-function getItemsQueryOptions() {
+function getItemsQueryOptions(pagination: PaginationState) {
+  const skip = pagination.pageIndex * pagination.pageSize;
+  const limit = pagination.pageSize;
+
   return {
-    queryFn: () => ItemsService.readItems({ skip: 0, limit: 100 }),
-    queryKey: ["items"],
-  }
+    queryFn: () => ItemsService.readItems({ skip, limit }),
+    queryKey: ["items", pagination.pageIndex, pagination.pageSize],
+  };
 }
 
 export const Route = createFileRoute("/_layout/items")({
@@ -25,12 +29,17 @@ export const Route = createFileRoute("/_layout/items")({
       },
     ],
   }),
-})
+});
 
 function ItemsTableContent() {
-  const { data: items } = useSuspenseQuery(getItemsQueryOptions())
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
-  if (items.data.length === 0) {
+  const { data: items } = useSuspenseQuery(getItemsQueryOptions(pagination));
+
+  if (items.count === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12">
         <div className="rounded-full bg-muted p-4 mb-4">
@@ -39,10 +48,20 @@ function ItemsTableContent() {
         <h3 className="text-lg font-semibold">You don't have any items yet</h3>
         <p className="text-muted-foreground">Add a new item to get started</p>
       </div>
-    )
+    );
   }
 
-  return <DataTable columns={columns} data={items.data} />
+  return (
+    <DataTable
+      columns={columns}
+      data={items.data}
+      manualPagination={true}
+      rowCount={items.count}
+      pageCount={Math.ceil(items.count / pagination.pageSize)}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  );
 }
 
 function ItemsTable() {
@@ -50,7 +69,7 @@ function ItemsTable() {
     <Suspense fallback={<PendingItems />}>
       <ItemsTableContent />
     </Suspense>
-  )
+  );
 }
 
 function Items() {
@@ -65,5 +84,5 @@ function Items() {
       </div>
       <ItemsTable />
     </div>
-  )
+  );
 }

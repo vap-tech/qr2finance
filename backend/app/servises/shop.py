@@ -2,7 +2,7 @@ import logging
 import uuid
 
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import Session, col, select, update
+from sqlmodel import Session, col, delete, select
 
 from app.models import Shop, ShopCategory, ShopCategoryLink, ShopCreate, ShopPublic
 
@@ -60,7 +60,6 @@ def get_shop_read(
         select(ShopCategoryLink.category_id).where(
             ShopCategoryLink.owner_id == owner_id,
             ShopCategoryLink.shop_id == shop_id,
-            col(ShopCategoryLink.is_active).is_(True),
         )
     ).all()
 
@@ -99,36 +98,25 @@ def set_shop_categories(
         if missing:
             raise ValueError(f"Some categories not found: {missing}")
 
-    # 2) Деактивируем все связи магазина
+    # 2) Полностью удаляем текущие связи магазина
     session.exec(
-        update(ShopCategoryLink)
-        .where(
+        delete(ShopCategoryLink).where(
             col(ShopCategoryLink.owner_id) == owner_id,
             col(ShopCategoryLink.shop_id) == shop_id,
         )
-        .values(is_active=False)
     )  # type: ignore
 
-    # 3) Upsert для переданных категорий
-    #    Важно: используем INSERT .. ON CONFLICT по (shop_id, category_id)
+    # 3) Вставляем новый набор связей
     if category_ids:
         values = [
             {
                 "owner_id": owner_id,
                 "shop_id": shop_id,
                 "category_id": cid,
-                "is_active": True,
             }
             for cid in category_ids
         ]
-        stmt = (
-            insert(ShopCategoryLink)
-            .values(values)
-            .on_conflict_do_update(
-                index_elements=[ShopCategoryLink.shop_id, ShopCategoryLink.category_id],  # type: ignore
-                set_={"is_active": True, "owner_id": owner_id},
-            )
-        )
+        stmt = insert(ShopCategoryLink).values(values)
         session.exec(stmt)
 
     session.commit()

@@ -32,7 +32,7 @@ def get_or_create_shop_category(
         base_stmt = base_stmt.where(ShopCategory.owner_id == owner_id)
 
     existing = session.exec(
-        base_stmt.order_by(col(ShopCategory.is_active).desc(), ShopCategory.id)
+        base_stmt.order_by(col(ShopCategory.is_active).desc(), col(ShopCategory.id))
     ).first()
     if existing:
         if not existing.is_active:

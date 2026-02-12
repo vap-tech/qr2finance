@@ -12,8 +12,18 @@ from tests.utils.user import authentication_token_from_email
 from tests.utils.utils import get_superuser_token_headers
 
 
+def _ensure_test_database() -> None:
+    db_name = (settings.POSTGRES_DB or "").lower()
+    if "test" not in db_name:
+        raise RuntimeError(
+            "Refusing to run tests against a non-test database. "
+            f"Current POSTGRES_DB={settings.POSTGRES_DB!r}"
+        )
+
+
 @pytest.fixture(scope="session", autouse=True)
 def db() -> Generator[Session, None, None]:
+    _ensure_test_database()
     with Session(engine) as session:
         init_db(session)
         yield session

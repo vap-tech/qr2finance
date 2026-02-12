@@ -231,7 +231,6 @@ class ShopCategoryLink(SQLModel, table=True):
     owner_id: uuid.UUID = Field(index=True)
     shop_id: uuid.UUID = Field(foreign_key="shops.id", primary_key=True)
     category_id: uuid.UUID = Field(foreign_key="shop_categories.id", primary_key=True)
-    is_active: bool = Field(default=True, index=True)
     __table_args__ = (
         Index("ix_shop_cat_link_owner_shop", "owner_id", "shop_id"),
         Index("ix_shop_cat_link_owner_cat", "owner_id", "category_id"),

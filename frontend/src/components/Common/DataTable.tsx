@@ -1,5 +1,7 @@
 import {
   type ColumnDef,
+  type OnChangeFn,
+  type PaginationState,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
@@ -32,18 +34,40 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  manualPagination?: boolean;
+  pageCount?: number;
+  rowCount?: number;
+  pagination?: PaginationState;
+  onPaginationChange?: OnChangeFn<PaginationState>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  manualPagination = false,
+  pageCount,
+  rowCount,
+  pagination,
+  onPaginationChange,
 }: DataTableProps<TData, TValue>) {
   const table = useReactTable({
     data,
     columns,
+    manualPagination,
+    pageCount,
+    rowCount,
+    state: pagination ? { pagination } : undefined,
+    onPaginationChange,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
   });
+
+  const totalRows = rowCount ?? data.length;
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const hasRows = totalRows > 0;
+  const from = hasRows ? pageIndex * pageSize + 1 : 0;
+  const to = hasRows ? Math.min((pageIndex + 1) * pageSize, totalRows) : 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -94,18 +118,8 @@ export function DataTable<TData, TValue>({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border-t bg-muted/20">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="text-sm text-muted-foreground">
-              Showing{" "}
-              {table.getState().pagination.pageIndex *
-                table.getState().pagination.pageSize +
-                1}{" "}
-              to{" "}
-              {Math.min(
-                (table.getState().pagination.pageIndex + 1) *
-                  table.getState().pagination.pageSize,
-                data.length,
-              )}{" "}
-              of{" "}
-              <span className="font-medium text-foreground">{data.length}</span>{" "}
+              Showing {from} to {to} of{" "}
+              <span className="font-medium text-foreground">{totalRows}</span>{" "}
               entries
             </div>
             <div className="flex items-center gap-x-2">
