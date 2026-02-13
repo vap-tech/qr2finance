@@ -109,6 +109,7 @@ def delete_cashier(
         raise HTTPException(status_code=404, detail="Cashier not found")
     if not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    session.delete(cashier)
+    cashier.is_active = False
+    session.add(cashier)
     session.commit()
-    return Message(message="Cashier deleted successfully")
+    return Message(message="Cashier deactivated successfully")
