@@ -206,6 +206,7 @@ class CashierUpdate(CashierBase):
 
 class Cashier(CashierBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    is_active: bool = Field(default=True)
     receipts: list["Receipt"] = Relationship(back_populates="cashier")
 
 
