@@ -2,6 +2,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from sqlalchemy.exc import MultipleResultsFound
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -59,10 +60,16 @@ def create_cashier(
     """
     Create new cashier.
     """
-    cashier = get_or_create_cashier(session=session, cashier_in=cashier_in)
-    session.commit()
-    session.refresh(cashier)
-    return cashier
+    try:
+        cashier = get_or_create_cashier(session=session, cashier_in=cashier_in)
+        session.commit()
+        session.refresh(cashier)
+        return cashier
+    except MultipleResultsFound as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    finally:
+        if session.in_transaction():
+            session.rollback()
 
 
 @router.put("/{id}", response_model=CashierPublic)
