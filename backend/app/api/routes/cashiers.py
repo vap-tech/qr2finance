@@ -27,10 +27,13 @@ def read_cashiers(
     Retrieve cashiers.
     """
 
-    count_statement = select(func.count()).select_from(Cashier)
+    count_statement = (
+        select(func.count()).select_from(Cashier).where(Cashier.is_active.is_(True))
+    )
     count = session.exec(count_statement).one()
     statement = (
         select(Cashier)
+        .where(Cashier.is_active.is_(True))
         .order_by(Cashier.id.desc())  # type: ignore
         .offset(skip)
         .limit(limit)
