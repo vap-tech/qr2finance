@@ -29,5 +29,9 @@ def get_or_create_cashier(session: Session, cashier_in: CashierCreate):
     if not cashier:
         cashier = Cashier(**cashier_in.model_dump())
         session.add(cashier)
-        session.flush()
+    elif cashier.is_active is False:
+        cashier.is_active = True
+        session.add(cashier)
+
+    session.flush()
     return cashier
