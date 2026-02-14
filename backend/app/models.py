@@ -237,6 +237,7 @@ class ShopOwnerUpdate(ShopOwnerBase):
 class ShopOwner(ShopOwnerBase, table=True):
     __tablename__ = "shop_owners"  # type: ignore
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    is_active: bool = Field(default=True)
     shops: list["Shop"] = Relationship(back_populates="shop_owner")
 
 

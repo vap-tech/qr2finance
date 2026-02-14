@@ -43,6 +43,8 @@ def read_shop_categories(
     if q := (q.strip() if q else None):
         base_query = base_query.where(col(ShopCategory.name).ilike(f"%{q}%"))
 
+    base_query = base_query.where(col(ShopCategory.is_active).is_(True))
+
     # count
     count_stmt = select(func.count()).select_from(base_query.subquery())
     count = session.exec(count_stmt).one()
