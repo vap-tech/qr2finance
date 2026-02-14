@@ -221,6 +221,36 @@ class CashiersPublic(SQLModel):
     count: int
 
 
+class ShopOwnerBase(SQLModel):
+    name: str = Field(sa_type=String, index=True)
+    inn: str = Field(sa_type=String, unique=True)
+
+
+class ShopOwnerCreate(ShopOwnerBase):
+    pass
+
+
+class ShopOwnerUpdate(ShopOwnerBase):
+    pass
+
+
+class ShopOwner(ShopOwnerBase, table=True):
+    __tablename__ = "shop_owners"  # type: ignore
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    shops: list["Shop"] = Relationship(back_populates="shop_owner")
+
+
+class ShopOwnerPublic(ShopOwnerBase):
+    id: uuid.UUID
+
+
+class ShopOwnersPublic(SQLModel):
+    """Paginated list of public shop owners."""
+
+    data: list[ShopOwnerPublic]
+    count: int
+
+
 # --- Shop ---
 class ShopCategoryLink(SQLModel, table=True):
     """
@@ -242,12 +272,16 @@ class Shop(SQLModel, table=True):
     __tablename__ = "shops"  # type: ignore
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(index=True)
+    shop_owner_id: uuid.UUID | None = Field(
+        default=None, foreign_key="shop_owners.id", index=True, nullable=True
+    )
     retail_name: str = Field(sa_type=String, nullable=False, index=True)
     address: str = Field(sa_type=String, nullable=False)
     is_favorite: bool = Field(default=False, sa_type=Boolean, index=True)
     notes: str | None = Field(default=None, sa_type=String)
     is_active: bool = Field(default=True, index=True)
     receipts: list["Receipt"] = Relationship(back_populates="shop")
+    shop_owner: ShopOwner | None = Relationship(back_populates="shops")
     # many-to-many
     categories: list["ShopCategory"] = Relationship(
         back_populates="shops",
@@ -309,6 +343,7 @@ class ShopCreate(SQLModel):
     address: str | None = None
     is_favorite: bool = False
     notes: str | None = None
+    shop_owner_id: uuid.UUID | None = None
 
 
 class ShopUpdate(SQLModel):
@@ -317,6 +352,7 @@ class ShopUpdate(SQLModel):
     is_favorite: bool | None = None
     notes: str | None = None
     is_active: bool | None = None
+    shop_owner_id: uuid.UUID | None = None
 
 
 class ShopRead(SQLModel):
@@ -326,6 +362,7 @@ class ShopRead(SQLModel):
     is_favorite: bool
     notes: str | None
     is_active: bool
+    shop_owner_id: uuid.UUID | None
 
 
 class ShopPublic(ShopRead):

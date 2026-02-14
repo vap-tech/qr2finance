@@ -19,6 +19,7 @@ import { Route as LayoutShopsRouteImport } from './routes/_layout/shops'
 import { Route as LayoutShopCategoriesRouteImport } from './routes/_layout/shop-categories'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
+import { Route as LayoutCashiersRouteImport } from './routes/_layout/cashiers'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
 
 const SignupRoute = SignupRouteImport.update({
@@ -70,6 +71,11 @@ const LayoutItemsRoute = LayoutItemsRouteImport.update({
   path: '/items',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutCashiersRoute = LayoutCashiersRouteImport.update({
+  id: '/cashiers',
+  path: '/cashiers',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutAdminRoute = LayoutAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/cashiers': typeof LayoutCashiersRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
   '/shop-categories': typeof LayoutShopCategoriesRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof LayoutAdminRoute
+  '/cashiers': typeof LayoutCashiersRoute
   '/items': typeof LayoutItemsRoute
   '/settings': typeof LayoutSettingsRoute
   '/shop-categories': typeof LayoutShopCategoriesRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_layout/admin': typeof LayoutAdminRoute
+  '/_layout/cashiers': typeof LayoutCashiersRoute
   '/_layout/items': typeof LayoutItemsRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/shop-categories': typeof LayoutShopCategoriesRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/cashiers'
     | '/items'
     | '/settings'
     | '/shop-categories'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/cashiers'
     | '/items'
     | '/settings'
     | '/shop-categories'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_layout/admin'
+    | '/_layout/cashiers'
     | '/_layout/items'
     | '/_layout/settings'
     | '/_layout/shop-categories'
@@ -234,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutItemsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/cashiers': {
+      id: '/_layout/cashiers'
+      path: '/cashiers'
+      fullPath: '/cashiers'
+      preLoaderRoute: typeof LayoutCashiersRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/admin': {
       id: '/_layout/admin'
       path: '/admin'
@@ -246,6 +265,7 @@ declare module '@tanstack/react-router' {
 
 interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
+  LayoutCashiersRoute: typeof LayoutCashiersRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutShopCategoriesRoute: typeof LayoutShopCategoriesRoute
@@ -255,6 +275,7 @@ interface LayoutRouteChildren {
 
 const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
+  LayoutCashiersRoute: LayoutCashiersRoute,
   LayoutItemsRoute: LayoutItemsRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutShopCategoriesRoute: LayoutShopCategoriesRoute,

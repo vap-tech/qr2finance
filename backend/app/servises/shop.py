@@ -27,6 +27,7 @@ def get_or_create_shop(
         insert(Shop)
         .values(
             owner_id=owner_id,
+            shop_owner_id=shop_in.shop_owner_id,
             retail_name=retail_name,
             address=address,
             notes=shop_in.notes,
@@ -70,6 +71,7 @@ def get_shop_read(
         is_favorite=shop.is_favorite,
         notes=shop.notes,
         is_active=shop.is_active,
+        shop_owner_id=shop.shop_owner_id,
         category_ids=list(cat_ids),
     )
 

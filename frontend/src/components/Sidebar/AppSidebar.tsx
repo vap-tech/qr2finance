@@ -1,4 +1,11 @@
-import { Briefcase, FolderTree, Home, Store, Users } from "lucide-react";
+import {
+  Briefcase,
+  FolderTree,
+  Home,
+  Store,
+  User as UserIcon,
+  Users,
+} from "lucide-react";
 
 import { SidebarAppearance } from "@/components/Common/Appearance";
 import { Logo } from "@/components/Common/Logo";
@@ -16,6 +23,7 @@ const baseItems: Item[] = [
   { icon: Home, title: "Dashboard", path: "/" },
   { icon: Briefcase, title: "Items", path: "/items" },
   { icon: Store, title: "Shops", path: "/shops" },
+  { icon: UserIcon, title: "Cashiers", path: "/cashiers" },
   { icon: FolderTree, title: "Shop Categories", path: "/shop-categories" },
 ];
 
