@@ -92,6 +92,12 @@ def update_user_me(
                 status_code=409, detail="User with this email already exists"
             )
     user_data = user_in.model_dump(exclude_unset=True)
+    if "email" in user_data and user_data["email"] is not None:
+        user_data["email"] = user_data["email"].strip()
+    if "full_name" in user_data and user_data["full_name"] is not None:
+        user_data["full_name"] = user_data["full_name"].strip()
+    if "telegram_id" in user_data and user_data["telegram_id"] is not None:
+        user_data["telegram_id"] = user_data["telegram_id"].strip()
     current_user.sqlmodel_update(user_data)
     session.add(current_user)
     session.commit()

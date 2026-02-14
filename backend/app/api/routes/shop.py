@@ -105,6 +105,8 @@ def create_shop(
     """
     Create new shop (always owned by current_user, even for superuser unless).
     """
+    if shop_in.notes is not None:
+        shop_in.notes = shop_in.notes.strip()
     shop = get_or_create_shop(
         session=session, owner_id=current_user.id, shop_in=shop_in
     )
@@ -132,6 +134,12 @@ def update_shop(
     shop = _get_shop_or_404(session, current_user, id)
 
     update_dict = shop_in.model_dump(exclude_unset=True)
+    if "retail_name" in update_dict and update_dict["retail_name"] is not None:
+        update_dict["retail_name"] = update_dict["retail_name"].strip()
+    if "address" in update_dict and update_dict["address"] is not None:
+        update_dict["address"] = update_dict["address"].strip()
+    if "notes" in update_dict and update_dict["notes"] is not None:
+        update_dict["notes"] = update_dict["notes"].strip()
 
     # защита: обычный юзер не может перевесить owner_id даже если подсунет
     update_dict.pop("owner_id", None)

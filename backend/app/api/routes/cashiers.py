@@ -92,6 +92,10 @@ def update_cashier(
     if not cashier:
         raise HTTPException(status_code=404, detail="Cashier not found")
     update_dict = cashier_in.model_dump(exclude_unset=True)
+    if "name" in update_dict and update_dict["name"] is not None:
+        update_dict["name"] = update_dict["name"].strip()
+    if "inn" in update_dict and update_dict["inn"] is not None:
+        update_dict["inn"] = update_dict["inn"].strip()
     cashier.sqlmodel_update(update_dict)
     session.add(cashier)
     session.commit()

@@ -18,6 +18,7 @@ import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
 import { Route as LayoutShopsRouteImport } from './routes/_layout/shops'
 import { Route as LayoutShopCategoriesRouteImport } from './routes/_layout/shop-categories'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
+import { Route as LayoutRightsholdersRouteImport } from './routes/_layout/rightsholders'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutCashiersRouteImport } from './routes/_layout/cashiers'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
@@ -66,6 +67,11 @@ const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutRightsholdersRoute = LayoutRightsholdersRouteImport.update({
+  id: '/rightsholders',
+  path: '/rightsholders',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutItemsRoute = LayoutItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/cashiers': typeof LayoutCashiersRoute
   '/items': typeof LayoutItemsRoute
+  '/rightsholders': typeof LayoutRightsholdersRoute
   '/settings': typeof LayoutSettingsRoute
   '/shop-categories': typeof LayoutShopCategoriesRoute
   '/shops': typeof LayoutShopsRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/admin': typeof LayoutAdminRoute
   '/cashiers': typeof LayoutCashiersRoute
   '/items': typeof LayoutItemsRoute
+  '/rightsholders': typeof LayoutRightsholdersRoute
   '/settings': typeof LayoutSettingsRoute
   '/shop-categories': typeof LayoutShopCategoriesRoute
   '/shops': typeof LayoutShopsRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/cashiers': typeof LayoutCashiersRoute
   '/_layout/items': typeof LayoutItemsRoute
+  '/_layout/rightsholders': typeof LayoutRightsholdersRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/shop-categories': typeof LayoutShopCategoriesRoute
   '/_layout/shops': typeof LayoutShopsRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cashiers'
     | '/items'
+    | '/rightsholders'
     | '/settings'
     | '/shop-categories'
     | '/shops'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cashiers'
     | '/items'
+    | '/rightsholders'
     | '/settings'
     | '/shop-categories'
     | '/shops'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/_layout/admin'
     | '/_layout/cashiers'
     | '/_layout/items'
+    | '/_layout/rightsholders'
     | '/_layout/settings'
     | '/_layout/shop-categories'
     | '/_layout/shops'
@@ -239,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutSettingsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/rightsholders': {
+      id: '/_layout/rightsholders'
+      path: '/rightsholders'
+      fullPath: '/rightsholders'
+      preLoaderRoute: typeof LayoutRightsholdersRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/items': {
       id: '/_layout/items'
       path: '/items'
@@ -267,6 +286,7 @@ interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutCashiersRoute: typeof LayoutCashiersRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
+  LayoutRightsholdersRoute: typeof LayoutRightsholdersRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutShopCategoriesRoute: typeof LayoutShopCategoriesRoute
   LayoutShopsRoute: typeof LayoutShopsRoute
@@ -277,6 +297,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutCashiersRoute: LayoutCashiersRoute,
   LayoutItemsRoute: LayoutItemsRoute,
+  LayoutRightsholdersRoute: LayoutRightsholdersRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutShopCategoriesRoute: LayoutShopCategoriesRoute,
   LayoutShopsRoute: LayoutShopsRoute,

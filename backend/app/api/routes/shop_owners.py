@@ -94,6 +94,10 @@ def update_shop_owner(
     if not shop_owner:
         raise HTTPException(status_code=404, detail="Shop owner not found")
     update_dict = shop_owner_in.model_dump(exclude_unset=True)
+    if "name" in update_dict and update_dict["name"] is not None:
+        update_dict["name"] = update_dict["name"].strip()
+    if "inn" in update_dict and update_dict["inn"] is not None:
+        update_dict["inn"] = update_dict["inn"].strip()
     shop_owner.sqlmodel_update(update_dict)
     session.add(shop_owner)
     session.commit()

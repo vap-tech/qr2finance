@@ -64,7 +64,12 @@ def create_item(
     """
     Create new item.
     """
-    item = Item.model_validate(item_in, update={"owner_id": current_user.id})
+    item_data = item_in.model_dump()
+    if item_data.get("title") is not None:
+        item_data["title"] = item_data["title"].strip()
+    if item_data.get("description") is not None:
+        item_data["description"] = item_data["description"].strip()
+    item = Item.model_validate(item_data, update={"owner_id": current_user.id})
     session.add(item)
     session.commit()
     session.refresh(item)
@@ -88,6 +93,10 @@ def update_item(
     if not current_user.is_superuser and (item.owner_id != current_user.id):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     update_dict = item_in.model_dump(exclude_unset=True)
+    if "title" in update_dict and update_dict["title"] is not None:
+        update_dict["title"] = update_dict["title"].strip()
+    if "description" in update_dict and update_dict["description"] is not None:
+        update_dict["description"] = update_dict["description"].strip()
     item.sqlmodel_update(update_dict)
     session.add(item)
     session.commit()

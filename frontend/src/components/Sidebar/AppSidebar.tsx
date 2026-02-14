@@ -1,5 +1,6 @@
 import {
   Briefcase,
+  Building2,
   FolderTree,
   Home,
   Store,
@@ -24,6 +25,7 @@ const baseItems: Item[] = [
   { icon: Briefcase, title: "Items", path: "/items" },
   { icon: Store, title: "Shops", path: "/shops" },
   { icon: UserIcon, title: "Cashiers", path: "/cashiers" },
+  { icon: Building2, title: "Rightsholders", path: "/rightsholders" },
   { icon: FolderTree, title: "Shop Categories", path: "/shop-categories" },
 ];
 
