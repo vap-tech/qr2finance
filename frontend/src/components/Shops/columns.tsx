@@ -1,15 +1,25 @@
-import type { ColumnDef } from "@tanstack/react-table"
-import { BadgeCheck, Check, Copy, Heart, HeartOff } from "lucide-react"
+import type { ColumnDef } from "@tanstack/react-table";
+import { useState } from "react";
+import {
+  BadgeCheck,
+  Check,
+  Copy,
+  Download,
+  Heart,
+  HeartOff,
+  Loader2,
+  X,
+} from "lucide-react";
 
-import type { ShopRead } from "@/client"
-import { Button } from "@/components/ui/button"
-import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
-import { cn } from "@/lib/utils"
-import { ShopActionsMenu } from "./ShopActionsMenu"
+import { ShopOwnersService, type ShopRead } from "@/client";
+import { Button } from "@/components/ui/button";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
+import { cn } from "@/lib/utils";
+import { ShopActionsMenu } from "./ShopActionsMenu";
 
 function CopyId({ id }: { id: string }) {
-  const [copiedText, copy] = useCopyToClipboard()
-  const isCopied = copiedText === id
+  const [copiedText, copy] = useCopyToClipboard();
+  const isCopied = copiedText === id;
 
   return (
     <div className="flex items-center gap-1.5 group">
@@ -28,7 +38,67 @@ function CopyId({ id }: { id: string }) {
         <span className="sr-only">Copy ID</span>
       </Button>
     </div>
-  )
+  );
+}
+
+function ShopOwnerCell({ shopOwnerId }: { shopOwnerId?: string | null }) {
+  const [ownerName, setOwnerName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+
+  if (!shopOwnerId) {
+    return (
+      <div className="inline-flex items-center gap-2">
+        <X className="size-4 text-red-600" />
+        <span className="text-sm text-muted-foreground">N/A</span>
+      </div>
+    );
+  }
+
+  if (ownerName) {
+    return <span className="font-medium">{ownerName}</span>;
+  }
+
+  return (
+    <div className="inline-flex items-center gap-2">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-7"
+        disabled={isLoading}
+        onClick={async () => {
+          setIsLoading(true);
+          setIsError(false);
+
+          try {
+            const owner = await ShopOwnersService.readShopOwner({
+              id: shopOwnerId,
+            });
+            setOwnerName(owner.name);
+          } catch {
+            setIsError(true);
+          } finally {
+            setIsLoading(false);
+          }
+        }}
+      >
+        {isLoading ? (
+          <Loader2 className="size-4 animate-spin text-green-600" />
+        ) : (
+          <Download className="size-4 text-green-600" />
+        )}
+        <span className="sr-only">Load owner name</span>
+      </Button>
+      <span
+        className={cn(
+          "text-sm text-muted-foreground",
+          isError && "text-destructive",
+        )}
+      >
+        {isError ? "Load failed" : "Load owner"}
+      </span>
+    </div>
+  );
 }
 
 export const columns: ColumnDef<ShopRead>[] = [
@@ -41,25 +111,42 @@ export const columns: ColumnDef<ShopRead>[] = [
     accessorKey: "retail_name",
     header: "Retail Name",
     cell: ({ row }) => {
-      const retailName = row.original.retail_name
+      const retailName = row.original.retail_name;
       return (
-        <span className={cn("font-medium", !retailName && "italic text-muted-foreground")}>
+        <span
+          className={cn(
+            "font-medium",
+            !retailName && "italic text-muted-foreground",
+          )}
+        >
           {retailName || "No retail name"}
         </span>
-      )
+      );
     },
   },
   {
     accessorKey: "address",
     header: "Address",
     cell: ({ row }) => {
-      const address = row.original.address
+      const address = row.original.address;
       return (
-        <span className={cn("max-w-xs truncate block text-muted-foreground", !address && "italic")}>
+        <span
+          className={cn(
+            "max-w-xs truncate block text-muted-foreground",
+            !address && "italic",
+          )}
+        >
           {address || "No address"}
         </span>
-      )
+      );
     },
+  },
+  {
+    accessorKey: "shop_owner_id",
+    header: "Shop owner",
+    cell: ({ row }) => (
+      <ShopOwnerCell shopOwnerId={row.original.shop_owner_id} />
+    ),
   },
   {
     accessorKey: "is_favorite",
@@ -94,12 +181,17 @@ export const columns: ColumnDef<ShopRead>[] = [
     accessorKey: "notes",
     header: "Notes",
     cell: ({ row }) => {
-      const notes = row.original.notes
+      const notes = row.original.notes;
       return (
-        <span className={cn("max-w-xs truncate block text-muted-foreground", !notes && "italic")}>
+        <span
+          className={cn(
+            "max-w-xs truncate block text-muted-foreground",
+            !notes && "italic",
+          )}
+        >
           {notes || "No notes"}
         </span>
-      )
+      );
     },
   },
   {
@@ -111,4 +203,4 @@ export const columns: ColumnDef<ShopRead>[] = [
       </div>
     ),
   },
-]
+];
