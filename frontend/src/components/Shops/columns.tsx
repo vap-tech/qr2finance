@@ -4,11 +4,11 @@ import {
   BadgeCheck,
   Check,
   Copy,
+  CircleX,
   Download,
   Heart,
   HeartOff,
   Loader2,
-  X,
 } from "lucide-react";
 
 import { ShopOwnersService, type ShopRead } from "@/client";
@@ -49,7 +49,9 @@ function ShopOwnerCell({ shopOwnerId }: { shopOwnerId?: string | null }) {
   if (!shopOwnerId) {
     return (
       <div className="inline-flex items-center gap-2">
-        <X className="size-4 text-red-600" />
+        <span className="inline-flex size-7 items-center justify-center">
+          <CircleX className="size-4 text-red-600" />
+        </span>
         <span className="text-sm text-muted-foreground">N/A</span>
       </div>
     );
