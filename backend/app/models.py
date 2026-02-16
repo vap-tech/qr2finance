@@ -2,6 +2,7 @@ import hashlib
 import json
 import uuid
 from datetime import datetime, timezone
+from enum import Enum
 
 from pydantic import EmailStr
 from sqlalchemy import (
@@ -378,12 +379,22 @@ class ShopsPublic(SQLModel):
 
 
 # --- Receipts ---
+class ReceiptStatus(str, Enum):
+    DRAFT = "draft"
+    FINALIZED = "finalized"
+    ARCHIVED = "archived"
+
+
+class ReceiptSource(str, Enum):
+    MANUAL = "manual"
+    FNS_IMPORT = "fns_import"
+    EXTERNAL_IMPORT = "external_import"
+
+
 class Receipt(SQLModel, table=True):
     """Receipt database model."""
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    external_id: str = Field(max_length=100, sa_type=String, unique=True)
-    created_at: datetime = Field(sa_type=DateTime)
     date_time: datetime = Field(sa_type=DateTime)
 
     code: int = Field(sa_type=Integer)
@@ -406,6 +417,12 @@ class Receipt(SQLModel, table=True):
     request_number: int = Field(sa_type=Integer)
     taxation_type: int | None = Field(default=None, sa_type=Integer)
     applied_taxation_type: int | None = Field(default=None, sa_type=Integer)
+    status: ReceiptStatus = Field(
+        default=ReceiptStatus.DRAFT, sa_type=String, index=True
+    )
+    source: ReceiptSource = Field(
+        default=ReceiptSource.MANUAL, sa_type=String, index=True
+    )
 
     owner_id: uuid.UUID = Field(
         foreign_key="user.id", nullable=False, ondelete="CASCADE"
@@ -413,7 +430,9 @@ class Receipt(SQLModel, table=True):
     owner: User | None = Relationship(back_populates="receipts")
     shop_id: uuid.UUID = Field(foreign_key="shops.id", index=True)
     shop: "Shop" = Relationship(back_populates="receipts")
-    cashier_id: uuid.UUID = Field(foreign_key="cashier.id", nullable=True)
+    cashier_id: uuid.UUID | None = Field(
+        default=None, foreign_key="cashier.id", nullable=True
+    )
     cashier: Cashier | None = Relationship(back_populates="receipts")
     raw_backup: "ReceiptRawBackup" = Relationship(
         back_populates="receipt",
@@ -426,6 +445,18 @@ class Receipt(SQLModel, table=True):
     items: list["ReceiptItem"] = Relationship(
         back_populates="receipt",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+    __table_args__ = (
+        UniqueConstraint(
+            "fiscal_document_number",
+            "fiscal_drive_number",
+            "fiscal_sign",
+            "date_time",
+            "total_sum",
+            name="uq_receipt_identity",
+        ),
+        Index("ix_receipt_owner_status", "owner_id", "status"),
+        Index("ix_receipt_owner_source", "owner_id", "source"),
     )
 
 
@@ -495,3 +526,137 @@ class ReceiptItem(SQLModel, table=True):
 
     receipt_id: uuid.UUID = Field(foreign_key="receipt.id", nullable=False)
     receipt: Receipt | None = Relationship(back_populates="items")
+
+
+# --- Receipt schemas ---
+class ReceiptBase(SQLModel):
+    date_time: datetime
+    code: int
+    cash_total_sum: int
+    credit_sum: int
+    ecash_total_sum: int
+    total_sum: int
+    prepaid_sum: int
+    provision_sum: int
+    fiscal_document_format_ver: int
+    fiscal_drive_number: str = Field(max_length=20)
+    fiscal_document_number: int
+    fiscal_sign: int
+    shift_number: int | None = None
+    kkt_reg_id: str = Field(max_length=20)
+    nds_10: int | None = None
+    nds_18: int | None = None
+    operation_type: int
+    request_number: int
+    taxation_type: int | None = None
+    applied_taxation_type: int | None = None
+    shop_id: uuid.UUID
+    cashier_id: uuid.UUID | None = None
+    status: ReceiptStatus = ReceiptStatus.DRAFT
+    source: ReceiptSource = ReceiptSource.MANUAL
+
+
+class ReceiptCreate(ReceiptBase):
+    pass
+
+
+class ReceiptUpdate(SQLModel):
+    date_time: datetime | None = None
+    code: int | None = None
+    cash_total_sum: int | None = None
+    credit_sum: int | None = None
+    ecash_total_sum: int | None = None
+    total_sum: int | None = None
+    prepaid_sum: int | None = None
+    provision_sum: int | None = None
+    fiscal_document_format_ver: int | None = None
+    fiscal_drive_number: str | None = Field(default=None, max_length=20)
+    fiscal_document_number: int | None = None
+    fiscal_sign: int | None = None
+    shift_number: int | None = None
+    kkt_reg_id: str | None = Field(default=None, max_length=20)
+    nds_10: int | None = None
+    nds_18: int | None = None
+    operation_type: int | None = None
+    request_number: int | None = None
+    taxation_type: int | None = None
+    applied_taxation_type: int | None = None
+    shop_id: uuid.UUID | None = None
+    cashier_id: uuid.UUID | None = None
+    status: ReceiptStatus | None = None
+    source: ReceiptSource | None = None
+
+
+class ReceiptRead(ReceiptBase):
+    id: uuid.UUID
+    owner_id: uuid.UUID
+
+
+class ReceiptPublic(ReceiptRead):
+    pass
+
+
+class ReceiptsPublic(SQLModel):
+    data: list[ReceiptRead]
+    count: int
+
+
+class ReceiptItemBase(SQLModel):
+    name: str = Field(max_length=500)
+    price: int
+    quantity: float
+    sum: int
+    measure: str | None = Field(default="шт", max_length=20)
+    product_type: int | None = None
+    gtin: str | None = Field(default=None, max_length=20)
+    raw_product_code: str | None = Field(default=None, max_length=50)
+
+
+class ReceiptItemCreate(ReceiptItemBase):
+    receipt_id: uuid.UUID
+
+
+class ReceiptItemInlineCreate(ReceiptItemBase):
+    """Receipt item payload for nested receipt creation."""
+
+    pass
+
+
+class ReceiptItemUpdate(SQLModel):
+    name: str | None = Field(default=None, max_length=500)
+    price: int | None = None
+    quantity: float | None = None
+    sum: int | None = None
+    measure: str | None = Field(default=None, max_length=20)
+    product_type: int | None = None
+    gtin: str | None = Field(default=None, max_length=20)
+    raw_product_code: str | None = Field(default=None, max_length=50)
+    receipt_id: uuid.UUID | None = None
+
+
+class ReceiptItemRead(ReceiptItemBase):
+    id: uuid.UUID
+    receipt_id: uuid.UUID
+
+
+class ReceiptItemPublic(ReceiptItemRead):
+    pass
+
+
+class ReceiptItemsPublic(SQLModel):
+    data: list[ReceiptItemRead]
+    count: int
+
+
+class ReceiptWithItemsCreate(SQLModel):
+    """Nested payload for creating a receipt with its items."""
+
+    receipt: ReceiptCreate
+    items: list[ReceiptItemInlineCreate] = Field(min_length=1)
+
+
+class ReceiptWithItemsPublic(SQLModel):
+    """Public representation of a receipt with nested items."""
+
+    receipt: ReceiptRead
+    items: list[ReceiptItemRead]

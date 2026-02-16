@@ -5,6 +5,7 @@ from app.api.routes import (
     items,
     login,
     private,
+    receipts,
     shop,
     shop_categories,
     shop_owners,
@@ -18,6 +19,7 @@ api_router.include_router(shop_categories.router)
 api_router.include_router(cashiers.router)
 api_router.include_router(shop_owners.router)
 api_router.include_router(shop.router)
+api_router.include_router(receipts.router)
 api_router.include_router(login.router)
 api_router.include_router(users.router)
 api_router.include_router(utils.router)
