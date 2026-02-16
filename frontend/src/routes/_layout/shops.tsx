@@ -1,19 +1,23 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
-import { Store } from "lucide-react"
-import { Suspense } from "react"
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import type { PaginationState } from "@tanstack/react-table";
+import { Store } from "lucide-react";
+import { Suspense, useState } from "react";
 
-import { ShopsService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
-import PendingShops from "@/components/Pending/PendingShops"
-import AddShop from "@/components/Shops/AddShop"
-import { columns } from "@/components/Shops/columns"
+import { ShopsService } from "@/client";
+import { DataTable } from "@/components/Common/DataTable";
+import PendingShops from "@/components/Pending/PendingShops";
+import AddShop from "@/components/Shops/AddShop";
+import { columns } from "@/components/Shops/columns";
 
-function getShopsQueryOptions() {
+function getShopsQueryOptions(pagination: PaginationState) {
+  const skip = pagination.pageIndex * pagination.pageSize;
+  const limit = pagination.pageSize;
+
   return {
-    queryFn: () => ShopsService.readShops({ skip: 0, limit: 100 }),
-    queryKey: ["shops"],
-  }
+    queryFn: () => ShopsService.readShops({ skip, limit }),
+    queryKey: ["shops", pagination.pageIndex, pagination.pageSize],
+  };
 }
 
 export const Route = createFileRoute("/_layout/shops")({
@@ -25,12 +29,16 @@ export const Route = createFileRoute("/_layout/shops")({
       },
     ],
   }),
-})
+});
 
 function ShopsTableContent() {
-  const { data: shops } = useSuspenseQuery(getShopsQueryOptions())
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const { data: shops } = useSuspenseQuery(getShopsQueryOptions(pagination));
 
-  if (shops.data.length === 0) {
+  if (shops.count === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12">
         <div className="rounded-full bg-muted p-4 mb-4">
@@ -39,10 +47,20 @@ function ShopsTableContent() {
         <h3 className="text-lg font-semibold">You don't have any shops yet</h3>
         <p className="text-muted-foreground">Add a new shop to get started</p>
       </div>
-    )
+    );
   }
 
-  return <DataTable columns={columns} data={shops.data} />
+  return (
+    <DataTable
+      columns={columns}
+      data={shops.data}
+      manualPagination={true}
+      rowCount={shops.count}
+      pageCount={Math.ceil(shops.count / pagination.pageSize)}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  );
 }
 
 function ShopsTable() {
@@ -50,7 +68,7 @@ function ShopsTable() {
     <Suspense fallback={<PendingShops />}>
       <ShopsTableContent />
     </Suspense>
-  )
+  );
 }
 
 function Shops() {
@@ -65,5 +83,5 @@ function Shops() {
       </div>
       <ShopsTable />
     </div>
-  )
+  );
 }

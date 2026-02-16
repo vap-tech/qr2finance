@@ -1,20 +1,23 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
-import { FolderTree } from "lucide-react"
-import { Suspense } from "react"
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import type { PaginationState } from "@tanstack/react-table";
+import { FolderTree } from "lucide-react";
+import { Suspense, useState } from "react";
 
-import { ShopCategoriesService } from "@/client"
-import { DataTable } from "@/components/Common/DataTable"
-import PendingShopCategories from "@/components/Pending/PendingShopCategories"
-import AddCategory from "@/components/ShopCategories/AddCategory"
-import { columns } from "@/components/ShopCategories/columns"
+import { ShopCategoriesService } from "@/client";
+import { DataTable } from "@/components/Common/DataTable";
+import PendingShopCategories from "@/components/Pending/PendingShopCategories";
+import AddCategory from "@/components/ShopCategories/AddCategory";
+import { columns } from "@/components/ShopCategories/columns";
 
-function getShopCategoriesQueryOptions() {
+function getShopCategoriesQueryOptions(pagination: PaginationState) {
+  const skip = pagination.pageIndex * pagination.pageSize;
+  const limit = pagination.pageSize;
+
   return {
-    queryFn: () =>
-      ShopCategoriesService.readShopCategories({ skip: 0, limit: 100 }),
-    queryKey: ["shop-categories"],
-  }
+    queryFn: () => ShopCategoriesService.readShopCategories({ skip, limit }),
+    queryKey: ["shop-categories", pagination.pageIndex, pagination.pageSize],
+  };
 }
 
 export const Route = createFileRoute("/_layout/shop-categories")({
@@ -26,12 +29,18 @@ export const Route = createFileRoute("/_layout/shop-categories")({
       },
     ],
   }),
-})
+});
 
 function ShopCategoriesTableContent() {
-  const { data: categories } = useSuspenseQuery(getShopCategoriesQueryOptions())
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+  const { data: categories } = useSuspenseQuery(
+    getShopCategoriesQueryOptions(pagination),
+  );
 
-  if (categories.data.length === 0) {
+  if (categories.count === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12">
         <div className="rounded-full bg-muted p-4 mb-4">
@@ -40,12 +49,24 @@ function ShopCategoriesTableContent() {
         <h3 className="text-lg font-semibold">
           You don't have any shop categories yet
         </h3>
-        <p className="text-muted-foreground">Add a new category to get started</p>
+        <p className="text-muted-foreground">
+          Add a new category to get started
+        </p>
       </div>
-    )
+    );
   }
 
-  return <DataTable columns={columns} data={categories.data} />
+  return (
+    <DataTable
+      columns={columns}
+      data={categories.data}
+      manualPagination={true}
+      rowCount={categories.count}
+      pageCount={Math.ceil(categories.count / pagination.pageSize)}
+      pagination={pagination}
+      onPaginationChange={setPagination}
+    />
+  );
 }
 
 function ShopCategoriesTable() {
@@ -53,7 +74,7 @@ function ShopCategoriesTable() {
     <Suspense fallback={<PendingShopCategories />}>
       <ShopCategoriesTableContent />
     </Suspense>
-  )
+  );
 }
 
 function ShopCategories() {
@@ -70,5 +91,5 @@ function ShopCategories() {
       </div>
       <ShopCategoriesTable />
     </div>
-  )
+  );
 }
