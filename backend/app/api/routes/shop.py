@@ -141,7 +141,7 @@ def update_shop(
     if "notes" in update_dict and update_dict["notes"] is not None:
         update_dict["notes"] = update_dict["notes"].strip()
 
-    # защита: обычный юзер не может перевесить owner_id даже если подсунет
+    # защита: нельзя перевесить owner_id даже если подсунуть
     update_dict.pop("owner_id", None)
 
     shop.sqlmodel_update(update_dict)
