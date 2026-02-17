@@ -36,7 +36,7 @@ def read_shop_owners(
     statement = (
         select(ShopOwner)
         .where(col(ShopOwner.is_active).is_(True))
-        .order_by(col(ShopOwner.id).desc())
+        .order_by(col(ShopOwner.name).asc())
         .offset(skip)
         .limit(limit)
     )

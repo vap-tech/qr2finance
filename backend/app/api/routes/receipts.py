@@ -1,22 +1,27 @@
+import json
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Body, HTTPException
-from sqlmodel import select
+from fastapi import APIRouter, Body, File, HTTPException, UploadFile
+from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     CashierCreate,
+    Receipt,
     ReceiptCreate,
     ReceiptItem,
     ReceiptItemInlineCreate,
     ReceiptItemRead,
     ReceiptRead,
+    ReceiptShort,
     ReceiptSource,
+    ReceiptsShortPublic,
     ReceiptWithItemsCreate,
     ReceiptWithItemsPublic,
     ShopCreate,
     ShopOwnerCreate,
+    ShopRead,
 )
 from app.servises.cashier import get_or_create_cashier
 from app.servises.receipt import create_receipt_with_items
@@ -24,6 +29,75 @@ from app.servises.shop import get_or_create_shop
 from app.servises.shop_owner import get_or_create_shop_owner
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
+
+_SHOP_DISPLAY_LIMIT = 28
+
+
+def _build_shop_display(shop: ShopRead | None) -> str | None:
+    if shop is None:
+        return None
+    base = (shop.retail_name or "").strip()
+    if not base:
+        base = (shop.address or "").strip()
+    if not base:
+        return None
+    if len(base) > _SHOP_DISPLAY_LIMIT:
+        return base[: _SHOP_DISPLAY_LIMIT - 3].rstrip() + "..."
+    return base
+
+
+@router.get("/", response_model=ReceiptsShortPublic)
+def read_receipts(
+    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve receipts (short view).
+    """
+    if current_user.is_superuser:
+        count_statement = select(func.count()).select_from(Receipt)
+        count = session.exec(count_statement).one()
+        statement = (
+            select(Receipt, func.count(ReceiptItem.id))
+            .join(ReceiptItem, ReceiptItem.receipt_id == Receipt.id, isouter=True)
+            .order_by(Receipt.date_time.desc())  # type: ignore
+            .offset(skip)
+            .limit(limit)
+            .group_by(Receipt.id)
+        )
+        rows = session.exec(statement).all()
+    else:
+        count_statement = (
+            select(func.count())
+            .select_from(Receipt)
+            .where(Receipt.owner_id == current_user.id)
+        )
+        count = session.exec(count_statement).one()
+        statement = (
+            select(Receipt, func.count(ReceiptItem.id))
+            .join(ReceiptItem, ReceiptItem.receipt_id == Receipt.id, isouter=True)
+            .where(Receipt.owner_id == current_user.id)
+            .order_by(Receipt.date_time.desc())  # type: ignore
+            .offset(skip)
+            .limit(limit)
+            .group_by(Receipt.id)
+        )
+        rows = session.exec(statement).all()
+
+    data: list[ReceiptShort] = []
+    for receipt, items_count in rows:
+        shop = ShopRead.model_validate(receipt.shop) if receipt.shop else None
+        data.append(
+            ReceiptShort(
+                id=receipt.id,
+                date_time=receipt.date_time,
+                total_sum=receipt.total_sum,
+                items_count=items_count,
+                shop_display=_build_shop_display(shop),
+                shop=shop,
+            )
+        )
+
+    return ReceiptsShortPublic(data=data, count=count)
 
 
 def _extract_raw_payload(payload: Any) -> dict[str, Any]:
@@ -145,8 +219,96 @@ def _parse_items(receipt_data: dict[str, Any]) -> list[ReceiptItemInlineCreate]:
     return items
 
 
-@router.post("/raw", response_model=ReceiptWithItemsPublic)
-def create_receipt_from_raw(
+def _create_receipt_from_raw_payload(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    payload: dict[str, Any] | list[dict[str, Any]],
+) -> Any:
+    raw_payload = _extract_raw_payload(payload)
+    receipt_data = _extract_receipt_data(raw_payload)
+
+    user_name = receipt_data.get("user")
+    user_inn = receipt_data.get("userInn")
+    shop_owner_id = None
+    if isinstance(user_name, str) and isinstance(user_inn, str):
+        shop_owner = get_or_create_shop_owner(
+            session=session,
+            shop_owner_in=ShopOwnerCreate(name=user_name, inn=user_inn),
+        )
+        shop_owner_id = shop_owner.id  # type: ignore
+
+    shop = get_or_create_shop(
+        session=session,
+        owner_id=current_user.id,
+        shop_in=ShopCreate(
+            retail_name=receipt_data.get("retailPlace"),
+            address=receipt_data.get("retailPlaceAddress"),
+            shop_owner_id=shop_owner_id,
+        ),
+    )
+    if shop is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Shop fields are invalid (retailPlace and retailPlaceAddress are required)",
+        )
+
+    # For existing shops, backfill owner link if it was missing before.
+    if shop_owner_id and shop.shop_owner_id is None:
+        shop.shop_owner_id = shop_owner_id
+        session.add(shop)
+
+    cashier = None
+    operator = receipt_data.get("operator")
+    operator_inn = receipt_data.get("operatorInn")
+    if isinstance(operator, str) and isinstance(operator_inn, str):
+        cashier = get_or_create_cashier(
+            session=session,
+            cashier_in=CashierCreate(name=operator, inn=operator_inn),
+        )
+
+    receipt_in = _parse_receipt_create(
+        receipt_data,
+        shop_id=shop.id,
+    )
+    if cashier is not None:
+        receipt_in.cashier_id = cashier.id
+    items_in = _parse_items(receipt_data)
+
+    created = create_receipt_with_items(
+        session=session,
+        owner_id=current_user.id,
+        payload=ReceiptWithItemsCreate(receipt=receipt_in, items=items_in),
+    )
+    session.commit()
+
+    db_items = session.exec(
+        select(ReceiptItem).where(ReceiptItem.receipt_id == created.id)
+    ).all()
+    return ReceiptWithItemsPublic(
+        receipt=ReceiptRead.model_validate(created),
+        items=[ReceiptItemRead.model_validate(i) for i in db_items],
+    )
+
+
+def _load_payload_from_upload(file: UploadFile) -> Any:
+    raw = file.file.read()
+    if not raw:
+        raise HTTPException(status_code=422, detail="Empty file")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=422, detail="File must be UTF-8 JSON") from exc
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=422, detail="File contains invalid JSON"
+        ) from exc
+
+
+@router.post("/raw-json", response_model=ReceiptWithItemsPublic)
+def create_receipt_from_raw_json(
     *,
     session: SessionDep,
     current_user: CurrentUser,
@@ -156,69 +318,37 @@ def create_receipt_from_raw(
     Parse raw FNS-like JSON and create receipt with nested items.
     """
     try:
-        raw_payload = _extract_raw_payload(payload)
-        receipt_data = _extract_receipt_data(raw_payload)
-
-        user_name = receipt_data.get("user")
-        user_inn = receipt_data.get("userInn")
-        shop_owner_id = None
-        if isinstance(user_name, str) and isinstance(user_inn, str):
-            shop_owner = get_or_create_shop_owner(
-                session=session,
-                shop_owner_in=ShopOwnerCreate(name=user_name, inn=user_inn),
-            )
-            shop_owner_id = shop_owner.id  # type: ignore
-
-        shop = get_or_create_shop(
+        return _create_receipt_from_raw_payload(
             session=session,
-            owner_id=current_user.id,
-            shop_in=ShopCreate(
-                retail_name=receipt_data.get("retailPlace"),
-                address=receipt_data.get("retailPlaceAddress"),
-                shop_owner_id=shop_owner_id,
-            ),
+            current_user=current_user,
+            payload=payload,
         )
-        if shop is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Shop fields are invalid (retailPlace and retailPlaceAddress are required)",
-            )
+    except HTTPException:
+        if session.in_transaction():
+            session.rollback()
+        raise
+    except ValueError as exc:
+        if session.in_transaction():
+            session.rollback()
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-        # For existing shops, backfill owner link if it was missing before.
-        if shop_owner_id and shop.shop_owner_id is None:
-            shop.shop_owner_id = shop_owner_id
-            session.add(shop)
 
-        cashier = None
-        operator = receipt_data.get("operator")
-        operator_inn = receipt_data.get("operatorInn")
-        if isinstance(operator, str) and isinstance(operator_inn, str):
-            cashier = get_or_create_cashier(
-                session=session,
-                cashier_in=CashierCreate(name=operator, inn=operator_inn),
-            )
-
-        receipt_in = _parse_receipt_create(
-            receipt_data,
-            shop_id=shop.id,
-        )
-        if cashier is not None:
-            receipt_in.cashier_id = cashier.id
-        items_in = _parse_items(receipt_data)
-
-        created = create_receipt_with_items(
+@router.post("/raw-file", response_model=ReceiptWithItemsPublic)
+def create_receipt_from_raw_file(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+) -> Any:
+    """
+    Parse raw FNS-like JSON from uploaded file and create receipt with nested items.
+    """
+    try:
+        payload = _load_payload_from_upload(file)
+        return _create_receipt_from_raw_payload(
             session=session,
-            owner_id=current_user.id,
-            payload=ReceiptWithItemsCreate(receipt=receipt_in, items=items_in),
-        )
-        session.commit()
-
-        db_items = session.exec(
-            select(ReceiptItem).where(ReceiptItem.receipt_id == created.id)
-        ).all()
-        return ReceiptWithItemsPublic(
-            receipt=ReceiptRead.model_validate(created),
-            items=[ReceiptItemRead.model_validate(i) for i in db_items],
+            current_user=current_user,
+            payload=payload,
         )
     except HTTPException:
         if session.in_transaction():

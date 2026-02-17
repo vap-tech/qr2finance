@@ -596,6 +596,20 @@ class ReceiptPublic(ReceiptRead):
     pass
 
 
+class ReceiptShort(SQLModel):
+    id: uuid.UUID
+    date_time: datetime
+    total_sum: int
+    items_count: int
+    shop_display: str | None = None
+    shop: ShopRead | None = None
+
+
+class ReceiptsShortPublic(SQLModel):
+    data: list[ReceiptShort]
+    count: int
+
+
 class ReceiptsPublic(SQLModel):
     data: list[ReceiptRead]
     count: int
