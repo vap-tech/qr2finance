@@ -1,4 +1,5 @@
 import json
+import uuid
 from datetime import datetime
 from typing import Any
 
@@ -8,6 +9,7 @@ from sqlmodel import func, select
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     CashierCreate,
+    CashierPublic,
     Receipt,
     ReceiptCreate,
     ReceiptItem,
@@ -18,9 +20,11 @@ from app.models import (
     ReceiptSource,
     ReceiptsShortPublic,
     ReceiptWithItemsCreate,
+    ReceiptWithItemsFullPublic,
     ReceiptWithItemsPublic,
     ShopCreate,
     ShopOwnerCreate,
+    ShopOwnerPublic,
     ShopRead,
 )
 from app.servises.cashier import get_or_create_cashier
@@ -98,6 +102,36 @@ def read_receipts(
         )
 
     return ReceiptsShortPublic(data=data, count=count)
+
+
+@router.get("/{id}", response_model=ReceiptWithItemsFullPublic)
+def read_receipt(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+    """
+    Get receipt by ID with items.
+    """
+    receipt = session.get(Receipt, id)
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    if not current_user.is_superuser and (receipt.owner_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    db_items = session.exec(
+        select(ReceiptItem).where(ReceiptItem.receipt_id == receipt.id)
+    ).all()
+    shop = ShopRead.model_validate(receipt.shop) if receipt.shop else None
+    shop_owner = (
+        ShopOwnerPublic.model_validate(receipt.shop.shop_owner)
+        if receipt.shop and receipt.shop.shop_owner
+        else None
+    )
+    cashier = CashierPublic.model_validate(receipt.cashier) if receipt.cashier else None
+    return ReceiptWithItemsFullPublic(
+        receipt=ReceiptRead.model_validate(receipt),
+        items=[ReceiptItemRead.model_validate(i) for i in db_items],
+        shop=shop,
+        shop_owner=shop_owner,
+        cashier=cashier,
+    )
 
 
 def _extract_raw_payload(payload: Any) -> dict[str, Any]:

@@ -674,3 +674,13 @@ class ReceiptWithItemsPublic(SQLModel):
 
     receipt: ReceiptRead
     items: list[ReceiptItemRead]
+
+
+class ReceiptWithItemsFullPublic(SQLModel):
+    """Full representation of a receipt with nested items and related entities."""
+
+    receipt: ReceiptRead
+    items: list[ReceiptItemRead]
+    shop: ShopRead | None = None
+    shop_owner: ShopOwnerPublic | None = None
+    cashier: CashierPublic | None = None
