@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException
-from pydantic import ValidationError
 from sqlmodel import select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -168,7 +167,7 @@ def create_receipt_from_raw(
                 session=session,
                 shop_owner_in=ShopOwnerCreate(name=user_name, inn=user_inn),
             )
-            shop_owner_id = shop_owner.id
+            shop_owner_id = shop_owner.id  # type: ignore
 
         shop = get_or_create_shop(
             session=session,
@@ -229,7 +228,3 @@ def create_receipt_from_raw(
         if session.in_transaction():
             session.rollback()
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except ValidationError as exc:
-        if session.in_transaction():
-            session.rollback()
-        raise HTTPException(status_code=422, detail=exc.errors()) from exc
