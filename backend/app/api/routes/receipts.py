@@ -34,6 +34,7 @@ from app.servises.shop_owner import get_or_create_shop_owner
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
 
+# Max characters for shop_display in short receipt list responses.
 _SHOP_DISPLAY_LIMIT = 28
 
 
