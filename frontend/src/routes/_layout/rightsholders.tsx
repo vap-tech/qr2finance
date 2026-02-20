@@ -6,9 +6,9 @@ import { Suspense, useState } from "react"
 
 import { ShopOwnersService } from "@/client"
 import { DataTable } from "@/components/Common/DataTable"
+import PendingRightsholders from "@/components/Pending/PendingRightsholders"
 import AddRightsholder from "@/components/Rightsholders/AddRightsholder"
 import { columns } from "@/components/Rightsholders/columns"
-import PendingRightsholders from "@/components/Pending/PendingRightsholders"
 
 function getRightsholdersQueryOptions(pagination: PaginationState) {
   const skip = pagination.pageIndex * pagination.pageSize

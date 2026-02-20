@@ -147,6 +147,39 @@ def delete_receipt(
     return Message(message="Receipt deleted successfully")
 
 
+@router.post("/{id}/items", response_model=ReceiptWithItemsPublic)
+def add_receipt_items(
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    items: list[ReceiptItemInlineCreate] = Body(...),
+) -> Any:
+    """
+    Add items to an existing receipt.
+    """
+    receipt = session.get(Receipt, id)
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    if not current_user.is_superuser and (receipt.owner_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    if len(items) == 0:
+        raise HTTPException(status_code=422, detail="items list cannot be empty")
+
+    for item_in in items:
+        item = ReceiptItem(**item_in.model_dump(), receipt_id=receipt.id)
+        session.add(item)
+
+    session.commit()
+
+    db_items = session.exec(
+        select(ReceiptItem).where(ReceiptItem.receipt_id == receipt.id)
+    ).all()
+    return ReceiptWithItemsPublic(
+        receipt=ReceiptRead.model_validate(receipt),
+        items=[ReceiptItemRead.model_validate(i) for i in db_items],
+    )
+
+
 def _extract_raw_payload(payload: Any) -> dict[str, Any]:
     if isinstance(payload, list):
         if len(payload) == 0:

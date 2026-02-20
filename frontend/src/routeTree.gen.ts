@@ -19,6 +19,7 @@ import { Route as LayoutShopsRouteImport } from './routes/_layout/shops'
 import { Route as LayoutShopCategoriesRouteImport } from './routes/_layout/shop-categories'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutRightsholdersRouteImport } from './routes/_layout/rightsholders'
+import { Route as LayoutReceiptsRouteImport } from './routes/_layout/receipts'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutCashiersRouteImport } from './routes/_layout/cashiers'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
@@ -72,6 +73,11 @@ const LayoutRightsholdersRoute = LayoutRightsholdersRouteImport.update({
   path: '/rightsholders',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutReceiptsRoute = LayoutReceiptsRouteImport.update({
+  id: '/receipts',
+  path: '/receipts',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutItemsRoute = LayoutItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/cashiers': typeof LayoutCashiersRoute
   '/items': typeof LayoutItemsRoute
+  '/receipts': typeof LayoutReceiptsRoute
   '/rightsholders': typeof LayoutRightsholdersRoute
   '/settings': typeof LayoutSettingsRoute
   '/shop-categories': typeof LayoutShopCategoriesRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/admin': typeof LayoutAdminRoute
   '/cashiers': typeof LayoutCashiersRoute
   '/items': typeof LayoutItemsRoute
+  '/receipts': typeof LayoutReceiptsRoute
   '/rightsholders': typeof LayoutRightsholdersRoute
   '/settings': typeof LayoutSettingsRoute
   '/shop-categories': typeof LayoutShopCategoriesRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/cashiers': typeof LayoutCashiersRoute
   '/_layout/items': typeof LayoutItemsRoute
+  '/_layout/receipts': typeof LayoutReceiptsRoute
   '/_layout/rightsholders': typeof LayoutRightsholdersRoute
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/shop-categories': typeof LayoutShopCategoriesRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cashiers'
     | '/items'
+    | '/receipts'
     | '/rightsholders'
     | '/settings'
     | '/shop-categories'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cashiers'
     | '/items'
+    | '/receipts'
     | '/rightsholders'
     | '/settings'
     | '/shop-categories'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/_layout/admin'
     | '/_layout/cashiers'
     | '/_layout/items'
+    | '/_layout/receipts'
     | '/_layout/rightsholders'
     | '/_layout/settings'
     | '/_layout/shop-categories'
@@ -258,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutRightsholdersRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/receipts': {
+      id: '/_layout/receipts'
+      path: '/receipts'
+      fullPath: '/receipts'
+      preLoaderRoute: typeof LayoutReceiptsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/items': {
       id: '/_layout/items'
       path: '/items'
@@ -286,6 +305,7 @@ interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutCashiersRoute: typeof LayoutCashiersRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
+  LayoutReceiptsRoute: typeof LayoutReceiptsRoute
   LayoutRightsholdersRoute: typeof LayoutRightsholdersRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutShopCategoriesRoute: typeof LayoutShopCategoriesRoute
@@ -297,6 +317,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutCashiersRoute: LayoutCashiersRoute,
   LayoutItemsRoute: LayoutItemsRoute,
+  LayoutReceiptsRoute: LayoutReceiptsRoute,
   LayoutRightsholdersRoute: LayoutRightsholdersRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutShopCategoriesRoute: LayoutShopCategoriesRoute,

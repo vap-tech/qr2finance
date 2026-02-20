@@ -4,7 +4,14 @@ import uuid
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import Session, col, delete, select
 
-from app.models import Shop, ShopCategory, ShopCategoryLink, ShopCreate, ShopPublic
+from app.models import (
+    Shop,
+    ShopCategory,
+    ShopCategoryLink,
+    ShopCreate,
+    ShopOwnerPublic,
+    ShopPublic,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +71,10 @@ def get_shop_read(
         )
     ).all()
 
+    shop_owner = (
+        ShopOwnerPublic.model_validate(shop.shop_owner) if shop.shop_owner else None
+    )
+
     return ShopPublic(
         id=shop.id,
         retail_name=shop.retail_name,
@@ -72,6 +83,7 @@ def get_shop_read(
         notes=shop.notes,
         is_active=shop.is_active,
         shop_owner_id=shop.shop_owner_id,
+        shop_owner=shop_owner,
         category_ids=list(cat_ids),
     )
 

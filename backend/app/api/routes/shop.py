@@ -10,7 +10,9 @@ from app.models import (
     SetShopCategories,
     Shop,
     ShopCreate,
+    ShopOwnerPublic,
     ShopPublic,
+    ShopRead,
     ShopsPublic,
     ShopUpdate,
 )
@@ -76,8 +78,26 @@ def read_shops(
     )
     shops = session.exec(statement).all()
 
+    data: list[ShopRead] = []
+    for shop in shops:
+        shop_owner = (
+            ShopOwnerPublic.model_validate(shop.shop_owner) if shop.shop_owner else None
+        )
+        data.append(
+            ShopRead(
+                id=shop.id,
+                retail_name=shop.retail_name,
+                address=shop.address,
+                is_favorite=shop.is_favorite,
+                notes=shop.notes,
+                is_active=shop.is_active,
+                shop_owner_id=shop.shop_owner_id,
+                shop_owner=shop_owner,
+            )
+        )
+
     return ShopsPublic(
-        data=[ShopPublic.model_validate(i) for i in shops],
+        data=data,
         count=count,
     )
 

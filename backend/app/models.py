@@ -365,6 +365,7 @@ class ShopRead(SQLModel):
     notes: str | None
     is_active: bool
     shop_owner_id: uuid.UUID | None
+    shop_owner: ShopOwnerPublic | None = None
 
 
 class ShopPublic(ShopRead):

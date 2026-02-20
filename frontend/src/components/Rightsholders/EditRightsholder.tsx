@@ -42,7 +42,10 @@ interface EditRightsholderProps {
   onSuccess: () => void
 }
 
-const EditRightsholder = ({ rightsholder, onSuccess }: EditRightsholderProps) => {
+const EditRightsholder = ({
+  rightsholder,
+  onSuccess,
+}: EditRightsholderProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()

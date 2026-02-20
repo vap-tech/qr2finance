@@ -1,23 +1,21 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
 
-import type { ShopOwnerPublic } from "@/client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import DeleteRightsholder from "./DeleteRightsholder"
-import EditRightsholder from "./EditRightsholder"
+import type { ReceiptShort } from "@/lib/receiptsApi"
+import AddReceiptItems from "./AddReceiptItems"
+import DeleteReceipt from "./DeleteReceipt"
 
-interface RightsholderActionsMenuProps {
-  rightsholder: ShopOwnerPublic
+interface ReceiptActionsMenuProps {
+  receipt: ReceiptShort
 }
 
-export const RightsholderActionsMenu = ({
-  rightsholder,
-}: RightsholderActionsMenuProps) => {
+export const ReceiptActionsMenu = ({ receipt }: ReceiptActionsMenuProps) => {
   const [open, setOpen] = useState(false)
 
   return (
@@ -28,14 +26,11 @@ export const RightsholderActionsMenu = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <EditRightsholder
-          rightsholder={rightsholder}
+        <AddReceiptItems
+          receiptId={receipt.id}
           onSuccess={() => setOpen(false)}
         />
-        <DeleteRightsholder
-          id={rightsholder.id}
-          onSuccess={() => setOpen(false)}
-        />
+        <DeleteReceipt id={receipt.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
     </DropdownMenu>
   )
