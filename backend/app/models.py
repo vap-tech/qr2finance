@@ -194,7 +194,7 @@ class NewPassword(SQLModel):
 
 class CashierBase(SQLModel):
     name: str = Field(sa_type=String)
-    inn: str = Field(sa_type=String, unique=True)
+    inn: str = Field(sa_type=String)
 
 
 class CashierCreate(CashierBase):

@@ -29,7 +29,7 @@ from app.models import (
     ShopOwnerPublic,
     ShopRead,
 )
-from app.servises.cashier import get_or_create_cashier
+from app.servises.cashier import UNKNOWN_CASHIER_INN, get_or_create_cashier
 from app.servises.receipt import create_receipt_with_items
 from app.servises.shop import get_or_create_shop
 from app.servises.shop_owner import get_or_create_shop_owner
@@ -343,10 +343,15 @@ def _create_receipt_from_raw_payload(
     cashier = None
     operator = receipt_data.get("operator")
     operator_inn = receipt_data.get("operatorInn")
-    if isinstance(operator, str) and isinstance(operator_inn, str):
+    if isinstance(operator, str) and operator.strip() != "":
+        normalized_operator_inn = (
+            operator_inn.strip()
+            if isinstance(operator_inn, str) and operator_inn.strip() != ""
+            else UNKNOWN_CASHIER_INN
+        )
         cashier = get_or_create_cashier(
             session=session,
-            cashier_in=CashierCreate(name=operator, inn=operator_inn),
+            cashier_in=CashierCreate(name=operator, inn=normalized_operator_inn),
         )
 
     receipt_in = _parse_receipt_create(

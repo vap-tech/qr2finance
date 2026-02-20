@@ -3,16 +3,22 @@ from sqlmodel import Session, select
 
 from app.models import Cashier, CashierCreate
 
+UNKNOWN_CASHIER_INN = "000000000000"
+
 
 def get_or_create_cashier(session: Session, cashier_in: CashierCreate):
     """Get an existing cashier by INN/name or create a new one without committing."""
-    if cashier_in.name is None or cashier_in.inn is None:
+    if cashier_in.name is None:
         return None
 
     name = cashier_in.name.strip()
-    inn = cashier_in.inn.strip()
-    if name == "" or inn == "":
+    if name == "":
         return None
+    inn = (
+        cashier_in.inn.strip()
+        if cashier_in.inn is not None and cashier_in.inn.strip() != ""
+        else UNKNOWN_CASHIER_INN
+    )
 
     statement = select(Cashier).where(
         Cashier.inn == inn,
@@ -29,7 +35,8 @@ def get_or_create_cashier(session: Session, cashier_in: CashierCreate):
     if not cashier:
         cashier = Cashier(name=name, inn=inn)
         session.add(cashier)
-    elif cashier.is_active is False:
+
+    if cashier.is_active is False:
         cashier.is_active = True
         session.add(cashier)
 
