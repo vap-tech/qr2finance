@@ -16,6 +16,7 @@ from app.models import (
     ReceiptItem,
     ReceiptItemInlineCreate,
     ReceiptItemRead,
+    ReceiptRawBackup,
     ReceiptRead,
     ReceiptShort,
     ReceiptSource,
@@ -174,6 +175,41 @@ def _extract_receipt_data(raw_payload: dict[str, Any]) -> dict[str, Any]:
     return receipt_data
 
 
+def _save_raw_backup(
+    *,
+    session: SessionDep,
+    owner_id: uuid.UUID,
+    receipt_id: uuid.UUID,
+    raw_payload: dict[str, Any],
+) -> None:
+    source_hash = ReceiptRawBackup._compute_hash(raw_payload)
+
+    backup_by_hash = session.exec(
+        select(ReceiptRawBackup).where(col(ReceiptRawBackup.source_hash) == source_hash)
+    ).one_or_none()
+    if backup_by_hash and backup_by_hash.receipt_id != receipt_id:
+        raise ValueError("Raw payload already linked to another receipt")
+
+    existing_backup = session.exec(
+        select(ReceiptRawBackup).where(col(ReceiptRawBackup.receipt_id) == receipt_id)
+    ).one_or_none()
+    if existing_backup is None:
+        session.add(
+            ReceiptRawBackup(
+                raw_json=raw_payload,
+                source_hash=source_hash,
+                owner_id=owner_id,
+                receipt_id=receipt_id,
+            )
+        )
+        return
+
+    if existing_backup.source_hash != source_hash:
+        existing_backup.raw_json = raw_payload
+        existing_backup.update_hash()
+        session.add(existing_backup)
+
+
 def _parse_datetime(value: Any, field_name: str) -> datetime:
     if not isinstance(value, str) or not value:
         raise HTTPException(status_code=422, detail=f"{field_name} is required")
@@ -325,6 +361,12 @@ def _create_receipt_from_raw_payload(
         session=session,
         owner_id=current_user.id,
         payload=ReceiptWithItemsCreate(receipt=receipt_in, items=items_in),
+    )
+    _save_raw_backup(
+        session=session,
+        owner_id=current_user.id,
+        receipt_id=created.id,
+        raw_payload=raw_payload,
     )
     session.commit()
 
