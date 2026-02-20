@@ -33,9 +33,16 @@ function CopyId({ id }: { id: string }) {
 
 export const columns: ColumnDef<ItemPublic>[] = [
   {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <CopyId id={row.original.id} />,
+    id: "row_number",
+    header: "#",
+    cell: ({ row, table }) => {
+      const { pageIndex, pageSize } = table.getState().pagination
+      return (
+        <span className="tabular-nums text-muted-foreground">
+          {pageIndex * pageSize + row.index + 1}
+        </span>
+      )
+    },
   },
   {
     accessorKey: "title",
@@ -60,6 +67,11 @@ export const columns: ColumnDef<ItemPublic>[] = [
         </span>
       )
     },
+  },
+  {
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) => <CopyId id={row.original.id} />,
   },
   {
     id: "actions",
