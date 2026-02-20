@@ -1,6 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Trash2 } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
@@ -13,18 +11,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { LoadingButton } from "@/components/ui/loading-button"
 import useCustomToast from "@/hooks/useCustomToast"
 import { deleteReceipt } from "@/lib/receiptsApi"
 
 interface DeleteReceiptProps {
   id: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onSuccess: () => void
 }
 
-const DeleteReceipt = ({ id, onSuccess }: DeleteReceiptProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+const DeleteReceipt = ({
+  id,
+  open,
+  onOpenChange,
+  onSuccess,
+}: DeleteReceiptProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
   const { handleSubmit } = useForm()
@@ -33,7 +36,7 @@ const DeleteReceipt = ({ id, onSuccess }: DeleteReceiptProps) => {
     mutationFn: () => deleteReceipt(id),
     onSuccess: () => {
       showSuccessToast("The receipt was deleted successfully")
-      setIsOpen(false)
+      onOpenChange(false)
       onSuccess()
     },
     onError: (error) => {
@@ -49,15 +52,7 @@ const DeleteReceipt = ({ id, onSuccess }: DeleteReceiptProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        variant="destructive"
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <Trash2 />
-        Delete Receipt
-      </DropdownMenuItem>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>

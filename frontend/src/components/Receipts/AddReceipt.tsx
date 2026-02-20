@@ -1,6 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -14,7 +13,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Form,
@@ -45,8 +43,12 @@ const fileSchema = z.object({
 
 type FileFormData = z.infer<typeof fileSchema>
 
-const AddReceipt = () => {
-  const [isOpen, setIsOpen] = useState(false)
+interface AddReceiptProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+const AddReceipt = ({ open, onOpenChange }: AddReceiptProps) => {
   const [selectedTab, setSelectedTab] = useState("json")
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
@@ -72,7 +74,7 @@ const AddReceipt = () => {
       showSuccessToast("Receipt created successfully")
       jsonForm.reset()
       fileForm.reset()
-      setIsOpen(false)
+      onOpenChange(false)
     },
     onError: (error) => {
       showErrorToast(error instanceof Error ? error.message : "Request failed")
@@ -88,7 +90,7 @@ const AddReceipt = () => {
       showSuccessToast("Receipt created successfully")
       jsonForm.reset()
       fileForm.reset()
-      setIsOpen(false)
+      onOpenChange(false)
     },
     onError: (error) => {
       showErrorToast(error instanceof Error ? error.message : "Request failed")
@@ -115,19 +117,13 @@ const AddReceipt = () => {
 
   return (
     <Dialog
-      open={isOpen}
+      open={open}
       onOpenChange={(open) => {
         if (!isPending) {
-          setIsOpen(open)
+          onOpenChange(open)
         }
       }}
     >
-      <DialogTrigger asChild>
-        <Button className="my-4">
-          <Plus className="mr-2" />
-          Add Receipt
-        </Button>
-      </DialogTrigger>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Add Receipt</DialogTitle>

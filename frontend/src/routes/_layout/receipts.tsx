@@ -1,14 +1,16 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import type { PaginationState } from "@tanstack/react-table"
-import { ReceiptText } from "lucide-react"
-import { Suspense, useState } from "react"
+import { Plus, ReceiptText } from "lucide-react"
+import { lazy, Suspense, useState } from "react"
 
 import { DataTable } from "@/components/Common/DataTable"
 import PendingReceipts from "@/components/Pending/PendingReceipts"
-import AddReceipt from "@/components/Receipts/AddReceipt"
 import { columns } from "@/components/Receipts/columns"
+import { Button } from "@/components/ui/button"
 import { readReceipts } from "@/lib/receiptsApi"
+
+const AddReceipt = lazy(() => import("@/components/Receipts/AddReceipt"))
 
 function getReceiptsQueryOptions(pagination: PaginationState) {
   const skip = pagination.pageIndex * pagination.pageSize
@@ -79,6 +81,8 @@ function ReceiptsTable() {
 }
 
 function Receipts() {
+  const [addOpen, setAddOpen] = useState(false)
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -88,9 +92,17 @@ function Receipts() {
             Create and manage your receipts
           </p>
         </div>
-        <AddReceipt />
+        <Button className="my-4" onClick={() => setAddOpen(true)}>
+          <Plus className="mr-2" />
+          Add Receipt
+        </Button>
       </div>
       <ReceiptsTable />
+      {addOpen ? (
+        <Suspense fallback={null}>
+          <AddReceipt open={addOpen} onOpenChange={setAddOpen} />
+        </Suspense>
+      ) : null}
     </div>
   )
 }

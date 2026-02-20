@@ -1,6 +1,7 @@
 import uuid
+from typing import cast
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, func, select
 
 from app.models import Receipt, ReceiptCreate, ReceiptItem, ReceiptWithItemsCreate
 
@@ -83,3 +84,44 @@ def create_receipt_with_items(
 
     session.flush()
     return receipt
+
+
+def recalculate_receipt_payment_totals(session: Session, *, receipt: Receipt) -> None:
+    """
+    Recalculate receipt totals based on current item sums.
+
+    Keeps payment type semantics:
+    - cash-only stays cash-only
+    - card-only stays card-only
+    - mixed stays mixed (cash share preserved, card gets remainder)
+    - unknown/zero payments fallback to card-only
+    """
+    items_total = cast(
+        int,
+        session.exec(
+            select(func.coalesce(func.sum(col(ReceiptItem.sum)), 0)).where(
+                col(ReceiptItem.receipt_id) == receipt.id
+            )
+        ).one(),
+    )
+
+    previous_total = receipt.total_sum
+    previous_cash = receipt.cash_total_sum
+    previous_ecash = receipt.ecash_total_sum
+
+    if previous_cash > 0 and previous_ecash <= 0:
+        receipt.cash_total_sum = items_total
+        receipt.ecash_total_sum = 0
+    elif previous_ecash > 0 and previous_cash <= 0:
+        receipt.cash_total_sum = 0
+        receipt.ecash_total_sum = items_total
+    elif previous_cash > 0 and previous_ecash > 0 and previous_total > 0:
+        cash_part = (items_total * previous_cash) // previous_total
+        receipt.cash_total_sum = cash_part
+        receipt.ecash_total_sum = items_total - cash_part
+    else:
+        receipt.cash_total_sum = 0
+        receipt.ecash_total_sum = items_total
+
+    receipt.total_sum = items_total
+    session.add(receipt)

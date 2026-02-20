@@ -30,7 +30,10 @@ from app.models import (
     ShopRead,
 )
 from app.servises.cashier import UNKNOWN_CASHIER_INN, get_or_create_cashier
-from app.servises.receipt import create_receipt_with_items
+from app.servises.receipt import (
+    create_receipt_with_items,
+    recalculate_receipt_payment_totals,
+)
 from app.servises.shop import get_or_create_shop
 from app.servises.shop_owner import get_or_create_shop_owner
 
@@ -90,6 +93,8 @@ def read_receipts(
                 id=receipt.id,
                 date_time=receipt.date_time,
                 total_sum=receipt.total_sum,
+                cash_total_sum=receipt.cash_total_sum,
+                ecash_total_sum=receipt.ecash_total_sum,
                 items_count=int(items_count),
                 shop_display=_build_shop_display(shop),
                 shop=shop,
@@ -169,6 +174,8 @@ def add_receipt_items(
         item = ReceiptItem(**item_in.model_dump(), receipt_id=receipt.id)
         session.add(item)
 
+    session.flush()
+    recalculate_receipt_payment_totals(session, receipt=receipt)
     session.commit()
 
     db_items = session.exec(

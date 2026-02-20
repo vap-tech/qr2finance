@@ -1,7 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { ListPlus } from "lucide-react"
-import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
@@ -15,14 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/ui/loading-button"
@@ -41,11 +37,23 @@ type FormData = z.infer<typeof formSchema>
 
 interface AddReceiptItemsProps {
   receiptId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onSuccess: () => void
 }
 
-const AddReceiptItems = ({ receiptId, onSuccess }: AddReceiptItemsProps) => {
-  const [isOpen, setIsOpen] = useState(false)
+function FieldError({ message }: { message?: string }) {
+  return (
+    <p className="text-sm text-destructive min-h-5">{message || "\u00A0"}</p>
+  )
+}
+
+const AddReceiptItems = ({
+  receiptId,
+  open,
+  onOpenChange,
+  onSuccess,
+}: AddReceiptItemsProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
@@ -75,7 +83,7 @@ const AddReceiptItems = ({ receiptId, onSuccess }: AddReceiptItemsProps) => {
       ]),
     onSuccess: () => {
       showSuccessToast("Receipt item added successfully")
-      setIsOpen(false)
+      onOpenChange(false)
       form.reset({
         name: "",
         price: "",
@@ -115,22 +123,15 @@ const AddReceiptItems = ({ receiptId, onSuccess }: AddReceiptItemsProps) => {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuItem
-        onSelect={(e) => e.preventDefault()}
-        onClick={() => setIsOpen(true)}
-      >
-        <ListPlus />
-        Add Receipt Item
-      </DropdownMenuItem>
-
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>Add Receipt Item</DialogTitle>
               <DialogDescription>
-                Add one more item to this receipt.
+                Add one more item to this receipt. Price and sum are entered in
+                kopecks.
               </DialogDescription>
             </DialogHeader>
 
@@ -146,7 +147,7 @@ const AddReceiptItems = ({ receiptId, onSuccess }: AddReceiptItemsProps) => {
                     <FormControl>
                       <Input placeholder="Item name" type="text" {...field} />
                     </FormControl>
-                    <FormMessage />
+                    <FieldError message={form.formState.errors.name?.message} />
                   </FormItem>
                 )}
               />
@@ -163,7 +164,9 @@ const AddReceiptItems = ({ receiptId, onSuccess }: AddReceiptItemsProps) => {
                       <FormControl>
                         <Input type="number" min={1} step={1} {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <FieldError
+                        message={form.formState.errors.price?.message}
+                      />
                     </FormItem>
                   )}
                 />
@@ -179,7 +182,9 @@ const AddReceiptItems = ({ receiptId, onSuccess }: AddReceiptItemsProps) => {
                       <FormControl>
                         <Input type="number" min={1} step={1} {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <FieldError
+                        message={form.formState.errors.sum?.message}
+                      />
                     </FormItem>
                   )}
                 />
@@ -202,7 +207,9 @@ const AddReceiptItems = ({ receiptId, onSuccess }: AddReceiptItemsProps) => {
                           {...field}
                         />
                       </FormControl>
-                      <FormMessage />
+                      <FieldError
+                        message={form.formState.errors.quantity?.message}
+                      />
                     </FormItem>
                   )}
                 />
@@ -216,7 +223,9 @@ const AddReceiptItems = ({ receiptId, onSuccess }: AddReceiptItemsProps) => {
                       <FormControl>
                         <Input placeholder="шт" type="text" {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <FieldError
+                        message={form.formState.errors.measure?.message}
+                      />
                     </FormItem>
                   )}
                 />

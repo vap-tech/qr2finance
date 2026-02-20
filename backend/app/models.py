@@ -601,6 +601,8 @@ class ReceiptShort(SQLModel):
     id: uuid.UUID
     date_time: datetime
     total_sum: int
+    cash_total_sum: int
+    ecash_total_sum: int
     items_count: int
     shop_display: str | None = None
     shop: ShopRead | None = None
