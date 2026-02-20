@@ -33,15 +33,27 @@ function CopyId({ id }: { id: string }) {
 
 export const columns: ColumnDef<CashierPublic>[] = [
   {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <CopyId id={row.original.id} />,
+    id: "row_number",
+    header: "#",
+    cell: ({ row, table }) => {
+      const { pageIndex, pageSize } = table.getState().pagination
+      return (
+        <span className="tabular-nums text-muted-foreground">
+          {pageIndex * pageSize + row.index + 1}
+        </span>
+      )
+    },
   },
   {
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
-      <span className={cn("font-medium", !row.original.name && "italic text-muted-foreground")}>
+      <span
+        className={cn(
+          "font-medium",
+          !row.original.name && "italic text-muted-foreground",
+        )}
+      >
         {row.original.name || "No name"}
       </span>
     ),
@@ -50,10 +62,20 @@ export const columns: ColumnDef<CashierPublic>[] = [
     accessorKey: "inn",
     header: "INN",
     cell: ({ row }) => (
-      <span className={cn("font-mono text-sm", !row.original.inn && "italic text-muted-foreground")}>
+      <span
+        className={cn(
+          "font-mono text-sm",
+          !row.original.inn && "italic text-muted-foreground",
+        )}
+      >
         {row.original.inn || "No INN"}
       </span>
     ),
+  },
+  {
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) => <CopyId id={row.original.id} />,
   },
   {
     id: "actions",
