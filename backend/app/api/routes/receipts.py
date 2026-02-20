@@ -1,10 +1,10 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Body, File, HTTPException, UploadFile
-from sqlmodel import func, select
+from sqlmodel import col, func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
@@ -57,35 +57,27 @@ def read_receipts(
     """
     Retrieve receipts (short view).
     """
-    if current_user.is_superuser:
-        count_statement = select(func.count()).select_from(Receipt)
-        count = session.exec(count_statement).one()
-        statement = (
-            select(Receipt, func.count(ReceiptItem.id))
-            .join(ReceiptItem, ReceiptItem.receipt_id == Receipt.id, isouter=True)
-            .order_by(Receipt.date_time.desc())  # type: ignore
-            .offset(skip)
-            .limit(limit)
-            .group_by(Receipt.id)
+    count_statement = select(func.count()).select_from(Receipt)
+    statement = (
+        select(Receipt, func.count(col(ReceiptItem.id)))
+        .join(
+            ReceiptItem,
+            col(ReceiptItem.receipt_id) == col(Receipt.id),
+            isouter=True,
         )
-        rows = session.exec(statement).all()
-    else:
-        count_statement = (
-            select(func.count())
-            .select_from(Receipt)
-            .where(Receipt.owner_id == current_user.id)
+        .order_by(col(Receipt.date_time).desc())
+        .offset(skip)
+        .limit(limit)
+        .group_by(col(Receipt.id))
+    )
+    if not current_user.is_superuser:
+        count_statement = count_statement.where(
+            col(Receipt.owner_id) == current_user.id
         )
-        count = session.exec(count_statement).one()
-        statement = (
-            select(Receipt, func.count(ReceiptItem.id))
-            .join(ReceiptItem, ReceiptItem.receipt_id == Receipt.id, isouter=True)
-            .where(Receipt.owner_id == current_user.id)
-            .order_by(Receipt.date_time.desc())  # type: ignore
-            .offset(skip)
-            .limit(limit)
-            .group_by(Receipt.id)
-        )
-        rows = session.exec(statement).all()
+        statement = statement.where(col(Receipt.owner_id) == current_user.id)
+
+    count = cast(int, session.exec(count_statement).one())
+    rows = cast(list[tuple[Receipt, int]], session.exec(statement).all())
 
     data: list[ReceiptShort] = []
     for receipt, items_count in rows:
@@ -95,7 +87,7 @@ def read_receipts(
                 id=receipt.id,
                 date_time=receipt.date_time,
                 total_sum=receipt.total_sum,
-                items_count=items_count,
+                items_count=int(items_count),
                 shop_display=_build_shop_display(shop),
                 shop=shop,
             )
