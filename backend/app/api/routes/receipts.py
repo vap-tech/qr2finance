@@ -10,6 +10,7 @@ from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     CashierCreate,
     CashierPublic,
+    Message,
     Receipt,
     ReceiptCreate,
     ReceiptItem,
@@ -125,6 +126,24 @@ def read_receipt(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) 
         shop_owner=shop_owner,
         cashier=cashier,
     )
+
+
+@router.delete("/{id}", response_model=Message)
+def delete_receipt(
+    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+) -> Message:
+    """
+    Delete receipt by ID (hard delete).
+    """
+    receipt = session.get(Receipt, id)
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    if not current_user.is_superuser and (receipt.owner_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    session.delete(receipt)
+    session.commit()
+    return Message(message="Receipt deleted successfully")
 
 
 def _extract_raw_payload(payload: Any) -> dict[str, Any]:
