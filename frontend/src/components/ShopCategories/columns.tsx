@@ -1,15 +1,15 @@
-import type { ColumnDef } from "@tanstack/react-table";
-import { BadgeCheck, Check, Copy } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table"
+import { BadgeCheck, Check, Copy } from "lucide-react"
 
-import type { ShopCategoryPublic } from "@/client";
-import { Button } from "@/components/ui/button";
-import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
-import { cn } from "@/lib/utils";
-import { CategoryActionsMenu } from "./CategoryActionsMenu";
+import type { ShopCategoryPublic } from "@/client"
+import { Button } from "@/components/ui/button"
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"
+import { cn } from "@/lib/utils"
+import { CategoryActionsMenu } from "./CategoryActionsMenu"
 
 function CopyId({ id }: { id: string }) {
-  const [copiedText, copy] = useCopyToClipboard();
-  const isCopied = copiedText === id;
+  const [copiedText, copy] = useCopyToClipboard()
+  const isCopied = copiedText === id
 
   return (
     <div className="flex items-center gap-1.5 group">
@@ -28,14 +28,21 @@ function CopyId({ id }: { id: string }) {
         <span className="sr-only">Copy ID</span>
       </Button>
     </div>
-  );
+  )
 }
 
 export const columns: ColumnDef<ShopCategoryPublic>[] = [
   {
-    accessorKey: "id",
-    header: "ID",
-    cell: ({ row }) => <CopyId id={row.original.id} />,
+    id: "row_number",
+    header: "#",
+    cell: ({ row, table }) => {
+      const { pageIndex, pageSize } = table.getState().pagination
+      return (
+        <span className="tabular-nums text-muted-foreground">
+          {pageIndex * pageSize + row.index + 1}
+        </span>
+      )
+    },
   },
   {
     accessorKey: "name",
@@ -43,6 +50,11 @@ export const columns: ColumnDef<ShopCategoryPublic>[] = [
     cell: ({ row }) => (
       <span className={cn("font-medium")}>{row.original.name}</span>
     ),
+  },
+  {
+    accessorKey: "id",
+    header: "ID",
+    cell: ({ row }) => <CopyId id={row.original.id} />,
   },
   {
     accessorKey: "is_active",
@@ -66,4 +78,4 @@ export const columns: ColumnDef<ShopCategoryPublic>[] = [
       </div>
     ),
   },
-];
+]
