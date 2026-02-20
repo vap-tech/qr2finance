@@ -1,21 +1,33 @@
-import type { ColumnDef } from "@tanstack/react-table";
-import { Check, X } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table"
+import { Check, X } from "lucide-react"
 
-import type { UserPublic } from "@/client";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { UserActionsMenu } from "./UserActionsMenu";
+import type { UserPublic } from "@/client"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { UserActionsMenu } from "./UserActionsMenu"
 
 export type UserTableData = UserPublic & {
-  isCurrentUser: boolean;
-};
+  isCurrentUser: boolean
+}
 
 export const columns: ColumnDef<UserTableData>[] = [
+  {
+    id: "row_number",
+    header: "#",
+    cell: ({ row, table }) => {
+      const { pageIndex, pageSize } = table.getState().pagination
+      return (
+        <span className="tabular-nums text-muted-foreground">
+          {pageIndex * pageSize + row.index + 1}
+        </span>
+      )
+    },
+  },
   {
     accessorKey: "full_name",
     header: "Full Name",
     cell: ({ row }) => {
-      const fullName = row.original.full_name;
+      const fullName = row.original.full_name
       return (
         <div className="flex items-center gap-2">
           <span
@@ -29,7 +41,7 @@ export const columns: ColumnDef<UserTableData>[] = [
             </Badge>
           )}
         </div>
-      );
+      )
     },
   },
   {
@@ -43,7 +55,7 @@ export const columns: ColumnDef<UserTableData>[] = [
     accessorKey: "telegram_id",
     header: "Telegram id",
     cell: ({ row }) => {
-      const telegramId = row.original.telegram_id;
+      const telegramId = row.original.telegram_id
       return (
         <div className="flex items-center gap-2">
           {telegramId ? (
@@ -60,7 +72,7 @@ export const columns: ColumnDef<UserTableData>[] = [
             {telegramId || "N/A"}
           </span>
         </div>
-      );
+      )
     },
   },
   {
@@ -98,4 +110,4 @@ export const columns: ColumnDef<UserTableData>[] = [
       </div>
     ),
   },
-];
+]
