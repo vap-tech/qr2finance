@@ -1,10 +1,10 @@
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -13,7 +13,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -21,37 +21,37 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { LoadingButton } from "@/components/ui/loading-button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import useCustomToast from "@/hooks/useCustomToast"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { LoadingButton } from "@/components/ui/loading-button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import useCustomToast from "@/hooks/useCustomToast";
 import {
   createReceiptFromRawFile,
   createReceiptFromRawJson,
-} from "@/lib/receiptsApi"
+} from "@/lib/receiptsApi";
 
 const rawJsonSchema = z.object({
   payload: z.string().min(1, { message: "Raw JSON is required" }),
-})
+});
 
-type RawJsonFormData = z.infer<typeof rawJsonSchema>
+type RawJsonFormData = z.infer<typeof rawJsonSchema>;
 
 const fileSchema = z.object({
   file: z.instanceof(File, { message: "JSON file is required" }),
-})
+});
 
-type FileFormData = z.infer<typeof fileSchema>
+type FileFormData = z.infer<typeof fileSchema>;
 
 interface AddReceiptProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 const AddReceipt = ({ open, onOpenChange }: AddReceiptProps) => {
-  const [selectedTab, setSelectedTab] = useState("json")
-  const queryClient = useQueryClient()
-  const { showSuccessToast, showErrorToast } = useCustomToast()
+  const [selectedTab, setSelectedTab] = useState("json");
+  const queryClient = useQueryClient();
+  const { showSuccessToast, showErrorToast } = useCustomToast();
 
   const jsonForm = useForm<RawJsonFormData>({
     resolver: zodResolver(rawJsonSchema),
@@ -60,67 +60,67 @@ const AddReceipt = ({ open, onOpenChange }: AddReceiptProps) => {
     defaultValues: {
       payload: "",
     },
-  })
+  });
 
   const fileForm = useForm<FileFormData>({
     resolver: zodResolver(fileSchema),
     mode: "onBlur",
     criteriaMode: "all",
-  })
+  });
 
   const jsonMutation = useMutation({
     mutationFn: (payload: unknown) => createReceiptFromRawJson(payload),
     onSuccess: () => {
-      showSuccessToast("Receipt created successfully")
-      jsonForm.reset()
-      fileForm.reset()
-      onOpenChange(false)
+      showSuccessToast("Receipt created successfully");
+      jsonForm.reset();
+      fileForm.reset();
+      onOpenChange(false);
     },
     onError: (error) => {
-      showErrorToast(error instanceof Error ? error.message : "Request failed")
+      showErrorToast(error instanceof Error ? error.message : "Request failed");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["receipts"] })
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
     },
-  })
+  });
 
   const fileMutation = useMutation({
     mutationFn: (file: File) => createReceiptFromRawFile(file),
     onSuccess: () => {
-      showSuccessToast("Receipt created successfully")
-      jsonForm.reset()
-      fileForm.reset()
-      onOpenChange(false)
+      showSuccessToast("Receipt created successfully");
+      jsonForm.reset();
+      fileForm.reset();
+      onOpenChange(false);
     },
     onError: (error) => {
-      showErrorToast(error instanceof Error ? error.message : "Request failed")
+      showErrorToast(error instanceof Error ? error.message : "Request failed");
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["receipts"] })
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
     },
-  })
+  });
 
   const onJsonSubmit = (data: RawJsonFormData) => {
     try {
-      const parsed = JSON.parse(data.payload)
-      jsonMutation.mutate(parsed)
+      const parsed = JSON.parse(data.payload);
+      jsonMutation.mutate(parsed);
     } catch {
-      jsonForm.setError("payload", { message: "Invalid JSON" })
+      jsonForm.setError("payload", { message: "Invalid JSON" });
     }
-  }
+  };
 
   const onFileSubmit = (data: FileFormData) => {
-    fileMutation.mutate(data.file)
-  }
+    fileMutation.mutate(data.file);
+  };
 
-  const isPending = jsonMutation.isPending || fileMutation.isPending
+  const isPending = jsonMutation.isPending || fileMutation.isPending;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(open) => {
         if (!isPending) {
-          onOpenChange(open)
+          onOpenChange(open);
         }
       }}
     >
@@ -153,7 +153,7 @@ const AddReceipt = ({ open, onOpenChange }: AddReceiptProps) => {
                         </FormLabel>
                         <FormControl>
                           <textarea
-                            className="border-input bg-transparent ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-[260px] w-full rounded-md border px-3 py-2 font-mono text-sm focus-visible:ring-2 focus-visible:outline-none"
+                            className="border-input bg-transparent ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-65 w-full rounded-md border px-3 py-2 font-mono text-sm focus-visible:ring-2 focus-visible:outline-none"
                             placeholder='{"ticket":{"document":{"receipt":{...}}}}'
                             {...field}
                           />
@@ -197,9 +197,9 @@ const AddReceipt = ({ open, onOpenChange }: AddReceiptProps) => {
                             ref={ref}
                             accept="application/json,.json"
                             onChange={(event) => {
-                              const file = event.target.files?.[0]
+                              const file = event.target.files?.[0];
                               if (file) {
-                                onChange(file)
+                                onChange(file);
                               }
                             }}
                           />
@@ -226,7 +226,7 @@ const AddReceipt = ({ open, onOpenChange }: AddReceiptProps) => {
         </Tabs>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default AddReceipt
+export default AddReceipt;
