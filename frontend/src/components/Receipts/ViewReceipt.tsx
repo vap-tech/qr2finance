@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ReceiptItemActionsMenu } from "./ReceiptItemActionsMenu";
 
 interface ViewReceiptProps {
   id: string;
@@ -154,8 +155,15 @@ const ViewReceipt = ({ id, open, onOpenChange }: ViewReceiptProps) => {
                         {formatMoney(item.price)}
                       </div>
                     </div>
-                    <div className="tabular-nums font-medium whitespace-nowrap">
-                      {formatMoney(item.sum)}
+                    <div className="flex items-start gap-2">
+                      <div className="tabular-nums font-medium whitespace-nowrap pt-1">
+                        {formatMoney(item.sum)}
+                      </div>
+                      <ReceiptItemActionsMenu
+                        receiptId={id}
+                        itemId={item.id}
+                        itemName={item.name}
+                      />
                     </div>
                   </div>
                 ))}
