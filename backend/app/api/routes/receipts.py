@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import Any, cast
 
 from fastapi import APIRouter, Body, File, HTTPException, UploadFile
-from sqlalchemy import exists
 from sqlmodel import col, func, select
 
 from app.api.deps import CurrentUser, SessionDep
