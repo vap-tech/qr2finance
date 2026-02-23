@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { CashiersReadCashiersData, CashiersReadCashiersResponse, CashiersCreateCashierData, CashiersCreateCashierResponse, CashiersReadCashierData, CashiersReadCashierResponse, CashiersUpdateCashierData, CashiersUpdateCashierResponse, CashiersDeleteCashierData, CashiersDeleteCashierResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ReceiptsReadReceiptsData, ReceiptsReadReceiptsResponse, ReceiptsReadReceiptData, ReceiptsReadReceiptResponse, ReceiptsDeleteReceiptData, ReceiptsDeleteReceiptResponse, ReceiptsAddReceiptItemsData, ReceiptsAddReceiptItemsResponse, ReceiptsCreateReceiptFromRawJsonData, ReceiptsCreateReceiptFromRawJsonResponse, ReceiptsCreateReceiptFromRawFileData, ReceiptsCreateReceiptFromRawFileResponse, ShopCategoriesReadShopCategoriesData, ShopCategoriesReadShopCategoriesResponse, ShopCategoriesCreateCategoryData, ShopCategoriesCreateCategoryResponse, ShopCategoriesReadShopCategorieData, ShopCategoriesReadShopCategorieResponse, ShopCategoriesUpdateCategoryData, ShopCategoriesUpdateCategoryResponse, ShopCategoriesDeleteCategoryData, ShopCategoriesDeleteCategoryResponse, ShopOwnersReadShopOwnersData, ShopOwnersReadShopOwnersResponse, ShopOwnersCreateShopOwnerData, ShopOwnersCreateShopOwnerResponse, ShopOwnersReadShopOwnerData, ShopOwnersReadShopOwnerResponse, ShopOwnersUpdateShopOwnerData, ShopOwnersUpdateShopOwnerResponse, ShopOwnersDeleteShopOwnerData, ShopOwnersDeleteShopOwnerResponse, ShopsReadShopsData, ShopsReadShopsResponse, ShopsCreateShopData, ShopsCreateShopResponse, ShopsReadShopData, ShopsReadShopResponse, ShopsUpdateShopData, ShopsUpdateShopResponse, ShopsDeleteShopData, ShopsDeleteShopResponse, ShopsReplaceShopCategoriesData, ShopsReplaceShopCategoriesResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { CashiersReadCashiersData, CashiersReadCashiersResponse, CashiersCreateCashierData, CashiersCreateCashierResponse, CashiersReadCashierData, CashiersReadCashierResponse, CashiersUpdateCashierData, CashiersUpdateCashierResponse, CashiersDeleteCashierData, CashiersDeleteCashierResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ReceiptItemCategoriesReadReceiptItemCategoriesData, ReceiptItemCategoriesReadReceiptItemCategoriesResponse, ReceiptItemCategoriesCreateReceiptItemCategoryData, ReceiptItemCategoriesCreateReceiptItemCategoryResponse, ReceiptItemCategoriesReadReceiptItemCategoryData, ReceiptItemCategoriesReadReceiptItemCategoryResponse, ReceiptItemCategoriesUpdateReceiptItemCategoryData, ReceiptItemCategoriesUpdateReceiptItemCategoryResponse, ReceiptItemCategoriesDeleteReceiptItemCategoryData, ReceiptItemCategoriesDeleteReceiptItemCategoryResponse, ReceiptItemsReadReceiptItemsData, ReceiptItemsReadReceiptItemsResponse, ReceiptItemsCreateReceiptItemData, ReceiptItemsCreateReceiptItemResponse, ReceiptItemsReadReceiptItemData, ReceiptItemsReadReceiptItemResponse, ReceiptItemsUpdateReceiptItemData, ReceiptItemsUpdateReceiptItemResponse, ReceiptItemsDeleteReceiptItemData, ReceiptItemsDeleteReceiptItemResponse, ReceiptItemsReplaceReceiptItemCategoriesData, ReceiptItemsReplaceReceiptItemCategoriesResponse, ReceiptItemsReplaceReceiptItemsCategoriesByNameData, ReceiptItemsReplaceReceiptItemsCategoriesByNameResponse, ReceiptsReadReceiptsData, ReceiptsReadReceiptsResponse, ReceiptsReadReceiptData, ReceiptsReadReceiptResponse, ReceiptsDeleteReceiptData, ReceiptsDeleteReceiptResponse, ReceiptsAddReceiptItemsData, ReceiptsAddReceiptItemsResponse, ReceiptsCreateReceiptFromRawJsonData, ReceiptsCreateReceiptFromRawJsonResponse, ReceiptsCreateReceiptFromRawFileData, ReceiptsCreateReceiptFromRawFileResponse, ShopCategoriesReadShopCategoriesData, ShopCategoriesReadShopCategoriesResponse, ShopCategoriesCreateCategoryData, ShopCategoriesCreateCategoryResponse, ShopCategoriesReadShopCategorieData, ShopCategoriesReadShopCategorieResponse, ShopCategoriesUpdateCategoryData, ShopCategoriesUpdateCategoryResponse, ShopCategoriesDeleteCategoryData, ShopCategoriesDeleteCategoryResponse, ShopOwnersReadShopOwnersData, ShopOwnersReadShopOwnersResponse, ShopOwnersCreateShopOwnerData, ShopOwnersCreateShopOwnerResponse, ShopOwnersReadShopOwnerData, ShopOwnersReadShopOwnerResponse, ShopOwnersUpdateShopOwnerData, ShopOwnersUpdateShopOwnerResponse, ShopOwnersDeleteShopOwnerData, ShopOwnersDeleteShopOwnerResponse, ShopsReadShopsData, ShopsReadShopsResponse, ShopsCreateShopData, ShopsCreateShopResponse, ShopsReadShopData, ShopsReadShopResponse, ShopsUpdateShopData, ShopsUpdateShopResponse, ShopsDeleteShopData, ShopsDeleteShopResponse, ShopsReplaceShopCategoriesData, ShopsReplaceShopCategoriesResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class CashiersService {
     /**
@@ -337,6 +337,272 @@ export class PrivateService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/private/users/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class ReceiptItemCategoriesService {
+    /**
+     * Read Receipt Item Categories
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.q
+     * @returns ReceiptItemCategorysPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReceiptItemCategories(data: ReceiptItemCategoriesReadReceiptItemCategoriesData = {}): CancelablePromise<ReceiptItemCategoriesReadReceiptItemCategoriesResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/receipt-item-categories/',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                q: data.q
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Receipt Item Category
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ReceiptItemCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static createReceiptItemCategory(data: ReceiptItemCategoriesCreateReceiptItemCategoryData): CancelablePromise<ReceiptItemCategoriesCreateReceiptItemCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/receipt-item-categories/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Receipt Item Category
+     * @param data The data for the request.
+     * @param data.categoryId
+     * @returns ReceiptItemCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReceiptItemCategory(data: ReceiptItemCategoriesReadReceiptItemCategoryData): CancelablePromise<ReceiptItemCategoriesReadReceiptItemCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/receipt-item-categories/{category_id}',
+            path: {
+                category_id: data.categoryId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Receipt Item Category
+     * @param data The data for the request.
+     * @param data.categoryId
+     * @param data.requestBody
+     * @returns ReceiptItemCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateReceiptItemCategory(data: ReceiptItemCategoriesUpdateReceiptItemCategoryData): CancelablePromise<ReceiptItemCategoriesUpdateReceiptItemCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/receipt-item-categories/{category_id}',
+            path: {
+                category_id: data.categoryId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Receipt Item Category
+     * @param data The data for the request.
+     * @param data.categoryId
+     * @returns ReceiptItemCategoryPublic Successful Response
+     * @throws ApiError
+     */
+    public static deleteReceiptItemCategory(data: ReceiptItemCategoriesDeleteReceiptItemCategoryData): CancelablePromise<ReceiptItemCategoriesDeleteReceiptItemCategoryResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/receipt-item-categories/{category_id}',
+            path: {
+                category_id: data.categoryId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class ReceiptItemsService {
+    /**
+     * Read Receipt Items
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @param data.sort
+     * @param data.order
+     * @param data.dateFrom
+     * @param data.dateTo
+     * @param data.categoryIds
+     * @returns ReceiptItemGroupsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReceiptItems(data: ReceiptItemsReadReceiptItemsData = {}): CancelablePromise<ReceiptItemsReadReceiptItemsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/receipt-items/',
+            query: {
+                skip: data.skip,
+                limit: data.limit,
+                sort: data.sort,
+                order: data.order,
+                date_from: data.dateFrom,
+                date_to: data.dateTo,
+                category_ids: data.categoryIds
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create Receipt Item
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ReceiptItemPublic Successful Response
+     * @throws ApiError
+     */
+    public static createReceiptItem(data: ReceiptItemsCreateReceiptItemData): CancelablePromise<ReceiptItemsCreateReceiptItemResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/receipt-items/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Receipt Item
+     * @param data The data for the request.
+     * @param data.itemId
+     * @returns ReceiptItemPublic Successful Response
+     * @throws ApiError
+     */
+    public static readReceiptItem(data: ReceiptItemsReadReceiptItemData): CancelablePromise<ReceiptItemsReadReceiptItemResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/receipt-items/{item_id}',
+            path: {
+                item_id: data.itemId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update Receipt Item
+     * @param data The data for the request.
+     * @param data.itemId
+     * @param data.requestBody
+     * @returns ReceiptItemPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateReceiptItem(data: ReceiptItemsUpdateReceiptItemData): CancelablePromise<ReceiptItemsUpdateReceiptItemResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/receipt-items/{item_id}',
+            path: {
+                item_id: data.itemId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Receipt Item
+     * @param data The data for the request.
+     * @param data.itemId
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteReceiptItem(data: ReceiptItemsDeleteReceiptItemData): CancelablePromise<ReceiptItemsDeleteReceiptItemResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/receipt-items/{item_id}',
+            path: {
+                item_id: data.itemId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Replace Receipt Item Categories
+     * @param data The data for the request.
+     * @param data.itemId
+     * @param data.requestBody
+     * @returns ReceiptItemPublic Successful Response
+     * @throws ApiError
+     */
+    public static replaceReceiptItemCategories(data: ReceiptItemsReplaceReceiptItemCategoriesData): CancelablePromise<ReceiptItemsReplaceReceiptItemCategoriesResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/receipt-items/{item_id}/categories',
+            path: {
+                item_id: data.itemId
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Replace Receipt Items Categories By Name
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static replaceReceiptItemsCategoriesByName(data: ReceiptItemsReplaceReceiptItemsCategoriesByNameData): CancelablePromise<ReceiptItemsReplaceReceiptItemsCategoriesByNameResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/receipt-items/categories/by-name',
             body: data.requestBody,
             mediaType: 'application/json',
             errors: {

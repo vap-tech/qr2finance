@@ -54,7 +54,7 @@ export const Body_login_login_access_tokenSchema = {
     },
     type: 'object',
     required: ['username', 'password'],
-    title: 'Body_login-login_access_token'
+    title: 'Body_login_login_access_token'
 } as const;
 
 export const Body_receipts_create_receipt_from_raw_fileSchema = {
@@ -67,7 +67,7 @@ export const Body_receipts_create_receipt_from_raw_fileSchema = {
     },
     type: 'object',
     required: ['file'],
-    title: 'Body_receipts-create_receipt_from_raw_file'
+    title: 'Body_receipts_create_receipt_from_raw_file'
 } as const;
 
 export const CashierCreateSchema = {
@@ -360,6 +360,208 @@ export const PrivateUserCreateSchema = {
     title: 'PrivateUserCreate'
 } as const;
 
+export const ReceiptItemCategoryCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'ReceiptItemCategoryCreate'
+} as const;
+
+export const ReceiptItemCategoryPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        is_active: {
+            type: 'boolean',
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name', 'is_active'],
+    title: 'ReceiptItemCategoryPublic'
+} as const;
+
+export const ReceiptItemCategoryUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        is_active: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Active'
+        }
+    },
+    type: 'object',
+    title: 'ReceiptItemCategoryUpdate'
+} as const;
+
+export const ReceiptItemCategorysPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ReceiptItemCategoryPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ReceiptItemCategorysPublic'
+} as const;
+
+export const ReceiptItemCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 500,
+            title: 'Name'
+        },
+        price: {
+            type: 'integer',
+            title: 'Price'
+        },
+        quantity: {
+            type: 'number',
+            title: 'Quantity'
+        },
+        sum: {
+            type: 'integer',
+            title: 'Sum'
+        },
+        measure: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 20
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Measure',
+            default: 'шт'
+        },
+        product_type: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Product Type'
+        },
+        gtin: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 20
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Gtin'
+        },
+        raw_product_code: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 50
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Raw Product Code'
+        },
+        receipt_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Receipt Id'
+        }
+    },
+    type: 'object',
+    required: ['name', 'price', 'quantity', 'sum', 'receipt_id'],
+    title: 'ReceiptItemCreate'
+} as const;
+
+export const ReceiptItemGroupPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            title: 'Name'
+        },
+        quantity: {
+            type: 'number',
+            title: 'Quantity'
+        },
+        sum: {
+            type: 'integer',
+            title: 'Sum'
+        },
+        items_count: {
+            type: 'integer',
+            title: 'Items Count'
+        }
+    },
+    type: 'object',
+    required: ['name', 'quantity', 'sum', 'items_count'],
+    title: 'ReceiptItemGroupPublic'
+} as const;
+
+export const ReceiptItemGroupsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ReceiptItemGroupPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ReceiptItemGroupsPublic'
+} as const;
+
 export const ReceiptItemInlineCreateSchema = {
     properties: {
         name: {
@@ -432,6 +634,97 @@ export const ReceiptItemInlineCreateSchema = {
     required: ['name', 'price', 'quantity', 'sum'],
     title: 'ReceiptItemInlineCreate',
     description: 'Receipt item payload for nested receipt creation.'
+} as const;
+
+export const ReceiptItemPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 500,
+            title: 'Name'
+        },
+        price: {
+            type: 'integer',
+            title: 'Price'
+        },
+        quantity: {
+            type: 'number',
+            title: 'Quantity'
+        },
+        sum: {
+            type: 'integer',
+            title: 'Sum'
+        },
+        measure: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 20
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Measure',
+            default: 'шт'
+        },
+        product_type: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Product Type'
+        },
+        gtin: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 20
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Gtin'
+        },
+        raw_product_code: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 50
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Raw Product Code'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        receipt_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Receipt Id'
+        },
+        category_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Category Ids'
+        }
+    },
+    type: 'object',
+    required: ['name', 'price', 'quantity', 'sum', 'id', 'receipt_id'],
+    title: 'ReceiptItemPublic'
 } as const;
 
 export const ReceiptItemReadSchema = {
@@ -515,6 +808,117 @@ export const ReceiptItemReadSchema = {
     type: 'object',
     required: ['name', 'price', 'quantity', 'sum', 'id', 'receipt_id'],
     title: 'ReceiptItemRead'
+} as const;
+
+export const ReceiptItemUpdateSchema = {
+    properties: {
+        name: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 500
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Name'
+        },
+        price: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Price'
+        },
+        quantity: {
+            anyOf: [
+                {
+                    type: 'number'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Quantity'
+        },
+        sum: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Sum'
+        },
+        measure: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 20
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Measure'
+        },
+        product_type: {
+            anyOf: [
+                {
+                    type: 'integer'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Product Type'
+        },
+        gtin: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 20
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Gtin'
+        },
+        raw_product_code: {
+            anyOf: [
+                {
+                    type: 'string',
+                    maxLength: 50
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Raw Product Code'
+        },
+        receipt_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Receipt Id'
+        }
+    },
+    type: 'object',
+    title: 'ReceiptItemUpdate'
 } as const;
 
 export const ReceiptReadSchema = {
@@ -694,6 +1098,14 @@ export const ReceiptShortSchema = {
             type: 'integer',
             title: 'Total Sum'
         },
+        cash_total_sum: {
+            type: 'integer',
+            title: 'Cash Total Sum'
+        },
+        ecash_total_sum: {
+            type: 'integer',
+            title: 'Ecash Total Sum'
+        },
         items_count: {
             type: 'integer',
             title: 'Items Count'
@@ -721,7 +1133,7 @@ export const ReceiptShortSchema = {
         }
     },
     type: 'object',
-    required: ['id', 'date_time', 'total_sum', 'items_count'],
+    required: ['id', 'date_time', 'total_sum', 'cash_total_sum', 'ecash_total_sum', 'items_count'],
     title: 'ReceiptShort'
 } as const;
 
@@ -822,6 +1234,43 @@ export const ReceiptsShortPublicSchema = {
     type: 'object',
     required: ['data', 'count'],
     title: 'ReceiptsShortPublic'
+} as const;
+
+export const SetReceiptItemCategoriesSchema = {
+    properties: {
+        category_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Category Ids'
+        }
+    },
+    type: 'object',
+    title: 'SetReceiptItemCategories'
+} as const;
+
+export const SetReceiptItemsCategoriesByNameSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 500,
+            minLength: 1,
+            title: 'Name'
+        },
+        category_ids: {
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            type: 'array',
+            title: 'Category Ids'
+        }
+    },
+    type: 'object',
+    required: ['name'],
+    title: 'SetReceiptItemsCategoriesByName'
 } as const;
 
 export const SetShopCategoriesSchema = {

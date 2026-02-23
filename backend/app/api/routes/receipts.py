@@ -105,7 +105,11 @@ def read_receipts(
 
 
 @router.get("/{id}", response_model=ReceiptWithItemsFullPublic)
-def read_receipt(session: SessionDep, current_user: CurrentUser, id: uuid.UUID) -> Any:
+def read_receipt(
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+) -> Any:
     """
     Get receipt by ID with items.
     """

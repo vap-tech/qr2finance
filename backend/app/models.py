@@ -509,6 +509,28 @@ class ReceiptRawBackup(SQLModel, table=True):
         self.source_hash = self._compute_hash(self.raw_json)
 
 
+class ReceiptItemCategoryLink(SQLModel, table=True):
+    """
+    Link-таблица M:N для категорий пунктов чека.
+    Primary key на (receipt_item_id, category_id) => нет дублей.
+    """
+
+    __tablename__ = "receipt_item_category_links"  # type: ignore
+    owner_id: uuid.UUID = Field(index=True)
+    receipt_item_id: uuid.UUID = Field(
+        foreign_key="receiptitem.id",
+        primary_key=True,
+    )
+    category_id: uuid.UUID = Field(
+        foreign_key="receipt_item_categories.id",
+        primary_key=True,
+    )
+    __table_args__ = (
+        Index("ix_receipt_item_cat_link_owner_item", "owner_id", "receipt_item_id"),
+        Index("ix_receipt_item_cat_link_owner_cat", "owner_id", "category_id"),
+    )
+
+
 class ReceiptItem(SQLModel, table=True):
     """Receipt item database model."""
 
@@ -527,6 +549,30 @@ class ReceiptItem(SQLModel, table=True):
 
     receipt_id: uuid.UUID = Field(foreign_key="receipt.id", nullable=False)
     receipt: Receipt | None = Relationship(back_populates="items")
+    categories: list["ReceiptItemCategory"] = Relationship(
+        back_populates="items",
+        link_model=ReceiptItemCategoryLink,
+    )
+
+
+class ReceiptItemCategory(SQLModel, table=True):
+    __tablename__ = "receipt_item_categories"  # type: ignore
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(index=True)
+    name: str = Field(sa_type=String, index=True)
+    is_active: bool = Field(default=True, index=True)
+    items: list[ReceiptItem] = Relationship(
+        back_populates="categories",
+        link_model=ReceiptItemCategoryLink,
+    )
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_id",
+            "name",
+            name="uq_receipt_item_categories_owner_name",
+        ),
+        Index("ix_receipt_item_categories_owner_name", "owner_id", "name"),
+    )
 
 
 # --- Receipt schemas ---
@@ -657,12 +703,58 @@ class ReceiptItemRead(ReceiptItemBase):
 
 
 class ReceiptItemPublic(ReceiptItemRead):
-    pass
+    category_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
 class ReceiptItemsPublic(SQLModel):
     data: list[ReceiptItemRead]
     count: int
+
+
+class ReceiptItemsWithCategoriesPublic(SQLModel):
+    data: list[ReceiptItemPublic]
+    count: int
+
+
+class ReceiptItemGroupPublic(SQLModel):
+    name: str
+    quantity: float
+    sum: int
+    items_count: int
+
+
+class ReceiptItemGroupsPublic(SQLModel):
+    data: list[ReceiptItemGroupPublic]
+    count: int
+
+
+class ReceiptItemCategoryCreate(SQLModel):
+    name: str
+
+
+class ReceiptItemCategoryPublic(SQLModel):
+    id: uuid.UUID
+    name: str
+    is_active: bool
+
+
+class ReceiptItemCategorysPublic(SQLModel):
+    data: list[ReceiptItemCategoryPublic]
+    count: int
+
+
+class ReceiptItemCategoryUpdate(SQLModel):
+    name: str | None = None
+    is_active: bool | None = None
+
+
+class SetReceiptItemCategories(SQLModel):
+    category_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class SetReceiptItemsCategoriesByName(SQLModel):
+    name: str = Field(min_length=1, max_length=500)
+    category_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
 class ReceiptWithItemsCreate(SQLModel):

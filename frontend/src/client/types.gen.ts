@@ -106,6 +106,50 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+export type ReceiptItemCategoryCreate = {
+    name: string;
+};
+
+export type ReceiptItemCategoryPublic = {
+    id: string;
+    name: string;
+    is_active: boolean;
+};
+
+export type ReceiptItemCategorysPublic = {
+    data: Array<ReceiptItemCategoryPublic>;
+    count: number;
+};
+
+export type ReceiptItemCategoryUpdate = {
+    name?: (string | null);
+    is_active?: (boolean | null);
+};
+
+export type ReceiptItemCreate = {
+    name: string;
+    price: number;
+    quantity: number;
+    sum: number;
+    measure?: (string | null);
+    product_type?: (number | null);
+    gtin?: (string | null);
+    raw_product_code?: (string | null);
+    receipt_id: string;
+};
+
+export type ReceiptItemGroupPublic = {
+    name: string;
+    quantity: number;
+    sum: number;
+    items_count: number;
+};
+
+export type ReceiptItemGroupsPublic = {
+    data: Array<ReceiptItemGroupPublic>;
+    count: number;
+};
+
 /**
  * Receipt item payload for nested receipt creation.
  */
@@ -120,6 +164,20 @@ export type ReceiptItemInlineCreate = {
     raw_product_code?: (string | null);
 };
 
+export type ReceiptItemPublic = {
+    name: string;
+    price: number;
+    quantity: number;
+    sum: number;
+    measure?: (string | null);
+    product_type?: (number | null);
+    gtin?: (string | null);
+    raw_product_code?: (string | null);
+    id: string;
+    receipt_id: string;
+    category_ids?: Array<(string)>;
+};
+
 export type ReceiptItemRead = {
     name: string;
     price: number;
@@ -131,6 +189,18 @@ export type ReceiptItemRead = {
     raw_product_code?: (string | null);
     id: string;
     receipt_id: string;
+};
+
+export type ReceiptItemUpdate = {
+    name?: (string | null);
+    price?: (number | null);
+    quantity?: (number | null);
+    sum?: (number | null);
+    measure?: (string | null);
+    product_type?: (number | null);
+    gtin?: (string | null);
+    raw_product_code?: (string | null);
+    receipt_id?: (string | null);
 };
 
 export type ReceiptRead = {
@@ -166,6 +236,8 @@ export type ReceiptShort = {
     id: string;
     date_time: string;
     total_sum: number;
+    cash_total_sum: number;
+    ecash_total_sum: number;
     items_count: number;
     shop_display?: (string | null);
     shop?: (ShopRead | null);
@@ -197,6 +269,15 @@ export type ReceiptWithItemsFullPublic = {
 export type ReceiptWithItemsPublic = {
     receipt: ReceiptRead;
     items: Array<ReceiptItemRead>;
+};
+
+export type SetReceiptItemCategories = {
+    category_ids?: Array<(string)>;
+};
+
+export type SetReceiptItemsCategoriesByName = {
+    name: string;
+    category_ids?: Array<(string)>;
 };
 
 export type SetShopCategories = {
@@ -478,6 +559,89 @@ export type PrivateCreateUserData = {
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type ReceiptItemCategoriesReadReceiptItemCategoriesData = {
+    limit?: number;
+    q?: (string | null);
+    skip?: number;
+};
+
+export type ReceiptItemCategoriesReadReceiptItemCategoriesResponse = (ReceiptItemCategorysPublic);
+
+export type ReceiptItemCategoriesCreateReceiptItemCategoryData = {
+    requestBody: ReceiptItemCategoryCreate;
+};
+
+export type ReceiptItemCategoriesCreateReceiptItemCategoryResponse = (ReceiptItemCategoryPublic);
+
+export type ReceiptItemCategoriesReadReceiptItemCategoryData = {
+    categoryId: string;
+};
+
+export type ReceiptItemCategoriesReadReceiptItemCategoryResponse = (ReceiptItemCategoryPublic);
+
+export type ReceiptItemCategoriesUpdateReceiptItemCategoryData = {
+    categoryId: string;
+    requestBody: ReceiptItemCategoryUpdate;
+};
+
+export type ReceiptItemCategoriesUpdateReceiptItemCategoryResponse = (ReceiptItemCategoryPublic);
+
+export type ReceiptItemCategoriesDeleteReceiptItemCategoryData = {
+    categoryId: string;
+};
+
+export type ReceiptItemCategoriesDeleteReceiptItemCategoryResponse = (ReceiptItemCategoryPublic);
+
+export type ReceiptItemsReadReceiptItemsData = {
+    categoryIds?: (Array<(string)> | null);
+    dateFrom?: (string | null);
+    dateTo?: (string | null);
+    limit?: number;
+    order?: 'asc' | 'desc';
+    skip?: number;
+    sort?: 'name' | 'quantity' | 'sum';
+};
+
+export type ReceiptItemsReadReceiptItemsResponse = (ReceiptItemGroupsPublic);
+
+export type ReceiptItemsCreateReceiptItemData = {
+    requestBody: ReceiptItemCreate;
+};
+
+export type ReceiptItemsCreateReceiptItemResponse = (ReceiptItemPublic);
+
+export type ReceiptItemsReadReceiptItemData = {
+    itemId: string;
+};
+
+export type ReceiptItemsReadReceiptItemResponse = (ReceiptItemPublic);
+
+export type ReceiptItemsUpdateReceiptItemData = {
+    itemId: string;
+    requestBody: ReceiptItemUpdate;
+};
+
+export type ReceiptItemsUpdateReceiptItemResponse = (ReceiptItemPublic);
+
+export type ReceiptItemsDeleteReceiptItemData = {
+    itemId: string;
+};
+
+export type ReceiptItemsDeleteReceiptItemResponse = (Message);
+
+export type ReceiptItemsReplaceReceiptItemCategoriesData = {
+    itemId: string;
+    requestBody: SetReceiptItemCategories;
+};
+
+export type ReceiptItemsReplaceReceiptItemCategoriesResponse = (ReceiptItemPublic);
+
+export type ReceiptItemsReplaceReceiptItemsCategoriesByNameData = {
+    requestBody: SetReceiptItemsCategoriesByName;
+};
+
+export type ReceiptItemsReplaceReceiptItemsCategoriesByNameResponse = (Message);
 
 export type ReceiptsReadReceiptsData = {
     limit?: number;

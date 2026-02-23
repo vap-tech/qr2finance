@@ -3,40 +3,48 @@ import {
   Building2,
   FolderTree,
   Home,
+  ListTree,
+  PackageSearch,
   ReceiptText,
   Store,
   User as UserIcon,
   Users,
-} from "lucide-react"
+} from "lucide-react";
 
-import { SidebarAppearance } from "@/components/Common/Appearance"
-import { Logo } from "@/components/Common/Logo"
+import { SidebarAppearance } from "@/components/Common/Appearance";
+import { Logo } from "@/components/Common/Logo";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-} from "@/components/ui/sidebar"
-import useAuth from "@/hooks/useAuth"
-import { type Item, Main } from "./Main"
-import { User } from "./User"
+} from "@/components/ui/sidebar";
+import useAuth from "@/hooks/useAuth";
+import { type Item, Main } from "./Main";
+import { User } from "./User";
 
 const baseItems: Item[] = [
   { icon: Home, title: "Dashboard", path: "/" },
   { icon: Briefcase, title: "Items", path: "/items" },
   { icon: Store, title: "Shops", path: "/shops" },
   { icon: ReceiptText, title: "Receipts", path: "/receipts" },
+  { icon: PackageSearch, title: "Receipt Items", path: "/receipt-items" },
+  {
+    icon: ListTree,
+    title: "Receipt Item Categories",
+    path: "/receipt-item-categories",
+  },
   { icon: UserIcon, title: "Cashiers", path: "/cashiers" },
   { icon: Building2, title: "Rightsholders", path: "/rightsholders" },
   { icon: FolderTree, title: "Shop Categories", path: "/shop-categories" },
-]
+];
 
 export function AppSidebar() {
-  const { user: currentUser } = useAuth()
+  const { user: currentUser } = useAuth();
 
   const items = currentUser?.is_superuser
     ? [...baseItems, { icon: Users, title: "Admin", path: "/admin" }]
-    : baseItems
+    : baseItems;
 
   return (
     <Sidebar collapsible="icon">
@@ -51,7 +59,7 @@ export function AppSidebar() {
         <User user={currentUser} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
 
-export default AppSidebar
+export default AppSidebar;

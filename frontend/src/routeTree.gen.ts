@@ -20,6 +20,8 @@ import { Route as LayoutShopCategoriesRouteImport } from './routes/_layout/shop-
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutRightsholdersRouteImport } from './routes/_layout/rightsholders'
 import { Route as LayoutReceiptsRouteImport } from './routes/_layout/receipts'
+import { Route as LayoutReceiptItemsRouteImport } from './routes/_layout/receipt-items'
+import { Route as LayoutReceiptItemCategoriesRouteImport } from './routes/_layout/receipt-item-categories'
 import { Route as LayoutItemsRouteImport } from './routes/_layout/items'
 import { Route as LayoutCashiersRouteImport } from './routes/_layout/cashiers'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
@@ -84,6 +86,17 @@ const LayoutReceiptsRoute = LayoutReceiptsRouteImport.update({
   path: '/receipts',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutReceiptItemsRoute = LayoutReceiptItemsRouteImport.update({
+  id: '/receipt-items',
+  path: '/receipt-items',
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutReceiptItemCategoriesRoute =
+  LayoutReceiptItemCategoriesRouteImport.update({
+    id: '/receipt-item-categories',
+    path: '/receipt-item-categories',
+    getParentRoute: () => LayoutRoute,
+  } as any)
 const LayoutItemsRoute = LayoutItemsRouteImport.update({
   id: '/items',
   path: '/items',
@@ -109,6 +122,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof LayoutAdminRoute
   '/cashiers': typeof LayoutCashiersRoute
   '/items': typeof LayoutItemsRoute
+  '/receipt-item-categories': typeof LayoutReceiptItemCategoriesRoute
+  '/receipt-items': typeof LayoutReceiptItemsRoute
   '/receipts': typeof LayoutReceiptsRoute
   '/rightsholders': typeof LayoutRightsholdersRoute
   '/settings': typeof LayoutSettingsRoute
@@ -123,6 +138,8 @@ export interface FileRoutesByTo {
   '/admin': typeof LayoutAdminRoute
   '/cashiers': typeof LayoutCashiersRoute
   '/items': typeof LayoutItemsRoute
+  '/receipt-item-categories': typeof LayoutReceiptItemCategoriesRoute
+  '/receipt-items': typeof LayoutReceiptItemsRoute
   '/receipts': typeof LayoutReceiptsRoute
   '/rightsholders': typeof LayoutRightsholdersRoute
   '/settings': typeof LayoutSettingsRoute
@@ -140,6 +157,8 @@ export interface FileRoutesById {
   '/_layout/admin': typeof LayoutAdminRoute
   '/_layout/cashiers': typeof LayoutCashiersRoute
   '/_layout/items': typeof LayoutItemsRoute
+  '/_layout/receipt-item-categories': typeof LayoutReceiptItemCategoriesRoute
+  '/_layout/receipt-items': typeof LayoutReceiptItemsRoute
   '/_layout/receipts': typeof LayoutReceiptsRoute
   '/_layout/rightsholders': typeof LayoutRightsholdersRoute
   '/_layout/settings': typeof LayoutSettingsRoute
@@ -158,6 +177,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cashiers'
     | '/items'
+    | '/receipt-item-categories'
+    | '/receipt-items'
     | '/receipts'
     | '/rightsholders'
     | '/settings'
@@ -172,6 +193,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/cashiers'
     | '/items'
+    | '/receipt-item-categories'
+    | '/receipt-items'
     | '/receipts'
     | '/rightsholders'
     | '/settings'
@@ -188,6 +211,8 @@ export interface FileRouteTypes {
     | '/_layout/admin'
     | '/_layout/cashiers'
     | '/_layout/items'
+    | '/_layout/receipt-item-categories'
+    | '/_layout/receipt-items'
     | '/_layout/receipts'
     | '/_layout/rightsholders'
     | '/_layout/settings'
@@ -283,6 +308,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutReceiptsRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/receipt-items': {
+      id: '/_layout/receipt-items'
+      path: '/receipt-items'
+      fullPath: '/receipt-items'
+      preLoaderRoute: typeof LayoutReceiptItemsRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    '/_layout/receipt-item-categories': {
+      id: '/_layout/receipt-item-categories'
+      path: '/receipt-item-categories'
+      fullPath: '/receipt-item-categories'
+      preLoaderRoute: typeof LayoutReceiptItemCategoriesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/items': {
       id: '/_layout/items'
       path: '/items'
@@ -311,6 +350,8 @@ interface LayoutRouteChildren {
   LayoutAdminRoute: typeof LayoutAdminRoute
   LayoutCashiersRoute: typeof LayoutCashiersRoute
   LayoutItemsRoute: typeof LayoutItemsRoute
+  LayoutReceiptItemCategoriesRoute: typeof LayoutReceiptItemCategoriesRoute
+  LayoutReceiptItemsRoute: typeof LayoutReceiptItemsRoute
   LayoutReceiptsRoute: typeof LayoutReceiptsRoute
   LayoutRightsholdersRoute: typeof LayoutRightsholdersRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
@@ -323,6 +364,8 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAdminRoute: LayoutAdminRoute,
   LayoutCashiersRoute: LayoutCashiersRoute,
   LayoutItemsRoute: LayoutItemsRoute,
+  LayoutReceiptItemCategoriesRoute: LayoutReceiptItemCategoriesRoute,
+  LayoutReceiptItemsRoute: LayoutReceiptItemsRoute,
   LayoutReceiptsRoute: LayoutReceiptsRoute,
   LayoutRightsholdersRoute: LayoutRightsholdersRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,

@@ -5,6 +5,8 @@ from app.api.routes import (
     items,
     login,
     private,
+    receipt_item_categories,
+    receipt_items,
     receipts,
     shop,
     shop_categories,
@@ -15,6 +17,8 @@ from app.api.routes import (
 from app.core.config import settings
 
 api_router = APIRouter()
+api_router.include_router(receipt_items.router)
+api_router.include_router(receipt_item_categories.router)
 api_router.include_router(shop_categories.router)
 api_router.include_router(cashiers.router)
 api_router.include_router(shop_owners.router)
