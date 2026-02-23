@@ -619,6 +619,7 @@ export class ReceiptsService {
      * @param data The data for the request.
      * @param data.skip
      * @param data.limit
+     * @param data.itemName
      * @returns ReceiptsShortPublic Successful Response
      * @throws ApiError
      */
@@ -628,7 +629,8 @@ export class ReceiptsService {
             url: '/api/v1/receipts/',
             query: {
                 skip: data.skip,
-                limit: data.limit
+                limit: data.limit,
+                item_name: data.itemName
             },
             errors: {
                 422: 'Validation Error'

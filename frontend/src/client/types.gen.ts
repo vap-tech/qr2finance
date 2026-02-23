@@ -644,6 +644,7 @@ export type ReceiptItemsReplaceReceiptItemsCategoriesByNameData = {
 export type ReceiptItemsReplaceReceiptItemsCategoriesByNameResponse = (Message);
 
 export type ReceiptsReadReceiptsData = {
+    itemName?: (string | null);
     limit?: number;
     skip?: number;
 };

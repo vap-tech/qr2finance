@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, cast
 
 from fastapi import APIRouter, Body, File, HTTPException, UploadFile
+from sqlalchemy import exists
 from sqlmodel import col, func, select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -58,7 +59,11 @@ def _build_shop_display(shop: ShopRead | None) -> str | None:
 
 @router.get("/", response_model=ReceiptsShortPublic)
 def read_receipts(
-    session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+    item_name: str | None = None,
 ) -> Any:
     """
     Retrieve receipts (short view).
@@ -81,6 +86,20 @@ def read_receipts(
             col(Receipt.owner_id) == current_user.id
         )
         statement = statement.where(col(Receipt.owner_id) == current_user.id)
+
+    if item_name := (item_name.strip() if item_name else None):
+        item_exists = (
+            select(1)
+            .select_from(ReceiptItem)
+            .where(
+                col(ReceiptItem.receipt_id) == col(Receipt.id),
+                col(ReceiptItem.name).ilike(f"%{item_name}%"),
+            )
+            .correlate(Receipt)
+            .exists()
+        )
+        count_statement = count_statement.where(item_exists)
+        statement = statement.where(item_exists)
 
     count = cast(int, session.exec(count_statement).one())
     rows = cast(list[tuple[Receipt, int]], session.exec(statement).all())

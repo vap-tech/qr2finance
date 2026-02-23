@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
 import type { ReceiptItemGroupPublic } from "@/client";
+import { ReceiptItemActionsMenu } from "./ReceiptItemActionsMenu";
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("ru-RU", {
@@ -60,6 +61,15 @@ export const columns: ColumnDef<ReceiptItemGroupPublic>[] = [
       <span className="tabular-nums font-semibold">
         {formatMoney(row.original.sum)}
       </span>
+    ),
+  },
+  {
+    id: "actions",
+    header: () => <span className="sr-only">Actions</span>,
+    cell: ({ row }) => (
+      <div className="flex justify-end">
+        <ReceiptItemActionsMenu item={row.original} />
+      </div>
     ),
   },
 ];
