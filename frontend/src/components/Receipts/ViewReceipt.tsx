@@ -1,19 +1,24 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query";
 
-import { ReceiptsService } from "@/client"
+import { ReceiptsService } from "@/client";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { Separator } from "@/components/ui/separator"
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ViewReceiptProps {
-  id: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  id: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 function formatMoney(value: number) {
@@ -21,17 +26,19 @@ function formatMoney(value: number) {
     style: "currency",
     currency: "RUB",
     minimumFractionDigits: 2,
-  }).format(value / 100)
+  }).format(value / 100);
 }
+
+const SHOP_PREVIEW_LIMIT = 25;
 
 const ViewReceipt = ({ id, open, onOpenChange }: ViewReceiptProps) => {
   const query = useQuery({
     queryKey: ["receipt", id],
     queryFn: () => ReceiptsService.readReceipt({ id }),
     enabled: open,
-  })
+  });
 
-  const receiptData = query.data
+  const receiptData = query.data;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -81,11 +88,38 @@ const ViewReceipt = ({ id, open, onOpenChange }: ViewReceiptProps) => {
               </div>
               <div>
                 <span className="text-muted-foreground">Shop: </span>
-                <span>
-                  {receiptData.shop?.retail_name ||
-                    receiptData.shop?.address ||
-                    "Unknown"}
-                </span>
+                <div className="inline-flex max-w-[220px] flex-col align-top">
+                  {(() => {
+                    const shopName =
+                      receiptData.shop?.retail_name ||
+                      receiptData.shop?.address ||
+                      "Unknown";
+                    const shopAddress = receiptData.shop?.address?.trim() || "";
+                    const preview =
+                      shopName.length > SHOP_PREVIEW_LIMIT
+                        ? `${shopName.slice(0, SHOP_PREVIEW_LIMIT)}...`
+                        : shopName;
+                    return (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="block w-full cursor-help overflow-hidden text-ellipsis whitespace-nowrap">
+                            {preview}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                          <div className="max-w-xs whitespace-pre-wrap">
+                            <div>{shopName}</div>
+                            {shopAddress && shopAddress !== shopName && (
+                              <div className="mt-1 text-[11px] opacity-90">
+                                {shopAddress}
+                              </div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })()}
+                </div>
               </div>
               <div>
                 <span className="text-muted-foreground">Items: </span>
@@ -131,7 +165,7 @@ const ViewReceipt = ({ id, open, onOpenChange }: ViewReceiptProps) => {
         )}
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default ViewReceipt
+export default ViewReceipt;
