@@ -89,7 +89,7 @@ const ViewReceipt = ({ id, open, onOpenChange }: ViewReceiptProps) => {
               </div>
               <div>
                 <span className="text-muted-foreground">Shop: </span>
-                <div className="inline-flex max-w-[220px] flex-col align-top">
+                <div className="inline-flex max-w-55 flex-col align-top">
                   {(() => {
                     const shopName =
                       receiptData.shop?.retail_name ||
