@@ -37,6 +37,45 @@ export type CashierUpdate = {
     inn: string;
 };
 
+export type DashboardPaymentSplit = {
+    cash_total_sum: number;
+    ecash_total_sum: number;
+    total_sum: number;
+    cash_percent: number;
+    ecash_percent: number;
+};
+
+export type DashboardResponse = {
+    totals: DashboardTotals;
+    payment_split: DashboardPaymentSplit;
+    timeseries: Array<DashboardTimeseriesPoint>;
+    top_shops: Array<DashboardTopShop>;
+    latest_receipts: ReceiptsShortPublic;
+};
+
+export type DashboardTimeseriesPoint = {
+    date: string;
+    revenue: number;
+    receipts_count: number;
+    avg_receipt: number;
+};
+
+export type DashboardTopShop = {
+    shop_id: string;
+    shop_display?: (string | null);
+    total_sum: number;
+    receipts_count: number;
+    shop_name?: (string | null);
+    shop_address?: (string | null);
+};
+
+export type DashboardTotals = {
+    revenue: number;
+    receipts_count: number;
+    avg_receipt: number;
+    unique_shops: number;
+};
+
 /**
  * Health check response.
  */
@@ -360,6 +399,7 @@ export type ShopRead = {
     is_active: boolean;
     shop_owner_id: (string | null);
     shop_owner?: (ShopOwnerPublic | null);
+    category_ids: Array<(string)>;
 };
 
 /**
@@ -463,6 +503,17 @@ export type ValidationError = {
     msg: string;
     type: string;
 };
+
+export type AnalyticsReadDashboardData = {
+    cashierId?: (string | null);
+    dateFrom?: (string | null);
+    dateTo?: (string | null);
+    latestLimit?: number;
+    shopCategoryId?: (string | null);
+    shopId?: (string | null);
+};
+
+export type AnalyticsReadDashboardResponse = (DashboardResponse);
 
 export type CashiersReadCashiersData = {
     limit?: number;

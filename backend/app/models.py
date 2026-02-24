@@ -366,10 +366,11 @@ class ShopRead(SQLModel):
     is_active: bool
     shop_owner_id: uuid.UUID | None
     shop_owner: ShopOwnerPublic | None = None
+    category_ids: list[uuid.UUID] = Field(default_factory=list)
 
 
 class ShopPublic(ShopRead):
-    category_ids: list[uuid.UUID] = Field(default_factory=list)
+    pass
 
 
 class ShopsPublic(SQLModel):
@@ -736,6 +737,46 @@ class ReceiptItemCategoryPublic(SQLModel):
     id: uuid.UUID
     name: str
     is_active: bool
+
+
+# --- Analytics schemas ---
+class DashboardTotals(SQLModel):
+    revenue: int
+    receipts_count: int
+    avg_receipt: float
+    unique_shops: int
+
+
+class DashboardPaymentSplit(SQLModel):
+    cash_total_sum: int
+    ecash_total_sum: int
+    total_sum: int
+    cash_percent: float
+    ecash_percent: float
+
+
+class DashboardTimeseriesPoint(SQLModel):
+    date: str  # DD-MM-YYYY
+    revenue: int
+    receipts_count: int
+    avg_receipt: float
+
+
+class DashboardTopShop(SQLModel):
+    shop_id: uuid.UUID
+    shop_display: str | None = None
+    shop_name: str | None = None
+    shop_address: str | None = None
+    total_sum: int
+    receipts_count: int
+
+
+class DashboardResponse(SQLModel):
+    totals: DashboardTotals
+    payment_split: DashboardPaymentSplit
+    timeseries: list[DashboardTimeseriesPoint]
+    top_shops: list[DashboardTopShop]
+    latest_receipts: ReceiptsShortPublic
 
 
 class ReceiptItemCategorysPublic(SQLModel):

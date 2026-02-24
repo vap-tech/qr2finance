@@ -1653,10 +1653,18 @@ export const ShopReadSchema = {
                     type: 'null'
                 }
             ]
+        },
+        category_ids: {
+            type: 'array',
+            items: {
+                type: 'string',
+                format: 'uuid'
+            },
+            title: 'Category Ids'
         }
     },
     type: 'object',
-    required: ['id', 'retail_name', 'address', 'is_favorite', 'notes', 'is_active', 'shop_owner_id'],
+    required: ['id', 'retail_name', 'address', 'is_favorite', 'notes', 'is_active', 'shop_owner_id', 'category_ids'],
     title: 'ShopRead'
 } as const;
 
@@ -2108,4 +2116,165 @@ export const ValidationErrorSchema = {
     type: 'object',
     required: ['loc', 'msg', 'type'],
     title: 'ValidationError'
+} as const;
+
+export const DashboardTotalsSchema = {
+    title: 'DashboardTotals',
+    type: 'object',
+    properties: {
+        revenue: {
+            type: 'integer',
+            title: 'Revenue'
+        },
+        receipts_count: {
+            type: 'integer',
+            title: 'Receipts Count'
+        },
+        avg_receipt: {
+            type: 'number',
+            title: 'Avg Receipt'
+        },
+        unique_shops: {
+            type: 'integer',
+            title: 'Unique Shops'
+        }
+    },
+    required: ['revenue', 'receipts_count', 'avg_receipt', 'unique_shops']
+} as const;
+
+export const DashboardPaymentSplitSchema = {
+    title: 'DashboardPaymentSplit',
+    type: 'object',
+    properties: {
+        cash_total_sum: {
+            type: 'integer',
+            title: 'Cash Total Sum'
+        },
+        ecash_total_sum: {
+            type: 'integer',
+            title: 'Ecash Total Sum'
+        },
+        total_sum: {
+            type: 'integer',
+            title: 'Total Sum'
+        },
+        cash_percent: {
+            type: 'number',
+            title: 'Cash Percent'
+        },
+        ecash_percent: {
+            type: 'number',
+            title: 'Ecash Percent'
+        }
+    },
+    required: ['cash_total_sum', 'ecash_total_sum', 'total_sum', 'cash_percent', 'ecash_percent']
+} as const;
+
+export const DashboardTimeseriesPointSchema = {
+    title: 'DashboardTimeseriesPoint',
+    type: 'object',
+    properties: {
+        date: {
+            type: 'string',
+            title: 'Date'
+        },
+        revenue: {
+            type: 'integer',
+            title: 'Revenue'
+        },
+        receipts_count: {
+            type: 'integer',
+            title: 'Receipts Count'
+        },
+        avg_receipt: {
+            type: 'number',
+            title: 'Avg Receipt'
+        }
+    },
+    required: ['date', 'revenue', 'receipts_count', 'avg_receipt']
+} as const;
+
+export const DashboardTopShopSchema = {
+    title: 'DashboardTopShop',
+    type: 'object',
+    properties: {
+        shop_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Shop Id'
+        },
+        shop_display: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shop Display'
+        },
+        total_sum: {
+            type: 'integer',
+            title: 'Total Sum'
+        },
+        receipts_count: {
+            type: 'integer',
+            title: 'Receipts Count'
+        },
+        shop_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shop Name'
+        },
+        shop_address: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shop Address'
+        }
+    },
+    required: ['shop_id', 'total_sum', 'receipts_count']
+} as const;
+
+export const DashboardResponseSchema = {
+    title: 'DashboardResponse',
+    type: 'object',
+    properties: {
+        totals: {
+            '$ref': '#/components/schemas/DashboardTotals'
+        },
+        payment_split: {
+            '$ref': '#/components/schemas/DashboardPaymentSplit'
+        },
+        timeseries: {
+            type: 'array',
+            items: {
+                '$ref': '#/components/schemas/DashboardTimeseriesPoint'
+            },
+            title: 'Timeseries'
+        },
+        top_shops: {
+            type: 'array',
+            items: {
+                '$ref': '#/components/schemas/DashboardTopShop'
+            },
+            title: 'Top Shops'
+        },
+        latest_receipts: {
+            '$ref': '#/components/schemas/ReceiptsShortPublic'
+        }
+    },
+    required: ['totals', 'payment_split', 'timeseries', 'top_shops', 'latest_receipts']
 } as const;

@@ -2,13 +2,14 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import func, select
+from sqlmodel import col, func, select
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
     Message,
     SetShopCategories,
     Shop,
+    ShopCategoryLink,
     ShopCreate,
     ShopOwnerPublic,
     ShopPublic,
@@ -78,6 +79,20 @@ def read_shops(
     )
     shops = session.exec(statement).all()
 
+    shop_ids = [shop.id for shop in shops]
+    category_map: dict[uuid.UUID, list[uuid.UUID]] = {sid: [] for sid in shop_ids}
+    if shop_ids:
+        link_stmt = select(
+            ShopCategoryLink.shop_id, ShopCategoryLink.category_id
+        ).where(col(ShopCategoryLink.shop_id).in_(shop_ids))
+        if not current_user.is_superuser:
+            link_stmt = link_stmt.where(
+                col(ShopCategoryLink.owner_id) == current_user.id
+            )
+        links = session.exec(link_stmt).all()
+        for shop_id, category_id in links:
+            category_map.setdefault(shop_id, []).append(category_id)
+
     data: list[ShopRead] = []
     for shop in shops:
         shop_owner = (
@@ -93,6 +108,7 @@ def read_shops(
                 is_active=shop.is_active,
                 shop_owner_id=shop.shop_owner_id,
                 shop_owner=shop_owner,
+                category_ids=category_map.get(shop.id, []),
             )
         )
 
