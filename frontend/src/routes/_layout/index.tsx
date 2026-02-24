@@ -3,15 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CalendarDays, CreditCard, Wallet } from "lucide-react";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import type { DateRange } from "react-day-picker";
-import {
-  Bar,
-  CartesianGrid,
-  Line,
-  LineChart,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 import {
   AnalyticsService,
@@ -249,7 +241,7 @@ function DashboardContent() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Select value={shopCategoryId} onValueChange={setShopCategoryId}>
-              <SelectTrigger className="w-full min-w-[180px]">
+              <SelectTrigger className="w-full min-w-45">
                 <SelectValue placeholder="All categories" />
               </SelectTrigger>
               <SelectContent>
@@ -262,7 +254,7 @@ function DashboardContent() {
               </SelectContent>
             </Select>
             <Select value={shopId} onValueChange={setShopId}>
-              <SelectTrigger className="w-full min-w-[180px]">
+              <SelectTrigger className="w-full min-w-45">
                 <SelectValue placeholder="All shops" />
               </SelectTrigger>
               <SelectContent>
@@ -275,7 +267,7 @@ function DashboardContent() {
               </SelectContent>
             </Select>
             <Select value={cashierId} onValueChange={setCashierId}>
-              <SelectTrigger className="w-full min-w-[180px]">
+              <SelectTrigger className="w-full min-w-45">
                 <SelectValue placeholder="All cashiers" />
               </SelectTrigger>
               <SelectContent>
@@ -351,7 +343,7 @@ function DashboardContent() {
             <CardTitle>Spending trend</CardTitle>
             <CardDescription>Daily totals</CardDescription>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-80">
             {dashboard.timeseries.length === 0 ? (
               <Empty className="border-none p-0">
                 <EmptyHeader>
@@ -385,7 +377,7 @@ function DashboardContent() {
                       if (!revenueItem) return null;
 
                       return (
-                        <div className="bg-popover/80 backdrop-blur text-popover-foreground border border-border/70 ring-1 ring-black/5 dark:ring-white/10 grid min-w-[8rem] items-start gap-1.5 rounded-lg px-2.5 py-1.5 text-xs shadow-xl">
+                        <div className="bg-popover/80 backdrop-blur text-popover-foreground border border-border/70 ring-1 ring-black/5 dark:ring-white/10 grid min-w-32 items-start gap-1.5 rounded-lg px-2.5 py-1.5 text-xs shadow-xl">
                           <div className="font-medium">{label}</div>
                           <div className="text-foreground font-mono font-medium tabular-nums">
                             {formatMoney(Number(revenueItem.value))}
@@ -439,7 +431,7 @@ function DashboardContent() {
                     <TableRow key={shop.shop_id}>
                       <TableCell className="font-medium">
                         <span
-                          className="inline-flex max-w-[220px] truncate"
+                          className="inline-flex max-w-55 truncate"
                           title={
                             [shop.shop_name, shop.shop_address]
                               .filter(Boolean)
@@ -572,12 +564,12 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="grid gap-6 lg:grid-cols-3">
-        <Skeleton className="h-[380px] w-full lg:col-span-2" />
-        <Skeleton className="h-[380px] w-full" />
+        <Skeleton className="h-95 w-full lg:col-span-2" />
+        <Skeleton className="h-95 w-full" />
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
-        <Skeleton className="h-[360px] w-full" />
-        <Skeleton className="h-[360px] w-full" />
+        <Skeleton className="h-90 w-full" />
+        <Skeleton className="h-90 w-full" />
       </div>
     </div>
   );
