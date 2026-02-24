@@ -1,13 +1,16 @@
 import io
 import json
+import os
+import tempfile
 import uuid
 import zipfile
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, cast
 
 from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse
 from sqlmodel import col, func, select
+from starlette.background import BackgroundTask
 
 from app.api.deps import CurrentUser, SessionDep
 from app.models import (
@@ -133,7 +136,7 @@ def export_receipts(
     current_user: CurrentUser,
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
-) -> StreamingResponse:
+) -> FileResponse:
     """
     Export receipts as JSONL with raw payloads and source hashes.
     """
@@ -161,23 +164,27 @@ def export_receipts(
         )
         statement = statement.where(col(Receipt.date_time) < dt_to_exclusive)
 
-    def iter_lines():
-        for source_hash, raw_json in session.exec(statement):
-            payload = {"source_hash": source_hash, "raw_json": raw_json}
-            yield json.dumps(payload, ensure_ascii=False) + "\n"
-
     archive_date = date.today().isoformat()
     jsonl_name = f"receipts-{archive_date}.jsonl"
     zip_name = f"{jsonl_name}.zip"
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as zip_file:
-        with zip_file.open(jsonl_name, "w") as target:
-            for line in iter_lines():
-                target.write(line.encode("utf-8"))
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+    temp_path = temp_file.name
+    temp_file.close()
 
-    buffer.seek(0)
-    headers = {"Content-Disposition": f'attachment; filename="{zip_name}"'}
-    return StreamingResponse(buffer, media_type="application/zip", headers=headers)
+    with zipfile.ZipFile(temp_path, "w", compression=zipfile.ZIP_DEFLATED) as zip_file:
+        with zip_file.open(jsonl_name, "w") as target:
+            for source_hash, raw_json in session.exec(statement):
+                payload = {"source_hash": source_hash, "raw_json": raw_json}
+                target.write(
+                    (json.dumps(payload, ensure_ascii=False) + "\n").encode("utf-8")
+                )
+
+    return FileResponse(
+        temp_path,
+        media_type="application/zip",
+        filename=zip_name,
+        background=BackgroundTask(os.unlink, temp_path),
+    )
 
 
 @router.post("/import", response_model=ReceiptImportSummary)
@@ -195,15 +202,10 @@ def import_receipts(
     errors: list[ReceiptImportError] = []
 
     file.file.seek(0)
-    raw_bytes = file.file.read()
-    if not raw_bytes:
-        raise HTTPException(status_code=422, detail="Empty file")
-
-    stream: io.TextIOBase
-    if raw_bytes.startswith(b"PK"):
+    if zipfile.is_zipfile(file.file):
+        file.file.seek(0)
         try:
-            zip_buffer = io.BytesIO(raw_bytes)
-            with zipfile.ZipFile(zip_buffer) as zip_file:
+            with zipfile.ZipFile(file.file) as zip_file:
                 names = zip_file.namelist()
                 if not names:
                     raise HTTPException(status_code=422, detail="Empty zip archive")
@@ -211,16 +213,67 @@ def import_receipts(
                     (name for name in names if name.lower().endswith(".jsonl")),
                     names[0],
                 )
-                with zip_file.open(jsonl_name) as extracted:
-                    data = extracted.read()
-            stream = io.StringIO(data.decode("utf-8"))
+                extracted = zip_file.open(jsonl_name)
+                stream: io.TextIOBase = io.TextIOWrapper(extracted, encoding="utf-8")
+                for line_no, line in enumerate(stream, start=1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                        if not isinstance(row, dict):
+                            raise ValueError("Row must be a JSON object")
+
+                        raw_json = row.get("raw_json")
+                        source_hash = row.get("source_hash")
+                        if raw_json is None:
+                            raise ValueError("raw_json is required")
+                        if not isinstance(raw_json, dict):
+                            raise ValueError("raw_json must be an object")
+                        if source_hash is None:
+                            source_hash = ReceiptRawBackup._compute_hash(raw_json)
+
+                        exists = session.exec(
+                            select(ReceiptRawBackup.id).where(
+                                col(ReceiptRawBackup.source_hash) == source_hash
+                            )
+                        ).first()
+                        if exists:
+                            skipped += 1
+                            continue
+
+                        _create_receipt_from_raw_payload(
+                            session=session,
+                            current_user=current_user,
+                            payload=raw_json,
+                        )
+                        imported += 1
+                    except HTTPException as exc:
+                        if session.in_transaction():
+                            session.rollback()
+                        failed += 1
+                        errors.append(
+                            ReceiptImportError(line=line_no, detail=str(exc.detail))
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        if session.in_transaction():
+                            session.rollback()
+                        failed += 1
+                        errors.append(ReceiptImportError(line=line_no, detail=str(exc)))
+                return ReceiptImportSummary(
+                    imported=imported,
+                    skipped=skipped,
+                    failed=failed,
+                    errors=errors,
+                )
         except (zipfile.BadZipFile, UnicodeDecodeError) as exc:
             raise HTTPException(
                 status_code=422, detail="Invalid zip or encoding"
             ) from exc
     else:
+        file.file.seek(0)
         try:
-            stream = io.StringIO(raw_bytes.decode("utf-8"))
+            stream = io.TextIOWrapper(file.file, encoding="utf-8")
         except UnicodeDecodeError as exc:
             raise HTTPException(status_code=422, detail="File must be UTF-8") from exc
 
