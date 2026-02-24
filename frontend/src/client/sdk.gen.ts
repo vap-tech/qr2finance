@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AnalyticsReadDashboardData, AnalyticsReadDashboardResponse, CashiersReadCashiersData, CashiersReadCashiersResponse, CashiersCreateCashierData, CashiersCreateCashierResponse, CashiersReadCashierData, CashiersReadCashierResponse, CashiersUpdateCashierData, CashiersUpdateCashierResponse, CashiersDeleteCashierData, CashiersDeleteCashierResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ReceiptItemCategoriesReadReceiptItemCategoriesData, ReceiptItemCategoriesReadReceiptItemCategoriesResponse, ReceiptItemCategoriesCreateReceiptItemCategoryData, ReceiptItemCategoriesCreateReceiptItemCategoryResponse, ReceiptItemCategoriesReadReceiptItemCategoryData, ReceiptItemCategoriesReadReceiptItemCategoryResponse, ReceiptItemCategoriesUpdateReceiptItemCategoryData, ReceiptItemCategoriesUpdateReceiptItemCategoryResponse, ReceiptItemCategoriesDeleteReceiptItemCategoryData, ReceiptItemCategoriesDeleteReceiptItemCategoryResponse, ReceiptItemsReadReceiptItemsData, ReceiptItemsReadReceiptItemsResponse, ReceiptItemsCreateReceiptItemData, ReceiptItemsCreateReceiptItemResponse, ReceiptItemsReadReceiptItemData, ReceiptItemsReadReceiptItemResponse, ReceiptItemsUpdateReceiptItemData, ReceiptItemsUpdateReceiptItemResponse, ReceiptItemsDeleteReceiptItemData, ReceiptItemsDeleteReceiptItemResponse, ReceiptItemsReplaceReceiptItemCategoriesData, ReceiptItemsReplaceReceiptItemCategoriesResponse, ReceiptItemsReplaceReceiptItemsCategoriesByNameData, ReceiptItemsReplaceReceiptItemsCategoriesByNameResponse, ReceiptsReadReceiptsData, ReceiptsReadReceiptsResponse, ReceiptsReadReceiptData, ReceiptsReadReceiptResponse, ReceiptsDeleteReceiptData, ReceiptsDeleteReceiptResponse, ReceiptsAddReceiptItemsData, ReceiptsAddReceiptItemsResponse, ReceiptsCreateReceiptFromRawJsonData, ReceiptsCreateReceiptFromRawJsonResponse, ReceiptsCreateReceiptFromRawFileData, ReceiptsCreateReceiptFromRawFileResponse, ShopCategoriesReadShopCategoriesData, ShopCategoriesReadShopCategoriesResponse, ShopCategoriesCreateCategoryData, ShopCategoriesCreateCategoryResponse, ShopCategoriesReadShopCategorieData, ShopCategoriesReadShopCategorieResponse, ShopCategoriesUpdateCategoryData, ShopCategoriesUpdateCategoryResponse, ShopCategoriesDeleteCategoryData, ShopCategoriesDeleteCategoryResponse, ShopOwnersReadShopOwnersData, ShopOwnersReadShopOwnersResponse, ShopOwnersCreateShopOwnerData, ShopOwnersCreateShopOwnerResponse, ShopOwnersReadShopOwnerData, ShopOwnersReadShopOwnerResponse, ShopOwnersUpdateShopOwnerData, ShopOwnersUpdateShopOwnerResponse, ShopOwnersDeleteShopOwnerData, ShopOwnersDeleteShopOwnerResponse, ShopsReadShopsData, ShopsReadShopsResponse, ShopsCreateShopData, ShopsCreateShopResponse, ShopsReadShopData, ShopsReadShopResponse, ShopsUpdateShopData, ShopsUpdateShopResponse, ShopsDeleteShopData, ShopsDeleteShopResponse, ShopsReplaceShopCategoriesData, ShopsReplaceShopCategoriesResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AnalyticsReadDashboardData, AnalyticsReadDashboardResponse, CashiersReadCashiersData, CashiersReadCashiersResponse, CashiersCreateCashierData, CashiersCreateCashierResponse, CashiersReadCashierData, CashiersReadCashierResponse, CashiersUpdateCashierData, CashiersUpdateCashierResponse, CashiersDeleteCashierData, CashiersDeleteCashierResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ReceiptItemCategoriesReadReceiptItemCategoriesData, ReceiptItemCategoriesReadReceiptItemCategoriesResponse, ReceiptItemCategoriesCreateReceiptItemCategoryData, ReceiptItemCategoriesCreateReceiptItemCategoryResponse, ReceiptItemCategoriesReadReceiptItemCategoryData, ReceiptItemCategoriesReadReceiptItemCategoryResponse, ReceiptItemCategoriesUpdateReceiptItemCategoryData, ReceiptItemCategoriesUpdateReceiptItemCategoryResponse, ReceiptItemCategoriesDeleteReceiptItemCategoryData, ReceiptItemCategoriesDeleteReceiptItemCategoryResponse, ReceiptItemsReadReceiptItemsData, ReceiptItemsReadReceiptItemsResponse, ReceiptItemsCreateReceiptItemData, ReceiptItemsCreateReceiptItemResponse, ReceiptItemsReadReceiptItemData, ReceiptItemsReadReceiptItemResponse, ReceiptItemsUpdateReceiptItemData, ReceiptItemsUpdateReceiptItemResponse, ReceiptItemsDeleteReceiptItemData, ReceiptItemsDeleteReceiptItemResponse, ReceiptItemsReplaceReceiptItemCategoriesData, ReceiptItemsReplaceReceiptItemCategoriesResponse, ReceiptItemsReplaceReceiptItemsCategoriesByNameData, ReceiptItemsReplaceReceiptItemsCategoriesByNameResponse, ReceiptsReadReceiptsData, ReceiptsReadReceiptsResponse, ReceiptsReadReceiptData, ReceiptsReadReceiptResponse, ReceiptsDeleteReceiptData, ReceiptsDeleteReceiptResponse, ReceiptsAddReceiptItemsData, ReceiptsAddReceiptItemsResponse, ReceiptsCreateReceiptFromRawJsonData, ReceiptsCreateReceiptFromRawJsonResponse, ReceiptsCreateReceiptFromRawFileData, ReceiptsCreateReceiptFromRawFileResponse, ReceiptsExportReceiptsData, ReceiptsExportReceiptsResponse, ReceiptsImportReceiptsData, ReceiptsImportReceiptsResponse, ShopCategoriesReadShopCategoriesData, ShopCategoriesReadShopCategoriesResponse, ShopCategoriesCreateCategoryData, ShopCategoriesCreateCategoryResponse, ShopCategoriesReadShopCategorieData, ShopCategoriesReadShopCategorieResponse, ShopCategoriesUpdateCategoryData, ShopCategoriesUpdateCategoryResponse, ShopCategoriesDeleteCategoryData, ShopCategoriesDeleteCategoryResponse, ShopOwnersReadShopOwnersData, ShopOwnersReadShopOwnersResponse, ShopOwnersCreateShopOwnerData, ShopOwnersCreateShopOwnerResponse, ShopOwnersReadShopOwnerData, ShopOwnersReadShopOwnerResponse, ShopOwnersUpdateShopOwnerData, ShopOwnersUpdateShopOwnerResponse, ShopOwnersDeleteShopOwnerData, ShopOwnersDeleteShopOwnerResponse, ShopsReadShopsData, ShopsReadShopsResponse, ShopsCreateShopData, ShopsCreateShopResponse, ShopsReadShopData, ShopsReadShopResponse, ShopsUpdateShopData, ShopsUpdateShopResponse, ShopsDeleteShopData, ShopsDeleteShopResponse, ShopsReplaceShopCategoriesData, ShopsReplaceShopCategoriesResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AnalyticsService {
     /**
@@ -768,6 +768,47 @@ export class ReceiptsService {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/api/v1/receipts/raw-file',
+            formData: data.formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Export Receipts
+     * @param data The data for the request.
+     * @param data.dateFrom
+     * @param data.dateTo
+     * @returns binary Successful Response
+     * @throws ApiError
+     */
+    public static exportReceipts(data: ReceiptsExportReceiptsData = {}): CancelablePromise<ReceiptsExportReceiptsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/receipts/export',
+            query: {
+                date_from: data.dateFrom,
+                date_to: data.dateTo
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Import Receipts
+     * @param data The data for the request.
+     * @param data.formData
+     * @returns ReceiptImportSummary Successful Response
+     * @throws ApiError
+     */
+    public static importReceipts(data: ReceiptsImportReceiptsData): CancelablePromise<ReceiptsImportReceiptsResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/receipts/import',
             formData: data.formData,
             mediaType: 'multipart/form-data',
             errors: {

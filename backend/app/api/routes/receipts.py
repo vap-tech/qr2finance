@@ -1,9 +1,12 @@
+import io
 import json
 import uuid
-from datetime import datetime
+import zipfile
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any, cast
 
-from fastapi import APIRouter, Body, File, HTTPException, UploadFile
+from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlmodel import col, func, select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -13,6 +16,8 @@ from app.models import (
     Message,
     Receipt,
     ReceiptCreate,
+    ReceiptImportError,
+    ReceiptImportSummary,
     ReceiptItem,
     ReceiptItemInlineCreate,
     ReceiptItemRead,
@@ -120,6 +125,150 @@ def read_receipts(
         )
 
     return ReceiptsShortPublic(data=data, count=count)
+
+
+@router.get("/export")
+def export_receipts(
+    session: SessionDep,
+    current_user: CurrentUser,
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+) -> StreamingResponse:
+    """
+    Export receipts as JSONL with raw payloads and source hashes.
+    """
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(status_code=422, detail="date_from must be <= date_to")
+
+    statement = (
+        select(ReceiptRawBackup.source_hash, ReceiptRawBackup.raw_json)
+        .join(Receipt, col(Receipt.id) == col(ReceiptRawBackup.receipt_id))
+        .order_by(col(Receipt.date_time).asc())
+    )
+
+    if not current_user.is_superuser:
+        statement = statement.where(col(ReceiptRawBackup.owner_id) == current_user.id)
+
+    if date_from:
+        dt_from = datetime.combine(date_from, time.min, tzinfo=timezone.utc)
+        statement = statement.where(col(Receipt.date_time) >= dt_from)
+
+    if date_to:
+        dt_to_exclusive = datetime.combine(
+            date_to + timedelta(days=1),
+            time.min,
+            tzinfo=timezone.utc,
+        )
+        statement = statement.where(col(Receipt.date_time) < dt_to_exclusive)
+
+    def iter_lines():
+        for source_hash, raw_json in session.exec(statement):
+            payload = {"source_hash": source_hash, "raw_json": raw_json}
+            yield json.dumps(payload, ensure_ascii=False) + "\n"
+
+    archive_date = date.today().isoformat()
+    jsonl_name = f"receipts-{archive_date}.jsonl"
+    zip_name = f"{jsonl_name}.zip"
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as zip_file:
+        with zip_file.open(jsonl_name, "w") as target:
+            for line in iter_lines():
+                target.write(line.encode("utf-8"))
+
+    buffer.seek(0)
+    headers = {"Content-Disposition": f'attachment; filename="{zip_name}"'}
+    return StreamingResponse(buffer, media_type="application/zip", headers=headers)
+
+
+@router.post("/import", response_model=ReceiptImportSummary)
+def import_receipts(
+    session: SessionDep,
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+) -> Any:
+    """
+    Import receipts from JSONL with raw payloads and source hashes.
+    """
+    imported = 0
+    skipped = 0
+    failed = 0
+    errors: list[ReceiptImportError] = []
+
+    file.file.seek(0)
+    raw_bytes = file.file.read()
+    if not raw_bytes:
+        raise HTTPException(status_code=422, detail="Empty file")
+
+    stream: io.TextIOBase
+    if raw_bytes.startswith(b"PK"):
+        try:
+            zip_buffer = io.BytesIO(raw_bytes)
+            with zipfile.ZipFile(zip_buffer) as zip_file:
+                names = zip_file.namelist()
+                if not names:
+                    raise HTTPException(status_code=422, detail="Empty zip archive")
+                jsonl_name = next(
+                    (name for name in names if name.lower().endswith(".jsonl")),
+                    names[0],
+                )
+                with zip_file.open(jsonl_name) as extracted:
+                    data = extracted.read()
+            stream = io.StringIO(data.decode("utf-8"))
+        except (zipfile.BadZipFile, UnicodeDecodeError) as exc:
+            raise HTTPException(
+                status_code=422, detail="Invalid zip or encoding"
+            ) from exc
+    else:
+        try:
+            stream = io.StringIO(raw_bytes.decode("utf-8"))
+        except UnicodeDecodeError as exc:
+            raise HTTPException(status_code=422, detail="File must be UTF-8") from exc
+
+    for line_no, line in enumerate(stream, start=1):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise ValueError("Row must be a JSON object")
+
+            raw_json = row.get("raw_json")
+            source_hash = row.get("source_hash")
+            if raw_json is None:
+                raise ValueError("raw_json is required")
+            if not isinstance(raw_json, dict):
+                raise ValueError("raw_json must be an object")
+            if source_hash is None:
+                source_hash = ReceiptRawBackup._compute_hash(raw_json)
+
+            exists = session.exec(
+                select(ReceiptRawBackup.id).where(
+                    col(ReceiptRawBackup.source_hash) == source_hash
+                )
+            ).first()
+            if exists:
+                skipped += 1
+                continue
+
+            _create_receipt_from_raw_payload(
+                session=session, current_user=current_user, payload=raw_json
+            )
+            imported += 1
+        except HTTPException as exc:
+            if session.in_transaction():
+                session.rollback()
+            failed += 1
+            errors.append(ReceiptImportError(line=line_no, detail=str(exc.detail)))
+        except Exception as exc:  # noqa: BLE001
+            if session.in_transaction():
+                session.rollback()
+            failed += 1
+            errors.append(ReceiptImportError(line=line_no, detail=str(exc)))
+
+    return ReceiptImportSummary(
+        imported=imported, skipped=skipped, failed=failed, errors=errors
+    )
 
 
 @router.get("/{id}", response_model=ReceiptWithItemsFullPublic)

@@ -739,6 +739,18 @@ class ReceiptItemCategoryPublic(SQLModel):
     is_active: bool
 
 
+class ReceiptImportError(SQLModel):
+    line: int
+    detail: str
+
+
+class ReceiptImportSummary(SQLModel):
+    imported: int
+    skipped: int
+    failed: int
+    errors: list[ReceiptImportError] = Field(default_factory=list)
+
+
 # --- Analytics schemas ---
 class DashboardTotals(SQLModel):
     revenue: int

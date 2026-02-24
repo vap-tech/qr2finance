@@ -1,14 +1,25 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { PaginationState } from "@tanstack/react-table";
-import { ArrowRight, Plus, ReceiptText } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { ArrowRight, Download, Plus, ReceiptText, Upload } from "lucide-react";
+import { lazy, Suspense, useRef, useState, type ChangeEvent } from "react";
 
+import { OpenAPI, ReceiptsService, type ReceiptImportSummary } from "@/client";
 import { DataTable } from "@/components/Common/DataTable";
 import PendingReceipts from "@/components/Pending/PendingReceipts";
 import { columns } from "@/components/Receipts/columns";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import useCustomToast from "@/hooks/useCustomToast";
 import { readReceipts } from "@/lib/receiptsApi";
 
 const AddReceipt = lazy(() => import("@/components/Receipts/AddReceipt"));
@@ -133,6 +144,94 @@ function ReceiptsTable() {
 
 function Receipts() {
   const [addOpen, setAddOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFrom, setExportFrom] = useState("");
+  const [exportTo, setExportTo] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { showSuccessToast, showErrorToast } = useCustomToast();
+  const queryClient = useQueryClient();
+
+  const getToken = async () => {
+    if (typeof OpenAPI.TOKEN === "function") {
+      return (await OpenAPI.TOKEN({} as never)) || "";
+    }
+    return OpenAPI.TOKEN || "";
+  };
+
+  const parseError = async (response: Response) => {
+    try {
+      const payload = (await response.json()) as { detail?: unknown };
+      const detail = payload?.detail;
+      if (typeof detail === "string") {
+        return detail;
+      }
+    } catch {
+      // ignore
+    }
+    return "Request failed";
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (exportFrom) params.set("date_from", exportFrom);
+      if (exportTo) params.set("date_to", exportTo);
+      const url = `${OpenAPI.BASE}/api/v1/receipts/export${
+        params.toString() ? `?${params.toString()}` : ""
+      }`;
+
+      const token = await getToken();
+      const response = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      const blob = await response.blob();
+      const filename = `receipts-${new Date()
+        .toISOString()
+        .slice(0, 10)}.jsonl.zip`;
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      showSuccessToast("Export is ready. Download should start shortly.");
+      setExportOpen(false);
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImportChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const result = await ReceiptsService.importReceipts({
+        formData: { file },
+      });
+      const summary = result as ReceiptImportSummary;
+      showSuccessToast(
+        `Imported ${summary.imported}, skipped ${summary.skipped}, failed ${summary.failed}.`,
+      );
+      queryClient.invalidateQueries({ queryKey: ["receipts"] });
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : "Import failed");
+    } finally {
+      setImporting(false);
+      event.target.value = "";
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -143,10 +242,31 @@ function Receipts() {
             Create and manage your receipts
           </p>
         </div>
-        <Button className="my-4" onClick={() => setAddOpen(true)}>
-          <Plus className="mr-2" />
-          Add Receipt
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json,.jsonl,.zip,application/x-ndjson,application/zip"
+            className="hidden"
+            onChange={handleImportChange}
+          />
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+          >
+            <Upload className="mr-2 size-4" />
+            {importing ? "Importing..." : "Import"}
+          </Button>
+          <Button variant="outline" onClick={() => setExportOpen(true)}>
+            <Download className="mr-2 size-4" />
+            Export
+          </Button>
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus className="mr-2" />
+            Add Receipt
+          </Button>
+        </div>
       </div>
       <ReceiptsTable />
       {addOpen ? (
@@ -154,6 +274,44 @@ function Receipts() {
           <AddReceipt open={addOpen} onOpenChange={setAddOpen} />
         </Suspense>
       ) : null}
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export receipts</DialogTitle>
+            <DialogDescription>
+              Optionally limit the export by date range.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="export-from">From</Label>
+              <Input
+                id="export-from"
+                type="date"
+                value={exportFrom}
+                onChange={(event) => setExportFrom(event.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="export-to">To</Label>
+              <Input
+                id="export-to"
+                type="date"
+                value={exportTo}
+                onChange={(event) => setExportTo(event.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setExportOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleExport} disabled={exporting}>
+              {exporting ? "Exporting..." : "Download"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

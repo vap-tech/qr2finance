@@ -2278,3 +2278,46 @@ export const DashboardResponseSchema = {
     },
     required: ['totals', 'payment_split', 'timeseries', 'top_shops', 'latest_receipts']
 } as const;
+
+export const ReceiptImportErrorSchema = {
+    title: 'ReceiptImportError',
+    type: 'object',
+    properties: {
+        line: {
+            type: 'integer',
+            title: 'Line'
+        },
+        detail: {
+            type: 'string',
+            title: 'Detail'
+        }
+    },
+    required: ['line', 'detail']
+} as const;
+
+export const ReceiptImportSummarySchema = {
+    title: 'ReceiptImportSummary',
+    type: 'object',
+    properties: {
+        imported: {
+            type: 'integer',
+            title: 'Imported'
+        },
+        skipped: {
+            type: 'integer',
+            title: 'Skipped'
+        },
+        failed: {
+            type: 'integer',
+            title: 'Failed'
+        },
+        errors: {
+            type: 'array',
+            items: {
+                '$ref': '#/components/schemas/ReceiptImportError'
+            },
+            title: 'Errors'
+        }
+    },
+    required: ['imported', 'skipped', 'failed', 'errors']
+} as const;

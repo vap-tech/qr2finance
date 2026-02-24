@@ -145,6 +145,18 @@ export type PrivateUserCreate = {
     is_verified?: boolean;
 };
 
+export type ReceiptImportError = {
+    line: number;
+    detail: string;
+};
+
+export type ReceiptImportSummary = {
+    imported: number;
+    skipped: number;
+    failed: number;
+    errors: Array<ReceiptImportError>;
+};
+
 export type ReceiptItemCategoryCreate = {
     name: string;
 };
@@ -736,6 +748,21 @@ export type ReceiptsCreateReceiptFromRawFileData = {
 };
 
 export type ReceiptsCreateReceiptFromRawFileResponse = (ReceiptWithItemsPublic);
+
+export type ReceiptsExportReceiptsData = {
+    dateFrom?: (string | null);
+    dateTo?: (string | null);
+};
+
+export type ReceiptsExportReceiptsResponse = ((Blob | File));
+
+export type ReceiptsImportReceiptsData = {
+    formData: {
+        file: (Blob | File);
+    };
+};
+
+export type ReceiptsImportReceiptsResponse = (ReceiptImportSummary);
 
 export type ShopCategoriesReadShopCategoriesData = {
     limit?: number;
