@@ -176,7 +176,7 @@ def read_dashboard(
         )
 
     top_shops_stmt = (
-        select(
+        select(  # pyright: ignore[reportCallIssue]
             col(Receipt.shop_id),
             func.coalesce(func.sum(col(Receipt.total_sum)), 0).label("total_sum"),
             func.count(col(Receipt.id)).label("receipts_count"),
