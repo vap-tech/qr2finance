@@ -67,8 +67,8 @@ async def cmd_id(message: types.Message) -> None:
 async def cmd_last(message: types.Message, db: Session, user: User | None) -> None:
     if user is None:
         await message.answer(
-            "⚠️ Telegram ID не привязан.\n"
-            "Сначала укажите Telegram ID в профиле на сайте.",
+            "❌ Telegram ID не привязан.\n"
+            "⚠️ Сначала укажите Telegram ID в профиле на сайте.",
             parse_mode="HTML",
         )
         return
@@ -134,8 +134,8 @@ async def handle_receipt_json(
 ) -> None:
     if user is None:
         await message.answer(
-            "⚠️ Вы не привязаны к аккаунту.\n"
-            "Добавьте Telegram ID в профиле на сайте, затем отправьте файл снова.",
+            "❌ Вы не привязаны к аккаунту.\n"
+            "⚠️ Добавьте Telegram ID в профиле на сайте, затем отправьте файл снова.",
             parse_mode="HTML",
         )
         return
