@@ -27,32 +27,49 @@ def _fmt_dt_local(value) -> str:
     return local_dt.strftime("%d.%m.%Y %H:%M")
 
 
+def _safe_detail(detail: Any) -> str:
+    if isinstance(detail, str):
+        return escape(detail)
+    return escape(json.dumps(detail, ensure_ascii=False))
+
+
 @router.message(Command("start"))
 async def cmd_start(message: types.Message, user: User | None) -> None:
     if user is None:
         await message.answer(
-            "Бот подключен.\n"
+            "🤖 <b>Бот подключен</b>\n\n"
             "Ваш Telegram ID пока не привязан к аккаунту.\n"
-            "Укажите Telegram ID в профиле на сайте и отправьте JSON-чек."
+            "🔗 Укажите Telegram ID в профиле на сайте и отправьте JSON-чек.",
+            parse_mode="HTML",
         )
         return
     await message.answer(
-        "Бот подключен и готов принимать JSON-файлы чеков.\nОтправьте файл .json в чат."
+        "✅ <b>Бот готов</b>\n\n"
+        "Принимаю JSON-файлы чеков.\n"
+        "📎 Отправьте файл <code>.json</code> в чат.\n"
+        "📋 Команда <code>/last</code> покажет последние чеки.",
+        parse_mode="HTML",
     )
 
 
 @router.message(Command("id"))
 async def cmd_id(message: types.Message) -> None:
     telegram_id = message.from_user.id if message.from_user else "unknown"
-    await message.answer(f"Telegram ID: {telegram_id}")
+    await message.answer(
+        "🆔 <b>Ваш Telegram ID</b>\n"
+        f"<code>{telegram_id}</code>\n\n"
+        "Скопируйте его в профиль на сайте для привязки.",
+        parse_mode="HTML",
+    )
 
 
 @router.message(Command("last"))
 async def cmd_last(message: types.Message, db: Session, user: User | None) -> None:
     if user is None:
         await message.answer(
-            "Ваш Telegram ID не привязан к аккаунту.\n"
-            "Сначала укажите Telegram ID в профиле на сайте."
+            "⚠️ Telegram ID не привязан.\n"
+            "Сначала укажите Telegram ID в профиле на сайте.",
+            parse_mode="HTML",
         )
         return
 
@@ -64,7 +81,7 @@ async def cmd_last(message: types.Message, db: Session, user: User | None) -> No
     ).all()
 
     if not receipts:
-        await message.answer("У вас пока нет загруженных чеков.")
+        await message.answer("📭 У вас пока нет загруженных чеков.")
         return
 
     total_count = db.exec(
@@ -117,14 +134,15 @@ async def handle_receipt_json(
 ) -> None:
     if user is None:
         await message.answer(
-            "Вы не привязаны к аккаунту.\n"
-            "Добавьте Telegram ID в профиле на сайте, затем отправьте файл снова."
+            "⚠️ Вы не привязаны к аккаунту.\n"
+            "Добавьте Telegram ID в профиле на сайте, затем отправьте файл снова.",
+            parse_mode="HTML",
         )
         return
 
     document = message.document
     if document is None:
-        await message.answer("Не удалось получить файл. Повторите отправку.")
+        await message.answer("⚠️ Не удалось получить файл. Повторите отправку.")
         return
 
     await message.bot.send_chat_action(message.chat.id, "upload_document")
@@ -158,16 +176,29 @@ async def handle_receipt_json(
         )
         await message.answer(response, parse_mode="HTML")
     except json.JSONDecodeError:
-        await message.answer("Файл не является валидным JSON.")
+        await message.answer("❌ Файл не является валидным JSON.")
     except HTTPException as exc:
-        await message.answer(f"Не удалось обработать чек: {exc.detail}")
+        await message.answer(
+            "❌ Не удалось обработать чек.\n"
+            f"Причина: <code>{_safe_detail(exc.detail)}</code>",
+            parse_mode="HTML",
+        )
     except ValueError as exc:
-        await message.answer(f"Не удалось обработать чек: {exc}")
+        await message.answer(
+            f"❌ Не удалось обработать чек.\nПричина: <code>{escape(str(exc))}</code>",
+            parse_mode="HTML",
+        )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Error processing telegram receipt: %s", exc)
-        await message.answer("Внутренняя ошибка при обработке чека.")
+        await message.answer(
+            "❌ Внутренняя ошибка при обработке чека.\n"
+            "Попробуйте еще раз немного позже."
+        )
 
 
 @router.message(F.document)
 async def handle_wrong_file_type(message: types.Message) -> None:
-    await message.answer("Поддерживаются только файлы .json")
+    await message.answer(
+        "⚠️ Поддерживаются только файлы <code>.json</code>.",
+        parse_mode="HTML",
+    )
