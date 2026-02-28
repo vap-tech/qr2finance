@@ -89,7 +89,7 @@ async def cmd_last(message: types.Message, db: Session, user: User | None) -> No
             f"└ 💰 {_fmt_money_kopeks(receipt.total_sum)} ₽ · позиций: {int(item_count)}"
         )
         if idx != len(receipts):
-            lines.append("────────────────────────")
+            lines.append("────────────────")
 
     lines.extend(["", f"Всего чеков: <b>{int(total_count)}</b>"])
     await message.answer("\n".join(lines), parse_mode="HTML")
