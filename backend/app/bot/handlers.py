@@ -84,9 +84,9 @@ async def cmd_last(message: types.Message, db: Session, user: User | None) -> No
         ).one()
 
         lines.append(
-            f"<b>{idx}. {_fmt_dt_local(receipt.date_time)}</b>\n"
-            f"🏪 {escape(shop_name)}\n"
-            f"💳 {_fmt_money_kopeks(receipt.total_sum)} ₽ · позиций: {int(item_count)}"
+            f"🕒 <b>{_fmt_dt_local(receipt.date_time)}</b>\n"
+            f"📌 {escape(shop_name)}\n"
+            f"💰 {_fmt_money_kopeks(receipt.total_sum)} ₽ · позиций: {int(item_count)}"
         )
         if idx != len(receipts):
             lines.append("────────────────")
