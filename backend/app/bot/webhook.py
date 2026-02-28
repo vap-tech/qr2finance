@@ -30,6 +30,7 @@ async def _set_commands(bot: Bot) -> None:
     commands = [
         BotCommand(command="start", description="Статус подключения"),
         BotCommand(command="id", description="Показать Telegram ID"),
+        BotCommand(command="last", description="Последние 5 чеков"),
     ]
     await bot.set_my_commands(commands)
 
