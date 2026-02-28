@@ -31,6 +31,9 @@ async def _set_commands(bot: Bot) -> None:
         BotCommand(command="start", description="Статус подключения"),
         BotCommand(command="id", description="Показать Telegram ID"),
         BotCommand(command="last", description="Последние 5 чеков"),
+        BotCommand(command="stats", description="Краткая статистика"),
+        BotCommand(command="top", description="Топ-5 товаров"),
+        BotCommand(command="shops", description="Топ-5 магазинов"),
     ]
     await bot.set_my_commands(commands)
 
@@ -52,6 +55,7 @@ async def init_bot_webhook() -> None:
     _bot = Bot(token=token)
     _dp = Dispatcher()
     _dp.message.outer_middleware(DbSessionMiddleware())
+    _dp.callback_query.outer_middleware(DbSessionMiddleware())
     _dp.include_router(bot_router)
 
     await _set_commands(_bot)
