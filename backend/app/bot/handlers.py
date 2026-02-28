@@ -38,7 +38,7 @@ async def cmd_start(message: types.Message, user: User | None) -> None:
     if user is None:
         await message.answer(
             "🤖 <b>Бот подключен</b>\n\n"
-            "Ваш Telegram ID пока не привязан к аккаунту.\n"
+            "⚠️ Ваш Telegram ID пока не привязан к аккаунту.\n"
             "🔗 Укажите Telegram ID в профиле на сайте и отправьте JSON-чек.",
             parse_mode="HTML",
         )
