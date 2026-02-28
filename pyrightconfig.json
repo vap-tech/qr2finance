@@ -1,10 +1,10 @@
 {
-  "venvPath": ".",
+  "venvPath": "backend",
   "venv": ".venv",
   "pythonVersion": "3.10",
   "typeCheckingMode": "basic",
-  "exclude": ["app/alembic", "tests"],
-  "include": ["app"],
+  "include": ["backend/app"],
+  "exclude": ["backend/app/alembic", "backend/tests"],
   "reportAny": "none",
   "reportExplicitAny": "none",
   "reportUnknownVariableType": "none",
@@ -14,5 +14,5 @@
   "reportUnusedCallResult": "none",
   "reportCallInDefaultInitializer": "none",
   "reportDeprecated": "none",
-  "reportImplicitStringConcatenation": "none",
+  "reportImplicitStringConcatenation": "none"
 }

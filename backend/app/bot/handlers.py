@@ -1,10 +1,11 @@
 import json
 import logging
 import uuid
+from collections.abc import Sequence
 from datetime import timezone
 from html import escape
 from time import monotonic
-from typing import Any, Sequence
+from typing import Any
 
 from aiogram import Bot, F, Router, types
 from aiogram.filters import Command
