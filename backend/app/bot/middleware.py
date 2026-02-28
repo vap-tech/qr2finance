@@ -1,11 +1,12 @@
 import logging
-from typing import Any, Awaitable, Callable, Dict
+from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-from app.database import SessionLocal  # Твой импорт сессии
-from app.models import User  # Твоя модель пользователя
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
+
+from app.core.db import engine
+from app.models import User
 
 # Настраиваем логирование, если еще не настроено
 logging.basicConfig(level=logging.INFO)
@@ -21,35 +22,32 @@ class DbSessionMiddleware(BaseMiddleware):
 
     async def __call__(
         self,
-        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> Any:
-        # 1. Открываем сессию базы данных
-        with SessionLocal() as db:
-            db: Session
+        # 1. Открываем сессию базы данных.
+        with Session(engine) as db:
             user = None
 
-            # 2. Пытаемся получить from_user из любого события
+            # 2. Пытаемся получить from_user из любого события.
             try:
                 from_user = getattr(event, "from_user", None)
                 if from_user:
-                    # Ищем юзера по telegram_id
-                    user = (
-                        db.query(User)
-                        .filter(User.telegram_id == str(from_user.id))
-                        .first()
+                    statement = select(User).where(
+                        User.telegram_id == str(from_user.id)
                     )
-            except Exception as e:
-                logger.warning(f"Не удалось получить пользователя: {e}")
+                    user = db.exec(statement).first()
+            except Exception as exc:
+                logger.warning("Не удалось получить пользователя: %s", exc)
 
-            # 3. Прокидываем данные в хэндлер
+            # 3. Прокидываем данные в хэндлер.
             data["db"] = db
             data["user"] = user
 
-            # 4. Выполняем хэндлер
+            # 4. Выполняем хэндлер.
             try:
                 return await handler(event, data)
-            except Exception as e:
-                logger.error(f"Ошибка в хендлере: {e}")
+            except Exception as exc:
+                logger.error("Ошибка в хендлере: %s", exc)
                 raise

@@ -1,613 +1,100 @@
 import json
 import logging
+from typing import Any
 
 from aiogram import Bot, F, Router, types
 from aiogram.filters import Command
-from app import crud, models, services
-from app.models import User
-from sqlalchemy import desc, func, select
-from sqlalchemy.orm import Session, joinedload
+from fastapi import HTTPException
+from sqlmodel import Session
 
-# Настраиваем роутер
+from app.api.routes.receipts import _create_receipt_from_raw_payload
+from app.models import User
+
 router = Router()
 logger = logging.getLogger(__name__)
 
 
+@router.message(Command("start"))
+async def cmd_start(message: types.Message, user: User | None) -> None:
+    if user is None:
+        await message.answer(
+            "Бот подключен.\n"
+            "Ваш Telegram ID пока не привязан к аккаунту.\n"
+            "Укажите Telegram ID в профиле на сайте и отправьте JSON-чек."
+        )
+        return
+    await message.answer(
+        "Бот подключен и готов принимать JSON-файлы чеков.\nОтправьте файл .json в чат."
+    )
+
+
 @router.message(Command("id"))
-async def get_my_id(message: types.Message):
-    await message.answer(f"Твой Telegram ID: `{message.from_user.id}`")
+async def cmd_id(message: types.Message) -> None:
+    telegram_id = message.from_user.id if message.from_user else "unknown"
+    await message.answer(f"Telegram ID: {telegram_id}")
+
+
+def _pick_payload(parsed: Any) -> dict[str, Any] | list[dict[str, Any]]:
+    if isinstance(parsed, list):
+        if len(parsed) == 0:
+            raise ValueError("Пустой JSON-массив")
+        first = parsed[0]
+        if not isinstance(first, dict):
+            raise ValueError("Первый элемент массива должен быть объектом")
+        return parsed
+    if not isinstance(parsed, dict):
+        raise ValueError("JSON должен быть объектом или массивом объектов")
+    return parsed
 
 
 @router.message(F.document.file_name.endswith(".json"))
 async def handle_receipt_json(
-    message: types.Message, bot: Bot, db: Session, user: User
-):
-    """
-    Аналог эндпоинта @router.post("/upload-json") для Telegram.
-    Принимает JSON-файл чека, парсит и сохраняет в БД.
-    """
-    # 1. Проверка авторизации (связан ли telegram_id)
-    if not user:
-        return await message.answer(
-            "❌ Вы не зарегистрированы в системе или не привязали Telegram ID.\n"
-            "Пожалуйста, сделайте это в профиле на сайте space-flow.dev"
+    message: types.Message,
+    bot: Bot,
+    db: Session,
+    user: User | None,
+) -> None:
+    if user is None:
+        await message.answer(
+            "Вы не привязаны к аккаунту.\n"
+            "Добавьте Telegram ID в профиле на сайте, затем отправьте файл снова."
         )
+        return
 
-    # 2. Получаем файл из сообщения
     document = message.document
+    if document is None:
+        await message.answer("Не удалось получить файл. Повторите отправку.")
+        return
 
-    # Визуальный отклик, что работа началась
     await message.bot.send_chat_action(message.chat.id, "upload_document")
 
     try:
-        # 3. Скачиваем файл в память (в буфер)
         file_info = await bot.get_file(document.file_id)
         file_content = await bot.download_file(file_info.file_path)
+        parsed = json.load(file_content)
+        payload = _pick_payload(parsed)
 
-        # 4. Декодируем и парсим JSON
-        # Мы используем .read(), так как download_file возвращает BytesIO
-        data = json.load(file_content)
-
-        # 5. Логика обработки списка или одиночного объекта (как в твоем коде)
-        if isinstance(data, list):
-            # Берем первый чек из списка
-            receipt_json = data[0] if len(data) > 0 else None
-        else:
-            receipt_json = data
-
-        if not receipt_json:
-            return await message.reply("⚠️ Файл пуст или содержит некорректные данные.")
-
-        # 6. Вызываем твой CRUD метод
-        # Передаем db и user.id, которые прокинула мидлварь
-        receipt = crud.create_receipt_with_backup(
-            db, receipt_json, user_id=user.id, import_method="telegram_bot"
+        created = _create_receipt_from_raw_payload(
+            session=db,
+            current_user=user,
+            payload=payload,
         )
-
-        # 7. Извлекаем данные для красивого ответа (как в твоем API)
-        ticket_data = (
-            receipt_json.get("ticket", {}).get("document", {}).get("receipt", {})
+        receipt_id = created.receipt.id
+        items_count = len(created.items)
+        await message.answer(
+            f"Чек успешно загружен.\nID: {receipt_id}\nПозиций: {items_count}"
         )
-        items_count = len(ticket_data.get("items", []))
-
-        await message.reply(
-            f"✅ **Чек успешно загружен!**\n\n"
-            f"🔹 ID чека: `{receipt.id}`\n"
-            f"🔹 Внешний ID: `{receipt.external_id}`\n"
-            f"🔹 Позиций обработано: {len(receipt.items)}\n"
-            f"🔹 Позиций в файле: {items_count}\n\n"
-            f"📊 Чек доступен в вашем личном кабинете."
-        )
-
     except json.JSONDecodeError:
-        await message.reply("❌ Ошибка: Файл не является валидным JSON.")
-    except Exception as e:
-        logger.error(f"Error processing TG receipt: {e}", exc_info=True)
-        await message.reply(f"❌ Произошла ошибка при обработке чека: {str(e)}")
+        await message.answer("Файл не является валидным JSON.")
+    except HTTPException as exc:
+        await message.answer(f"Не удалось обработать чек: {exc.detail}")
+    except ValueError as exc:
+        await message.answer(f"Не удалось обработать чек: {exc}")
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Error processing telegram receipt: %s", exc)
+        await message.answer("Внутренняя ошибка при обработке чека.")
 
 
 @router.message(F.document)
-async def handle_wrong_file_type(message: types.Message):
-    """Отлавливает файлы, которые не JSON"""
-    await message.reply("⚠️ Я принимаю только файлы формата **.json**")
-
-
-@router.message(Command("shops"))
-async def cmd_shops(message: types.Message, db: Session, user: User):
-    if not user:
-        return await message.answer("❌ Сначала привяжите аккаунт.")
-
-    # Вызываем твой сервис
-    shops_stats = services.get_spending_by_retail_shops(
-        db, user.id, page=0, page_size=8
-    )
-
-    if not shops_stats:
-        return await message.answer("🏪 Данные о магазинах не найдены.")
-
-    text = "🏪 **Топ-5 магазинов по тратам:**\n\n"
-    for i, shop in enumerate(shops_stats[:5], 1):
-        text += f"{i}. **{shop.retail_name or shop.legal_name}**\n"
-        text += (
-            f"   └ 💰 `{shop.total_amount / 100:,.2f} ₽` ({shop.receipts_count} шт.)\n"
-        )
-
-    await message.answer(text, parse_mode="Markdown")
-
-
-@router.message(Command("last"))
-async def cmd_last(message: types.Message, db: Session, user: User):
-    """
-    Показывает последние 5 загруженных чеков
-    """
-    if not user:
-        return await message.answer("❌ Сначала привяжите аккаунт.")
-
-    try:
-        # Получаем последние 5 чеков
-        recent_receipts = crud.get_recent_receipts(
-            db=db,
-            user_id=user.id,
-            limit=5,
-            with_items=True,  # Чтобы показать товары
-        )
-
-        if not recent_receipts:
-            return await message.answer("📭 У вас еще нет загруженных чеков.")
-
-        # Формируем сообщение
-        text = "📋 **Последние 5 чеков:**\n\n"
-
-        for i, receipt in enumerate(recent_receipts, 1):
-            # Получаем магазин для чека
-            shop_name = (
-                receipt.shop.retail_name or receipt.shop.legal_name
-                if receipt.shop
-                else "Неизвестный магазин"
-            )
-
-            # Форматируем дату
-            date_str = receipt.date_time.strftime("%d.%m.%Y %H:%M")
-
-            # Сумма в рублях
-            total_rub = receipt.total_sum / 100
-
-            # Превью товаров (первые 2)
-            items_preview = ""
-            if receipt.items:
-                items = receipt.items[:2]
-                items_list = []
-                for item in items:
-                    name = item.name[:20] + "..." if len(item.name) > 20 else item.name
-                    items_list.append(name)
-                items_preview = " | ".join(items_list)
-                if len(receipt.items) > 2:
-                    items_preview += f" +{len(receipt.items) - 2} ещё"
-
-            text += (
-                f"**{i}. {date_str}**\n"
-                f"🏪 *{shop_name[:30]}...*\n"
-                f"💰 *{total_rub:,.2f} ₽* ({len(receipt.items)} шт.)\n"
-            )
-
-            if items_preview:
-                text += f"🛒 {items_preview}\n"
-
-            # Разделитель между чеками
-            if i < len(recent_receipts):
-                text += "―" * 30 + "\n"
-
-        # Получаем общее количество чеков пользователя
-        total_receipts_count = db.execute(
-            select(func.count(models.Receipt.id)).where(
-                models.Receipt.user_id == user.id
-            )
-        ).scalar()
-
-        # Добавляем статистику
-        text += f"\n📊 Всего чеков: {total_receipts_count}"
-
-        # Создаем инлайн-кнопки для навигации
-        keyboard = []
-
-        # Если есть больше 5 чеков, добавляем кнопку "Ещё"
-        if total_receipts_count and total_receipts_count > 5:
-            keyboard.append(
-                [
-                    types.InlineKeyboardButton(
-                        text="📜 Показать ещё", callback_data="more_receipts"
-                    )
-                ]
-            )
-
-        # Кнопка для статистики
-        keyboard.append(
-            [
-                types.InlineKeyboardButton(text="📊 Статистика", callback_data="stats"),
-                types.InlineKeyboardButton(text="🏪 Магазины", callback_data="shops"),
-            ]
-        )
-
-        reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-        await message.answer(text, parse_mode="Markdown", reply_markup=reply_markup)
-
-    except Exception as e:
-        logger.error(f"Ошибка в cmd_last: {e}")
-        await message.answer("❌ Произошла ошибка при получении чеков.")
-
-
-@router.callback_query(F.data == "more_receipts")
-async def callback_more_receipts(
-    callback: types.CallbackQuery, db: Session, user: User
-):
-    """
-    Показывает следующие 5 чеков
-    """
-    if not user:
-        return await callback.answer("❌ Сначала привяжите аккаунт.", show_alert=True)
-
-    try:
-        # Можно передавать offset через callback data
-        # "more_receipts_5" где 5 - уже показано
-        offset = 5  # Уже показали первые 5
-
-        # Получаем следующие 5
-        receipts = (
-            db.execute(
-                select(models.Receipt)
-                .where(models.Receipt.user_id == user.id)
-                .order_by(desc(models.Receipt.created_at))
-                .offset(offset)
-                .limit(5)
-                .options(joinedload(models.Receipt.shop))
-            )
-            .scalars()
-            .all()
-        )
-
-        if not receipts:
-            return await callback.answer("Больше чеков нет", show_alert=True)
-
-        text = "📋 **Следующие чеки:**\n\n"
-
-        for i, receipt in enumerate(receipts, offset + 1):
-            shop_name = (
-                receipt.shop.retail_name or receipt.shop.legal_name
-                if receipt.shop
-                else "Неизвестно"
-            )
-
-            text += (
-                f"**{i}. {receipt.date_time.strftime('%d.%m.%Y %H:%M')}**\n"
-                f"🏪 {shop_name[:25]}...\n"
-                f"💰 {receipt.total_sum / 100:,.2f} ₽\n"
-                f"―" * 25 + "\n"
-            )
-
-        # Кнопка "Назад" если нужно
-        keyboard = [
-            [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="last_receipts")]
-        ]
-
-        reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-        await callback.message.edit_text(
-            text, parse_mode="Markdown", reply_markup=reply_markup
-        )
-
-        await callback.answer()
-
-    except Exception as e:
-        logger.error(f"Ошибка в callback_more_receipts: {e}")
-        await callback.answer("❌ Ошибка", show_alert=True)
-
-
-@router.callback_query(F.data.startswith("receipt_detail_"))
-async def callback_receipt_detail(
-    callback: types.CallbackQuery, db: Session, user: User
-):
-    """
-    Показывает детали конкретного чека
-    """
-    if not user:
-        return await callback.answer("❌ Сначала привяжите аккаунт.", show_alert=True)
-
-    try:
-        receipt_id = int(callback.data.split("_")[-1])
-
-        receipt = db.execute(
-            select(models.Receipt)
-            .where(models.Receipt.id == receipt_id, models.Receipt.user_id == user.id)
-            .options(
-                joinedload(models.Receipt.shop),
-                joinedload(models.Receipt.items),
-                joinedload(models.Receipt.cashier),
-            )
-        ).scalar_one_or_none()
-
-        if not receipt:
-            return await callback.answer("Чек не найден", show_alert=True)
-
-        shop = receipt.shop
-        shop_name = shop.retail_name or shop.legal_name if shop else "Неизвестно"
-        address = shop.address[:50] + "..." if shop and shop.address else ""
-
-        # Форматируем детальное сообщение
-        text = (
-            f"🧾 **Детали чека**\n"
-            f"📅 *Дата:* {receipt.date_time.strftime('%d.%m.%Y %H:%M')}\n"
-            f"🏪 *Магазин:* {shop_name}\n"
-        )
-
-        if address:
-            text += f"📍 *Адрес:* {address}\n"
-
-        if receipt.cashier and receipt.cashier.name:
-            text += f"👤 *Кассир:* {receipt.cashier.name}\n"
-
-        text += f"\n💰 *Итого:* {receipt.total_sum / 100:,.2f} ₽\n"
-
-        # Оплата
-        if receipt.cash_total_sum > 0:
-            text += f"💵 Наличные: {receipt.cash_total_sum / 100:,.2f} ₽\n"
-        if receipt.ecash_total_sum > 0:
-            text += f"💳 Безнал: {receipt.ecash_total_sum / 100:,.2f} ₽\n"
-
-        # НДС если есть
-        if receipt.nds_10 or receipt.nds_18:
-            text += "\n📊 *НДС:* "
-            nds_parts = []
-            if receipt.nds_10:
-                nds_parts.append(f"10% = {receipt.nds_10 / 100:,.2f} ₽")
-            if receipt.nds_18:
-                nds_parts.append(f"18% = {receipt.nds_18 / 100:,.2f} ₽")
-            text += ", ".join(nds_parts) + "\n"
-
-        # Товары
-        if receipt.items:
-            text += f"\n🛒 *Товары ({len(receipt.items)}):*\n"
-
-            for item in receipt.items[:10]:  # Показываем первые 10
-                item_sum_rub = item.sum / 100
-                item_price_rub = item.price / 100
-                text += (
-                    f"• {item.name[:35]}...\n"
-                    f"  {item.quantity} {item.measure} × {item_price_rub:,.2f}₽ = {item_sum_rub:,.2f}₽\n"
-                )
-
-            if len(receipt.items) > 10:
-                text += f"\n... и еще {len(receipt.items) - 10} товаров\n"
-
-        # Фискальные данные
-        text += f"\n🧾 *ФН:* {receipt.fiscal_drive_number}\n"
-        text += f"📄 *Док. №:* {receipt.fiscal_document_number}\n"
-        text += f"🔢 *Подпись:* {receipt.fiscal_sign}\n"
-
-        # Кнопки
-        keyboard = [
-            [
-                types.InlineKeyboardButton(
-                    text="⬅️ Назад к списку", callback_data="last_receipts"
-                ),
-                types.InlineKeyboardButton(
-                    text="📋 Сырые данные", callback_data=f"raw_data_{receipt.id}"
-                ),
-            ]
-        ]
-
-        reply_markup = types.InlineKeyboardMarkup(inline_keyboard=keyboard)
-
-        await callback.message.edit_text(
-            text, parse_mode="Markdown", reply_markup=reply_markup
-        )
-
-        await callback.answer()
-
-    except Exception as e:
-        logger.error(f"Ошибка в callback_receipt_detail: {e}")
-        await callback.answer("❌ Ошибка", show_alert=True)
-
-
-@router.callback_query(F.data == "stats")
-async def callback_stats(callback: types.CallbackQuery, db: Session, user: User):
-    """Обработка кнопки 'Статистика'"""
-    if not user:
-        return await callback.answer("❌ Сначала привяжите аккаунт.", show_alert=True)
-
-    try:
-        # Вызываем ваш существующий обработчик команды /stats
-        # Или делаем запрос к БД
-        await callback.answer("Загружаем статистику...", show_alert=False)
-
-        # Простой пример статистики
-        total_sum = (
-            db.scalar(
-                select(func.sum(models.Receipt.total_sum)).where(
-                    models.Receipt.user_id == user.id
-                )
-            )
-            or 0
-        )
-
-        total_receipts = (
-            db.scalar(
-                select(func.count(models.Receipt.id)).where(
-                    models.Receipt.user_id == user.id
-                )
-            )
-            or 0
-        )
-
-        text = (
-            f"📊 *Статистика*\n\n"
-            f"• Всего чеков: {total_receipts}\n"
-            f"• Общая сумма: {total_sum / 100:,.2f} ₽\n"
-            f"• Средний чек: {total_sum / total_receipts / 100:,.2f} ₽"
-            if total_receipts > 0
-            else "0 ₽"
-        )
-
-        await callback.message.edit_text(
-            text,
-            parse_mode="Markdown",
-            reply_markup=types.InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        types.InlineKeyboardButton(
-                            text="⬅️ Назад", callback_data="last_receipts"
-                        )
-                    ]
-                ]
-            ),
-        )
-
-    except Exception as e:
-        logger.error(f"Ошибка в callback_stats: {e}")
-        await callback.answer("❌ Ошибка", show_alert=True)
-
-
-@router.callback_query(F.data == "shops")
-async def callback_shops(callback: types.CallbackQuery, db: Session, user: User):
-    """Обработка кнопки 'Магазины'"""
-    if not user:
-        return await callback.answer("❌ Сначала привяжите аккаунт.", show_alert=True)
-
-    try:
-        # Вызываем ваш существующий обработчик команды /shops
-        # Или делаем запрос к БД
-        await callback.answer("Загружаем магазины...", show_alert=False)
-
-        # Пример получения топ магазинов
-        shops_stats = db.execute(
-            select(
-                models.Shop.legal_name,
-                models.Shop.retail_name,
-                func.count(models.Receipt.id).label("receipts_count"),
-                func.sum(models.Receipt.total_sum).label("total_amount"),
-            )
-            .join(models.Receipt, models.Receipt.shop_id == models.Shop.id)
-            .where(models.Receipt.user_id == user.id)
-            .group_by(models.Shop.id)
-            .order_by(desc("total_amount"))
-            .limit(5)
-        ).all()
-
-        if not shops_stats:
-            text = "🏪 *Магазины*\n\nНет данных о магазинах"
-        else:
-            text = "🏪 *Топ-5 магазинов по тратам:*\n\n"
-            for i, (legal_name, retail_name, count, amount) in enumerate(
-                shops_stats, 1
-            ):
-                shop_name = retail_name or legal_name or "Неизвестно"
-                text += (
-                    f"{i}. **{shop_name[:30]}...**\n"
-                    f"   └ 💰 `{amount / 100:,.2f} ₽` ({count} шт.)\n"
-                )
-
-        await callback.message.edit_text(
-            text,
-            parse_mode="Markdown",
-            reply_markup=types.InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        types.InlineKeyboardButton(
-                            text="⬅️ Назад", callback_data="last_receipts"
-                        )
-                    ]
-                ]
-            ),
-        )
-
-    except Exception as e:
-        logger.error(f"Ошибка в callback_shops: {e}")
-        await callback.answer("❌ Ошибка", show_alert=True)
-
-
-@router.callback_query(F.data == "last_receipts")
-async def callback_last_receipts(
-    callback: types.CallbackQuery, db: Session, user: User
-):
-    """Обработка кнопки 'Назад к списку'"""
-    # Просто вызываем исходную команду /last
-    await cmd_last(callback.message, db, user)
-    await callback.answer()
-
-
-@router.callback_query(F.data.startswith("raw_data_"))
-async def callback_raw_data(callback: types.CallbackQuery, db: Session, user: User):
-    """Показывает сырые данные чека"""
-    if not user:
-        return await callback.answer("❌ Сначала привяжите аккаунт.", show_alert=True)
-
-    try:
-        receipt_id = int(callback.data.split("_")[-1])
-
-        # Получаем бэкап
-        backup = db.execute(
-            select(models.ReceiptRawBackup)
-            .join(
-                models.Receipt, models.Receipt.id == models.ReceiptRawBackup.receipt_id
-            )
-            .where(models.Receipt.id == receipt_id, models.Receipt.user_id == user.id)
-        ).scalar_one_or_none()
-
-        if not backup or not backup.raw_json:
-            return await callback.answer("Сырые данные не найдены", show_alert=True)
-
-        # Ограничиваем вывод (сырые данные могут быть большими)
-        import json
-
-        raw_data_preview = json.dumps(backup.raw_json, ensure_ascii=False, indent=2)[
-            :1500
-        ]
-
-        text = f"📋 *Сырые данные чека*\n\n```json\n{raw_data_preview}\n"
-
-        if len(json.dumps(backup.raw_json)) > 1500:
-            text += "\n... (данные обрезаны)"
-
-        text += "```"
-
-        await callback.message.edit_text(
-            text,
-            parse_mode="Markdown",
-            reply_markup=types.InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        types.InlineKeyboardButton(
-                            text="⬅️ Назад к деталям",
-                            callback_data=f"receipt_detail_{receipt_id}",
-                        )
-                    ]
-                ]
-            ),
-        )
-
-        await callback.answer()
-
-    except Exception as e:
-        logger.error(f"Ошибка в callback_raw_data: {e}")
-        await callback.answer("❌ Ошибка", show_alert=True)
-
-
-# --- Команда /stats: Общая статистика ---
-@router.message(Command("stats"))
-async def cmd_stats(message: types.Message, db: Session, user: User):
-    if not user:
-        return await message.answer("❌ Сначала привяжите аккаунт.")
-
-    stats = services.get_user_total_sum(db, user.id)
-
-    if stats.receipts_count == 0:
-        return await message.answer("📊 У вас пока нет чеков для статистики.")
-
-    text = (
-        f"📊 **Твоя статистика:**\n\n"
-        f"🧾 Всего чеков: `{stats.receipts_count}`\n"
-        f"💰 Общая сумма: `{stats.total_sum / 100:,.2f} ₽`\n"
-        f"💳 Безнал: `{stats.ecash_total_sum / 100:,.2f} ₽`\n"
-        f"💵 Наличные: `{stats.cash_total_sum / 100:,.2f} ₽`"
-    )
-    await message.answer(text, parse_mode="Markdown")
-
-
-# --- Команда /top: Топ-5 трат ---
-@router.message(Command("top"))
-async def cmd_top(message: types.Message, db: Session, user: User):
-    if not user:
-        return await message.answer("❌ Сначала привяжите аккаунт.")
-
-    # Используем твой метод (берем топ-5 для компактности в ТГ)
-    top_items = services.get_top_products(db, user.id, limit=5)
-
-    if not top_items:
-        return await message.answer("🛒 Список товаров пока пуст.")
-
-    text = "🔝 **Топ-5 затратных покупок:**\n\n"
-    for i, item in enumerate(top_items, 1):
-        text += f"{i}. {item.name}\n"
-        text += f"   └ 💰 `{item.total_sum / 100:,.2f} ₽` ({item.total_quantity} {item.measure})\n"
-
-    await message.answer(text, parse_mode="Markdown")
+async def handle_wrong_file_type(message: types.Message) -> None:
+    await message.answer("Поддерживаются только файлы .json")
