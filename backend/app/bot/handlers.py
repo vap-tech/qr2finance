@@ -4,7 +4,7 @@ import uuid
 from datetime import timezone
 from html import escape
 from time import monotonic
-from typing import Any
+from typing import Any, Sequence
 
 from aiogram import Bot, F, Router, types
 from aiogram.filters import Command
@@ -69,7 +69,7 @@ async def _throttle_callback(
     return True
 
 
-def _build_last_keyboard(receipts: list[Receipt]) -> types.InlineKeyboardMarkup:
+def _build_last_keyboard(receipts: Sequence[Receipt]) -> types.InlineKeyboardMarkup:
     rows: list[list[types.InlineKeyboardButton]] = []
     for receipt in receipts:
         rows.append(
@@ -90,7 +90,7 @@ def _build_last_keyboard(receipts: list[Receipt]) -> types.InlineKeyboardMarkup:
     return types.InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def _build_last_text(db: Session, user: User, receipts: list[Receipt]) -> str:
+def _build_last_text(db: Session, user: User, receipts: Sequence[Receipt]) -> str:
     total_count = db.exec(
         select(func.count()).select_from(Receipt).where(Receipt.owner_id == user.id)
     ).one()
@@ -216,14 +216,18 @@ async def cmd_last(message: types.Message, db: Session, user: User | None) -> No
     receipts = db.exec(
         select(Receipt)
         .where(Receipt.owner_id == user.id)
-        .order_by(desc(Receipt.date_time))
+        .order_by(col(Receipt.date_time).desc())
         .limit(5)
     ).all()
     if not receipts:
         await message.answer("📭 У вас пока нет загруженных чеков.")
         return
 
-    logger.info("bot_cmd_last user_id=%s tg_id=%s", user.id, message.from_user.id)
+    logger.info(
+        "bot_cmd_last user_id=%s tg_id=%s",
+        user.id,
+        message.from_user.id if message.from_user else None,
+    )
     await message.answer(
         _build_last_text(db, user, receipts),
         parse_mode="HTML",
@@ -250,7 +254,11 @@ async def cmd_stats(message: types.Message, db: Session, user: User | None) -> N
         ).where(col(Receipt.owner_id) == user.id)
     ).one()
     avg = int(total_sum / receipts_count) if receipts_count else 0
-    logger.info("bot_cmd_stats user_id=%s tg_id=%s", user.id, message.from_user.id)
+    logger.info(
+        "bot_cmd_stats user_id=%s tg_id=%s",
+        user.id,
+        message.from_user.id if message.from_user else None,
+    )
     await message.answer(
         "<b>Статистика по чекам</b>\n\n"
         f"🧾 Чеков: <b>{int(receipts_count)}</b>\n"
@@ -288,7 +296,11 @@ async def cmd_top(message: types.Message, db: Session, user: User | None) -> Non
         await message.answer("📭 Пока нет данных по товарам.")
         return
 
-    logger.info("bot_cmd_top user_id=%s tg_id=%s", user.id, message.from_user.id)
+    logger.info(
+        "bot_cmd_top user_id=%s tg_id=%s",
+        user.id,
+        message.from_user.id if message.from_user else None,
+    )
     lines = ["<b>Топ-5 товаров по сумме</b>", ""]
     for idx, (name, total, count) in enumerate(rows, start=1):
         title = escape(name)
@@ -332,7 +344,11 @@ async def cmd_shops(message: types.Message, db: Session, user: User | None) -> N
         await message.answer("📭 Пока нет данных по магазинам.")
         return
 
-    logger.info("bot_cmd_shops user_id=%s tg_id=%s", user.id, message.from_user.id)
+    logger.info(
+        "bot_cmd_shops user_id=%s tg_id=%s",
+        user.id,
+        message.from_user.id if message.from_user else None,
+    )
     lines = ["<b>Топ-5 магазинов по сумме</b>", ""]
     for idx, (retail_name, address, total, count) in enumerate(rows, start=1):
         name = (retail_name or address or "Неизвестный магазин").strip()
@@ -361,14 +377,14 @@ async def callback_last_refresh(
     receipts = db.exec(
         select(Receipt)
         .where(Receipt.owner_id == user.id)
-        .order_by(desc(Receipt.date_time))
+        .order_by(col(Receipt.date_time).desc())
         .limit(5)
     ).all()
     if not receipts:
         await callback.answer("Чеки не найдены", show_alert=False)
         return
 
-    if callback.message is not None:
+    if isinstance(callback.message, types.Message):
         await callback.message.edit_text(
             _build_last_text(db, user, receipts),
             parse_mode="HTML",
@@ -414,7 +430,7 @@ async def callback_receipt_details(
             ]
         ]
     )
-    if callback.message is not None:
+    if isinstance(callback.message, types.Message):
         await callback.message.edit_text(
             _build_receipt_details_text(db, receipt),
             parse_mode="HTML",
@@ -445,11 +461,17 @@ async def handle_receipt_json(
         await message.answer("⚠️ Не удалось получить файл. Повторите отправку.")
         return
 
-    await message.bot.send_chat_action(message.chat.id, "upload_document")
+    await bot.send_chat_action(message.chat.id, "upload_document")
 
     try:
         file_info = await bot.get_file(document.file_id)
+        if file_info.file_path is None:
+            await message.answer("⚠️ Не удалось получить файл. Повторите отправку.")
+            return
         file_content = await bot.download_file(file_info.file_path)
+        if file_content is None:
+            await message.answer("⚠️ Не удалось скачать файл. Повторите отправку.")
+            return
         parsed = json.load(file_content)
         payload = _pick_payload(parsed)
 
