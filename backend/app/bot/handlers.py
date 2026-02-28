@@ -57,7 +57,7 @@ async def cmd_id(message: types.Message) -> None:
     telegram_id = message.from_user.id if message.from_user else "unknown"
     await message.answer(
         "🆔 <b>Ваш Telegram ID</b>\n"
-        f"<code>{telegram_id}</code>\n\n"
+        f"<pre>{telegram_id}</pre>\n"
         "Скопируйте его в профиль на сайте для привязки.",
         parse_mode="HTML",
     )
