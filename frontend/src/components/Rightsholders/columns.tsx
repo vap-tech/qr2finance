@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Check, Copy } from "lucide-react";
 
 import type { ShopOwnerPublic } from "@/client";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { cn } from "@/lib/utils";
@@ -71,6 +72,26 @@ export const columns: ColumnDef<ShopOwnerPublic>[] = [
         {row.original.inn || "No INN"}
       </span>
     ),
+  },
+  {
+    id: "name_variants",
+    header: "Name variants",
+    cell: ({ row }) => {
+      const aliasesCount = row.original.aliases_count ?? 0;
+      const hasConflict = row.original.has_name_conflict ?? false;
+      return (
+        <div className="flex items-center gap-2">
+          <Badge variant={hasConflict ? "destructive" : "outline"}>
+            {aliasesCount}
+          </Badge>
+          {hasConflict ? (
+            <span className="text-xs text-destructive">Conflict</span>
+          ) : (
+            <span className="text-xs text-muted-foreground">Single</span>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "id",

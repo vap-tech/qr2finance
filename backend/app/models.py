@@ -240,10 +240,55 @@ class ShopOwner(ShopOwnerBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     is_active: bool = Field(default=True)
     shops: list["Shop"] = Relationship(back_populates="shop_owner")
+    names: list["ShopOwnerName"] = Relationship(back_populates="shop_owner")
+
+
+class ShopOwnerName(SQLModel, table=True):
+    __tablename__ = "shop_owner_names"  # type: ignore
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    shop_owner_id: uuid.UUID = Field(
+        foreign_key="shop_owners.id",
+        index=True,
+        nullable=False,
+    )
+    name_raw: str = Field(sa_type=String, nullable=False)
+    name_normalized: str = Field(sa_type=String, nullable=False)
+    first_seen_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    last_seen_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    seen_count: int = Field(default=1, sa_type=Integer, nullable=False)
+    is_primary: bool = Field(default=False, sa_type=Boolean, nullable=False, index=True)
+    shop_owner: ShopOwner = Relationship(back_populates="names")
+    __table_args__ = (
+        UniqueConstraint(
+            "shop_owner_id",
+            "name_normalized",
+            name="uq_shop_owner_names_owner_normalized",
+        ),
+        Index("ix_shop_owner_names_owner_primary", "shop_owner_id", "is_primary"),
+    )
+
+
+class ShopOwnerNamePublic(SQLModel):
+    id: uuid.UUID
+    name_raw: str
+    name_normalized: str
+    first_seen_at: datetime
+    last_seen_at: datetime
+    seen_count: int
+    is_primary: bool
 
 
 class ShopOwnerPublic(ShopOwnerBase):
     id: uuid.UUID
+    aliases_count: int = 0
+    has_name_conflict: bool = False
+    aliases: list[ShopOwnerNamePublic] = Field(default_factory=list)
 
 
 class ShopOwnersPublic(SQLModel):
@@ -251,6 +296,10 @@ class ShopOwnersPublic(SQLModel):
 
     data: list[ShopOwnerPublic]
     count: int
+
+
+class ShopOwnerPrimaryAliasUpdate(SQLModel):
+    alias_id: uuid.UUID
 
 
 # --- Shop ---

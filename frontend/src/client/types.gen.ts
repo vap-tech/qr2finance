@@ -13,6 +13,10 @@ export type Body_receipts_create_receipt_from_raw_file = {
     file: (Blob | File);
 };
 
+export type Body_receipts_import_receipts = {
+    file: (Blob | File);
+};
+
 export type CashierCreate = {
     name: string;
     inn: string;
@@ -63,10 +67,10 @@ export type DashboardTimeseriesPoint = {
 export type DashboardTopShop = {
     shop_id: string;
     shop_display?: (string | null);
-    total_sum: number;
-    receipts_count: number;
     shop_name?: (string | null);
     shop_address?: (string | null);
+    total_sum: number;
+    receipts_count: number;
 };
 
 export type DashboardTotals = {
@@ -154,7 +158,7 @@ export type ReceiptImportSummary = {
     imported: number;
     skipped: number;
     failed: number;
-    errors: Array<ReceiptImportError>;
+    errors?: Array<ReceiptImportError>;
 };
 
 export type ReceiptItemCategoryCreate = {
@@ -371,10 +375,27 @@ export type ShopOwnerCreate = {
     inn: string;
 };
 
+export type ShopOwnerNamePublic = {
+    id: string;
+    name_raw: string;
+    name_normalized: string;
+    first_seen_at: string;
+    last_seen_at: string;
+    seen_count: number;
+    is_primary: boolean;
+};
+
+export type ShopOwnerPrimaryAliasUpdate = {
+    alias_id: string;
+};
+
 export type ShopOwnerPublic = {
     name: string;
     inn: string;
     id: string;
+    aliases_count?: number;
+    has_name_conflict?: boolean;
+    aliases?: Array<ShopOwnerNamePublic>;
 };
 
 /**
@@ -411,7 +432,7 @@ export type ShopRead = {
     is_active: boolean;
     shop_owner_id: (string | null);
     shop_owner?: (ShopOwnerPublic | null);
-    category_ids: Array<(string)>;
+    category_ids?: Array<(string)>;
 };
 
 /**
@@ -714,6 +735,19 @@ export type ReceiptsReadReceiptsData = {
 
 export type ReceiptsReadReceiptsResponse = (ReceiptsShortPublic);
 
+export type ReceiptsExportReceiptsData = {
+    dateFrom?: (string | null);
+    dateTo?: (string | null);
+};
+
+export type ReceiptsExportReceiptsResponse = (unknown);
+
+export type ReceiptsImportReceiptsData = {
+    formData: Body_receipts_import_receipts;
+};
+
+export type ReceiptsImportReceiptsResponse = (ReceiptImportSummary);
+
 export type ReceiptsReadReceiptData = {
     id: string;
 };
@@ -748,21 +782,6 @@ export type ReceiptsCreateReceiptFromRawFileData = {
 };
 
 export type ReceiptsCreateReceiptFromRawFileResponse = (ReceiptWithItemsPublic);
-
-export type ReceiptsExportReceiptsData = {
-    dateFrom?: (string | null);
-    dateTo?: (string | null);
-};
-
-export type ReceiptsExportReceiptsResponse = ((Blob | File));
-
-export type ReceiptsImportReceiptsData = {
-    formData: {
-        file: (Blob | File);
-    };
-};
-
-export type ReceiptsImportReceiptsResponse = (ReceiptImportSummary);
 
 export type ShopCategoriesReadShopCategoriesData = {
     limit?: number;
@@ -828,6 +847,13 @@ export type ShopOwnersDeleteShopOwnerData = {
 };
 
 export type ShopOwnersDeleteShopOwnerResponse = (Message);
+
+export type ShopOwnersSetPrimaryNameData = {
+    id: string;
+    requestBody: ShopOwnerPrimaryAliasUpdate;
+};
+
+export type ShopOwnersSetPrimaryNameResponse = (ShopOwnerPublic);
 
 export type ShopsReadShopsData = {
     limit?: number;

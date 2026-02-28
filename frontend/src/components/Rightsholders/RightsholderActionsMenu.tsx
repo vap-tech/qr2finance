@@ -1,24 +1,25 @@
-import { EllipsisVertical } from "lucide-react"
-import { useState } from "react"
+import { EllipsisVertical } from "lucide-react";
+import { useState } from "react";
 
-import type { ShopOwnerPublic } from "@/client"
-import { Button } from "@/components/ui/button"
+import type { ShopOwnerPublic } from "@/client";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import DeleteRightsholder from "./DeleteRightsholder"
-import EditRightsholder from "./EditRightsholder"
+} from "@/components/ui/dropdown-menu";
+import DeleteRightsholder from "./DeleteRightsholder";
+import EditRightsholder from "./EditRightsholder";
+import ManageRightsholderNames from "./ManageRightsholderNames";
 
 interface RightsholderActionsMenuProps {
-  rightsholder: ShopOwnerPublic
+  rightsholder: ShopOwnerPublic;
 }
 
 export const RightsholderActionsMenu = ({
   rightsholder,
 }: RightsholderActionsMenuProps) => {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -28,6 +29,11 @@ export const RightsholderActionsMenu = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <ManageRightsholderNames
+          rightsholderId={rightsholder.id}
+          rightsholderName={rightsholder.name}
+          onSuccess={() => setOpen(false)}
+        />
         <EditRightsholder
           rightsholder={rightsholder}
           onSuccess={() => setOpen(false)}
@@ -38,5 +44,5 @@ export const RightsholderActionsMenu = ({
         />
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
+  );
+};

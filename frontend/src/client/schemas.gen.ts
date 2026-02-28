@@ -70,6 +70,19 @@ export const Body_receipts_create_receipt_from_raw_fileSchema = {
     title: 'Body_receipts_create_receipt_from_raw_file'
 } as const;
 
+export const Body_receipts_import_receiptsSchema = {
+    properties: {
+        file: {
+            type: 'string',
+            format: 'binary',
+            title: 'File'
+        }
+    },
+    type: 'object',
+    required: ['file'],
+    title: 'Body_receipts_import_receipts'
+} as const;
+
 export const CashierCreateSchema = {
     properties: {
         name: {
@@ -141,6 +154,167 @@ export const CashiersPublicSchema = {
     required: ['data', 'count'],
     title: 'CashiersPublic',
     description: 'Paginated list of public cashiers.'
+} as const;
+
+export const DashboardPaymentSplitSchema = {
+    properties: {
+        cash_total_sum: {
+            type: 'integer',
+            title: 'Cash Total Sum'
+        },
+        ecash_total_sum: {
+            type: 'integer',
+            title: 'Ecash Total Sum'
+        },
+        total_sum: {
+            type: 'integer',
+            title: 'Total Sum'
+        },
+        cash_percent: {
+            type: 'number',
+            title: 'Cash Percent'
+        },
+        ecash_percent: {
+            type: 'number',
+            title: 'Ecash Percent'
+        }
+    },
+    type: 'object',
+    required: ['cash_total_sum', 'ecash_total_sum', 'total_sum', 'cash_percent', 'ecash_percent'],
+    title: 'DashboardPaymentSplit'
+} as const;
+
+export const DashboardResponseSchema = {
+    properties: {
+        totals: {
+            '$ref': '#/components/schemas/DashboardTotals'
+        },
+        payment_split: {
+            '$ref': '#/components/schemas/DashboardPaymentSplit'
+        },
+        timeseries: {
+            items: {
+                '$ref': '#/components/schemas/DashboardTimeseriesPoint'
+            },
+            type: 'array',
+            title: 'Timeseries'
+        },
+        top_shops: {
+            items: {
+                '$ref': '#/components/schemas/DashboardTopShop'
+            },
+            type: 'array',
+            title: 'Top Shops'
+        },
+        latest_receipts: {
+            '$ref': '#/components/schemas/ReceiptsShortPublic'
+        }
+    },
+    type: 'object',
+    required: ['totals', 'payment_split', 'timeseries', 'top_shops', 'latest_receipts'],
+    title: 'DashboardResponse'
+} as const;
+
+export const DashboardTimeseriesPointSchema = {
+    properties: {
+        date: {
+            type: 'string',
+            title: 'Date'
+        },
+        revenue: {
+            type: 'integer',
+            title: 'Revenue'
+        },
+        receipts_count: {
+            type: 'integer',
+            title: 'Receipts Count'
+        },
+        avg_receipt: {
+            type: 'number',
+            title: 'Avg Receipt'
+        }
+    },
+    type: 'object',
+    required: ['date', 'revenue', 'receipts_count', 'avg_receipt'],
+    title: 'DashboardTimeseriesPoint'
+} as const;
+
+export const DashboardTopShopSchema = {
+    properties: {
+        shop_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Shop Id'
+        },
+        shop_display: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shop Display'
+        },
+        shop_name: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shop Name'
+        },
+        shop_address: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shop Address'
+        },
+        total_sum: {
+            type: 'integer',
+            title: 'Total Sum'
+        },
+        receipts_count: {
+            type: 'integer',
+            title: 'Receipts Count'
+        }
+    },
+    type: 'object',
+    required: ['shop_id', 'total_sum', 'receipts_count'],
+    title: 'DashboardTopShop'
+} as const;
+
+export const DashboardTotalsSchema = {
+    properties: {
+        revenue: {
+            type: 'integer',
+            title: 'Revenue'
+        },
+        receipts_count: {
+            type: 'integer',
+            title: 'Receipts Count'
+        },
+        avg_receipt: {
+            type: 'number',
+            title: 'Avg Receipt'
+        },
+        unique_shops: {
+            type: 'integer',
+            title: 'Unique Shops'
+        }
+    },
+    type: 'object',
+    required: ['revenue', 'receipts_count', 'avg_receipt', 'unique_shops'],
+    title: 'DashboardTotals'
 } as const;
 
 export const HTTPValidationErrorSchema = {
@@ -358,6 +532,49 @@ export const PrivateUserCreateSchema = {
     type: 'object',
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate'
+} as const;
+
+export const ReceiptImportErrorSchema = {
+    properties: {
+        line: {
+            type: 'integer',
+            title: 'Line'
+        },
+        detail: {
+            type: 'string',
+            title: 'Detail'
+        }
+    },
+    type: 'object',
+    required: ['line', 'detail'],
+    title: 'ReceiptImportError'
+} as const;
+
+export const ReceiptImportSummarySchema = {
+    properties: {
+        imported: {
+            type: 'integer',
+            title: 'Imported'
+        },
+        skipped: {
+            type: 'integer',
+            title: 'Skipped'
+        },
+        failed: {
+            type: 'integer',
+            title: 'Failed'
+        },
+        errors: {
+            items: {
+                '$ref': '#/components/schemas/ReceiptImportError'
+            },
+            type: 'array',
+            title: 'Errors'
+        }
+    },
+    type: 'object',
+    required: ['imported', 'skipped', 'failed'],
+    title: 'ReceiptImportSummary'
 } as const;
 
 export const ReceiptItemCategoryCreateSchema = {
@@ -1443,6 +1660,58 @@ export const ShopOwnerCreateSchema = {
     title: 'ShopOwnerCreate'
 } as const;
 
+export const ShopOwnerNamePublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        name_raw: {
+            type: 'string',
+            title: 'Name Raw'
+        },
+        name_normalized: {
+            type: 'string',
+            title: 'Name Normalized'
+        },
+        first_seen_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'First Seen At'
+        },
+        last_seen_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Last Seen At'
+        },
+        seen_count: {
+            type: 'integer',
+            title: 'Seen Count'
+        },
+        is_primary: {
+            type: 'boolean',
+            title: 'Is Primary'
+        }
+    },
+    type: 'object',
+    required: ['id', 'name_raw', 'name_normalized', 'first_seen_at', 'last_seen_at', 'seen_count', 'is_primary'],
+    title: 'ShopOwnerNamePublic'
+} as const;
+
+export const ShopOwnerPrimaryAliasUpdateSchema = {
+    properties: {
+        alias_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Alias Id'
+        }
+    },
+    type: 'object',
+    required: ['alias_id'],
+    title: 'ShopOwnerPrimaryAliasUpdate'
+} as const;
+
 export const ShopOwnerPublicSchema = {
     properties: {
         name: {
@@ -1457,6 +1726,23 @@ export const ShopOwnerPublicSchema = {
             type: 'string',
             format: 'uuid',
             title: 'Id'
+        },
+        aliases_count: {
+            type: 'integer',
+            title: 'Aliases Count',
+            default: 0
+        },
+        has_name_conflict: {
+            type: 'boolean',
+            title: 'Has Name Conflict',
+            default: false
+        },
+        aliases: {
+            items: {
+                '$ref': '#/components/schemas/ShopOwnerNamePublic'
+            },
+            type: 'array',
+            title: 'Aliases'
         }
     },
     type: 'object',
@@ -1655,16 +1941,16 @@ export const ShopReadSchema = {
             ]
         },
         category_ids: {
-            type: 'array',
             items: {
                 type: 'string',
                 format: 'uuid'
             },
+            type: 'array',
             title: 'Category Ids'
         }
     },
     type: 'object',
-    required: ['id', 'retail_name', 'address', 'is_favorite', 'notes', 'is_active', 'shop_owner_id', 'category_ids'],
+    required: ['id', 'retail_name', 'address', 'is_favorite', 'notes', 'is_active', 'shop_owner_id'],
     title: 'ShopRead'
 } as const;
 
@@ -2116,208 +2402,4 @@ export const ValidationErrorSchema = {
     type: 'object',
     required: ['loc', 'msg', 'type'],
     title: 'ValidationError'
-} as const;
-
-export const DashboardTotalsSchema = {
-    title: 'DashboardTotals',
-    type: 'object',
-    properties: {
-        revenue: {
-            type: 'integer',
-            title: 'Revenue'
-        },
-        receipts_count: {
-            type: 'integer',
-            title: 'Receipts Count'
-        },
-        avg_receipt: {
-            type: 'number',
-            title: 'Avg Receipt'
-        },
-        unique_shops: {
-            type: 'integer',
-            title: 'Unique Shops'
-        }
-    },
-    required: ['revenue', 'receipts_count', 'avg_receipt', 'unique_shops']
-} as const;
-
-export const DashboardPaymentSplitSchema = {
-    title: 'DashboardPaymentSplit',
-    type: 'object',
-    properties: {
-        cash_total_sum: {
-            type: 'integer',
-            title: 'Cash Total Sum'
-        },
-        ecash_total_sum: {
-            type: 'integer',
-            title: 'Ecash Total Sum'
-        },
-        total_sum: {
-            type: 'integer',
-            title: 'Total Sum'
-        },
-        cash_percent: {
-            type: 'number',
-            title: 'Cash Percent'
-        },
-        ecash_percent: {
-            type: 'number',
-            title: 'Ecash Percent'
-        }
-    },
-    required: ['cash_total_sum', 'ecash_total_sum', 'total_sum', 'cash_percent', 'ecash_percent']
-} as const;
-
-export const DashboardTimeseriesPointSchema = {
-    title: 'DashboardTimeseriesPoint',
-    type: 'object',
-    properties: {
-        date: {
-            type: 'string',
-            title: 'Date'
-        },
-        revenue: {
-            type: 'integer',
-            title: 'Revenue'
-        },
-        receipts_count: {
-            type: 'integer',
-            title: 'Receipts Count'
-        },
-        avg_receipt: {
-            type: 'number',
-            title: 'Avg Receipt'
-        }
-    },
-    required: ['date', 'revenue', 'receipts_count', 'avg_receipt']
-} as const;
-
-export const DashboardTopShopSchema = {
-    title: 'DashboardTopShop',
-    type: 'object',
-    properties: {
-        shop_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Shop Id'
-        },
-        shop_display: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Shop Display'
-        },
-        total_sum: {
-            type: 'integer',
-            title: 'Total Sum'
-        },
-        receipts_count: {
-            type: 'integer',
-            title: 'Receipts Count'
-        },
-        shop_name: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Shop Name'
-        },
-        shop_address: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Shop Address'
-        }
-    },
-    required: ['shop_id', 'total_sum', 'receipts_count']
-} as const;
-
-export const DashboardResponseSchema = {
-    title: 'DashboardResponse',
-    type: 'object',
-    properties: {
-        totals: {
-            '$ref': '#/components/schemas/DashboardTotals'
-        },
-        payment_split: {
-            '$ref': '#/components/schemas/DashboardPaymentSplit'
-        },
-        timeseries: {
-            type: 'array',
-            items: {
-                '$ref': '#/components/schemas/DashboardTimeseriesPoint'
-            },
-            title: 'Timeseries'
-        },
-        top_shops: {
-            type: 'array',
-            items: {
-                '$ref': '#/components/schemas/DashboardTopShop'
-            },
-            title: 'Top Shops'
-        },
-        latest_receipts: {
-            '$ref': '#/components/schemas/ReceiptsShortPublic'
-        }
-    },
-    required: ['totals', 'payment_split', 'timeseries', 'top_shops', 'latest_receipts']
-} as const;
-
-export const ReceiptImportErrorSchema = {
-    title: 'ReceiptImportError',
-    type: 'object',
-    properties: {
-        line: {
-            type: 'integer',
-            title: 'Line'
-        },
-        detail: {
-            type: 'string',
-            title: 'Detail'
-        }
-    },
-    required: ['line', 'detail']
-} as const;
-
-export const ReceiptImportSummarySchema = {
-    title: 'ReceiptImportSummary',
-    type: 'object',
-    properties: {
-        imported: {
-            type: 'integer',
-            title: 'Imported'
-        },
-        skipped: {
-            type: 'integer',
-            title: 'Skipped'
-        },
-        failed: {
-            type: 'integer',
-            title: 'Failed'
-        },
-        errors: {
-            type: 'array',
-            items: {
-                '$ref': '#/components/schemas/ReceiptImportError'
-            },
-            title: 'Errors'
-        }
-    },
-    required: ['imported', 'skipped', 'failed', 'errors']
 } as const;

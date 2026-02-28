@@ -10,11 +10,18 @@ from app.models import (
     Message,
     ShopOwner,
     ShopOwnerCreate,
+    ShopOwnerName,
+    ShopOwnerPrimaryAliasUpdate,
     ShopOwnerPublic,
     ShopOwnersPublic,
     ShopOwnerUpdate,
 )
-from app.servises.shop_owner import get_or_create_shop_owner
+from app.servises.shop_owner import (
+    build_shop_owner_public,
+    get_or_create_shop_owner,
+    set_shop_owner_primary_alias,
+    touch_shop_owner_alias,
+)
 
 router = APIRouter(prefix="/shop-owners", tags=["shop-owners"])
 
@@ -34,17 +41,33 @@ def read_shop_owners(
     )
     count = session.exec(count_statement).one()
     statement = (
-        select(ShopOwner)
+        select(ShopOwner, func.count(col(ShopOwnerName.id)))
+        .join(
+            ShopOwnerName,
+            col(ShopOwnerName.shop_owner_id) == col(ShopOwner.id),
+            isouter=True,
+        )
         .where(col(ShopOwner.is_active).is_(True))
+        .group_by(col(ShopOwner.id))
         .order_by(col(ShopOwner.name).asc())
         .offset(skip)
         .limit(limit)
     )
-    shop_owners = session.exec(statement).all()
+    rows = session.exec(statement).all()
+    data = []
+    for shop_owner, aliases_count in rows:
+        count_value = int(aliases_count)
+        data.append(
+            ShopOwnerPublic(
+                id=shop_owner.id,
+                name=shop_owner.name,
+                inn=shop_owner.inn,
+                aliases_count=count_value,
+                has_name_conflict=count_value > 1,
+            )
+        )
 
-    return ShopOwnersPublic(
-        data=[ShopOwnerPublic.model_validate(i) for i in shop_owners], count=count
-    )
+    return ShopOwnersPublic(data=data, count=count)
 
 
 @router.get("/{id}", response_model=ShopOwnerPublic)
@@ -55,7 +78,7 @@ def read_shop_owner(session: SessionDep, _: CurrentUser, id: uuid.UUID) -> Any:
     shop_owner = session.get(ShopOwner, id)
     if not shop_owner:
         raise HTTPException(status_code=404, detail="Shop owner not found")
-    return shop_owner
+    return build_shop_owner_public(session, shop_owner)
 
 
 @router.post("/", response_model=ShopOwnerPublic)
@@ -69,9 +92,11 @@ def create_shop_owner(
         shop_owner = get_or_create_shop_owner(
             session=session, shop_owner_in=shop_owner_in
         )
+        if shop_owner is None:
+            raise HTTPException(status_code=422, detail="name and inn are required")
         session.commit()
         session.refresh(shop_owner)
-        return shop_owner
+        return build_shop_owner_public(session, shop_owner)
     except MultipleResultsFound as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     finally:
@@ -98,11 +123,47 @@ def update_shop_owner(
         update_dict["name"] = update_dict["name"].strip()
     if "inn" in update_dict and update_dict["inn"] is not None:
         update_dict["inn"] = update_dict["inn"].strip()
+    if update_dict.get("name") == "" or update_dict.get("inn") == "":
+        raise HTTPException(status_code=422, detail="name and inn cannot be empty")
     shop_owner.sqlmodel_update(update_dict)
+    if "name" in update_dict and update_dict["name"] is not None:
+        touch_shop_owner_alias(
+            session=session,
+            shop_owner=shop_owner,
+            name_raw=update_dict["name"],
+            make_primary=True,
+        )
     session.add(shop_owner)
     session.commit()
     session.refresh(shop_owner)
-    return shop_owner
+    return build_shop_owner_public(session, shop_owner)
+
+
+@router.patch("/{id}/primary-name", response_model=ShopOwnerPublic)
+def set_primary_name(
+    *,
+    session: SessionDep,
+    _: CurrentUser,
+    id: uuid.UUID,
+    payload: ShopOwnerPrimaryAliasUpdate,
+) -> Any:
+    """
+    Set primary visible name for shop owner.
+    """
+    shop_owner = session.get(ShopOwner, id)
+    if not shop_owner:
+        raise HTTPException(status_code=404, detail="Shop owner not found")
+    try:
+        set_shop_owner_primary_alias(
+            session=session,
+            shop_owner=shop_owner,
+            alias_id=payload.alias_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    session.commit()
+    session.refresh(shop_owner)
+    return build_shop_owner_public(session, shop_owner)
 
 
 @router.delete("/{id}")

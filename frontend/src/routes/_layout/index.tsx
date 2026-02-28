@@ -177,7 +177,7 @@ function DashboardContent() {
   const filteredShops = useMemo(() => {
     if (shopCategoryId === "all") return shops.data;
     return shops.data.filter((shop) =>
-      shop.category_ids.includes(shopCategoryId),
+      (shop.category_ids ?? []).includes(shopCategoryId),
     );
   }, [shops.data, shopCategoryId]);
 
