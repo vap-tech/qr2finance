@@ -1,52 +1,43 @@
-import os
+from enum import Enum
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
+from starlette.middleware.cors import CORSMiddleware
 
-from .database import Base, engine
-from .routers import analytics, auth, receipts, stores, users
+from app.api.main import api_router
+from app.core.config import settings
 
-load_dotenv()
-api_url = os.getenv("API_URL", "")
-cors = os.getenv("CORS", "http://localhost:3000")
-is_prod = os.getenv("IS_PROD") == "true"
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+def custom_generate_unique_id(route: APIRoute) -> str:
+    raw_tag = route.tags[0] if route.tags else "default"
+    tag = raw_tag.value if isinstance(raw_tag, Enum) else str(raw_tag)
+    safe_tag = tag.replace("-", "_")
+    safe_name = route.name.replace("-", "_")
+    return f"{safe_tag}_{safe_name}"
+
+
+docs_url = None
+redoc_url = None
+if settings.ENVIRONMENT == "local":
+    docs_url = f"{settings.API_V1_STR}/docs"
+    redoc_url = f"{settings.API_V1_STR}/redoc"
 
 app = FastAPI(
-    title="Receipt Analyzer API",
-    description="API for analyzing shopping receipts",
-    version="1.0.0",
-    root_path=api_url,
-    docs_url=None if is_prod else "/docs",
-    redoc_url=None if is_prod else "/redoc",
-    openapi_url=None if is_prod else "/openapi.json",
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    docs_url=docs_url,
+    redoc_url=redoc_url,
+    generate_unique_id_function=custom_generate_unique_id,
 )
 
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[cors],  # React frontend
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Set all CORS enabled origins
+if settings.all_cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.all_cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(receipts.router)
-app.include_router(analytics.router)
-app.include_router(stores.router)
-app.include_router(users.router)
-
-
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to Receipt Analyzer API"}
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+app.include_router(api_router, prefix=settings.API_V1_STR)

@@ -1,0 +1,57 @@
+[
+  {
+    "_id": "6986dfad67ebf4530e07850a",
+    "createdAt": "2026-02-07T06:46:05+00:00",
+    "ticket": {
+      "document": {
+        "receipt": {
+          "cashTotalSum": 0,
+          "code": 3,
+          "creditSum": 0,
+          "dateTime": "2026-02-06T18:50:00",
+          "ecashTotalSum": 60100,
+          "fiscalDocumentFormatVer": 4,
+          "fiscalDocumentNumber": 20733,
+          "fiscalDriveNumber": "7380440902283740",
+          "fiscalSign": 1271435226,
+          "items": [
+            {
+              "name": "Курица гриль 1 шт.",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 59900,
+              "productType": 1,
+              "quantity": 1,
+              "sum": 59900
+            },
+            {
+              "name": "Пакет Майка малая, шт (платный)",
+              "nds": 1,
+              "paymentType": 4,
+              "price": 200,
+              "productType": 1,
+              "quantity": 1,
+              "sum": 200
+            }
+          ],
+          "kktRegId": "0009320813033657    ",
+          "nds10": 5445,
+          "nds18": 33,
+          "operationType": 1,
+          "operator": "Мельникова Н. Н.",
+          "prepaidSum": 0,
+          "provisionSum": 0,
+          "requestNumber": 66,
+          "retailPlace": "Киоск №512",
+          "retailPlaceAddress": "36 - Воронежская область, м.р-н Репьёвский,396370, г/п Репьёвское, с Репьёвка,, ул Воронежская, д. 54",
+          "shiftNumber": 217,
+          "taxationType": 1,
+          "appliedTaxationType": 1,
+          "totalSum": 60100,
+          "user": "ЛЕБЕДЕВА АННА АНДРЕЕВНА",
+          "userInn": "366608065023"
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,66 @@
+[
+  {
+    "_id": "69888030e2f056ce4cd417b1",
+    "createdAt": "2026-02-08T12:23:12+00:00",
+    "ticket": {
+      "document": {
+        "receipt": {
+          "cashTotalSum": 0,
+          "code": 3,
+          "creditSum": 0,
+          "dateTime": "2026-02-08T15:22:00",
+          "ecashTotalSum": 124466,
+          "fiscalDocumentFormatVer": 4,
+          "fiscalDocumentNumber": 31121,
+          "fiscalDriveNumber": "7380440801652588",
+          "fiscalSign": 870075502,
+          "items": [
+            {
+              "name": "Мякоть свиная",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 36000,
+              "productType": 1,
+              "quantity": 2.254,
+              "sum": 81144
+            },
+            {
+              "name": "Карбонад свиной",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 39000,
+              "productType": 1,
+              "quantity": 1.098,
+              "sum": 42822
+            },
+            {
+              "name": "Пакет-майка большой",
+              "nds": 11,
+              "paymentType": 4,
+              "price": 500,
+              "productType": 1,
+              "quantity": 1,
+              "sum": 500
+            }
+          ],
+          "kktRegId": "0005117928002882    ",
+          "nds10": 11270,
+          "amountsReceiptNds": { "amountsNds": [{ "nds": 11, "ndsSum": 90 }] },
+          "operationType": 1,
+          "operator": "Хилькова Л.И.",
+          "prepaidSum": 0,
+          "provisionSum": 0,
+          "requestNumber": 112,
+          "retailPlace": "Магазин \"Бабаевские колбасы Центральный\"",
+          "retailPlaceAddress": "397855, Воронежская обл., Острогожский р-н, г. Острогожск, ул. Ленина, 30",
+          "shiftNumber": 180,
+          "taxationType": 4,
+          "appliedTaxationType": 4,
+          "totalSum": 124466,
+          "user": "БАБАЕВ ВЛАДИМИР ВИКТОРОВИЧ",
+          "userInn": "361911486224"
+        }
+      }
+    }
+  }
+]

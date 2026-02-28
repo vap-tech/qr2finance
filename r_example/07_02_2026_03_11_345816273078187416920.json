@@ -1,0 +1,120 @@
+[
+  {
+    "_id": "69872befe2f056ce4cd3fd56",
+    "createdAt": "2026-02-07T12:11:27+00:00",
+    "ticket": {
+      "document": {
+        "receipt": {
+          "cashTotalSum": 0,
+          "code": 3,
+          "creditSum": 0,
+          "dateTime": "2026-02-07T15:09:00",
+          "ecashTotalSum": 113338,
+          "fiscalDocumentFormatVer": 4,
+          "fiscalDocumentNumber": 29745,
+          "fiscalDriveNumber": "7384440900723113",
+          "fiscalSign": 328651140,
+          "fnsUrl": "www.nalog.gov.ru",
+          "items": [
+            {
+              "name": "*GL.VIL.SEL.Оливки б/к 170г",
+              "nds": 1,
+              "paymentType": 4,
+              "price": 10499,
+              "productType": 33,
+              "productCodeData": {
+                "gtin": 4680791802166,
+                "rawProductCode": "0104680791802166215ZQ6.L",
+                "productIdType": 6,
+                "sernum": "5ZQ6.L"
+              },
+              "quantity": 1,
+              "sum": 10499
+            },
+            {
+              "name": "ЛЕТО Яйцо куриное пищ.С1 10шт",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 9999,
+              "productType": 1,
+              "productCodeDataError": "not supported product type 3",
+              "quantity": 1,
+              "sum": 9999
+            },
+            {
+              "name": "ЭКОПТИЦА Филе ЦБ б/кожи охл.1кг",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 35999,
+              "productType": 1,
+              "productCodeDataError": "unable to convert gtin to integer; not supported product type 1",
+              "quantity": 1.079,
+              "sum": 38843
+            },
+            {
+              "name": "*ВЛ.СТ.Сосиски БАВАРСКИЕ вар.1кг",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 33999,
+              "productType": 1,
+              "productCodeDataError": "not supported product type 3",
+              "quantity": 1,
+              "sum": 33999
+            },
+            {
+              "name": "ЭКОНИВА Сметана 15% 300г",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 9999,
+              "productType": 33,
+              "productCodeData": {
+                "gtin": 4680017926263,
+                "rawProductCode": "0104680017926263215H_eSr",
+                "productIdType": 6,
+                "sernum": "5H_eSr"
+              },
+              "quantity": 1,
+              "sum": 9999
+            },
+            {
+              "name": "EKON.Молоко паст.2,5%ПЭТ 1000мл",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 9999,
+              "productType": 33,
+              "productCodeData": {
+                "gtin": 4680017922234,
+                "rawProductCode": "0104680017922234215DYWTZ",
+                "productIdType": 6,
+                "sernum": "5DYWTZ"
+              },
+              "quantity": 1,
+              "sum": 9999
+            }
+          ],
+          "kktRegId": "0006817778007467    ",
+          "nds10": 9349,
+          "nds18": 1750,
+          "operationType": 1,
+          "operator": "Вишнякова Елена Анатольевна, Продавец-каccир",
+          "operatorInn": "361911864275",
+          "prepaidSum": 0,
+          "properties": {
+            "propertyName": "X5",
+            "propertyValue": "9697;POS01-BO-9697;f9beca559f784d54899db89eb0536554;f4b8ffed84f8607b92c0a6e4cfea5b89"
+          },
+          "provisionSum": 0,
+          "requestNumber": 309,
+          "retailPlace": "9697 4368-Пятерочка",
+          "retailPlaceAddress": "397853,Воронежская область, м.р-н Острогожский, г/п город Острогожск, г Острогожск, мкр Северный, Дом 24",
+          "shiftNumber": 62,
+          "taxationType": 1,
+          "appliedTaxationType": 1,
+          "totalSum": 113338,
+          "user": "АО ТД Перекресток",
+          "userInn": "7728029110  "
+        }
+      }
+    }
+  }
+]

@@ -1,0 +1,51 @@
+[
+  {
+    "_id": "6983417a67ebf4530e06de56",
+    "createdAt": "2026-02-04T12:54:18+00:00",
+    "ticket": {
+      "document": {
+        "receipt": {
+          "cashTotalSum": 100000,
+          "code": 3,
+          "creditSum": 0,
+          "dateTime": "2026-02-04T15:52:00",
+          "ecashTotalSum": 0,
+          "fiscalDocumentFormatVer": 4,
+          "fiscalDocumentNumber": 58529,
+          "fiscalDriveNumber": "7384440800438495",
+          "fiscalSign": 4139205645,
+          "items": [
+            {
+              "name": "АИ-95-К5 N 5:00000",
+              "nds": 11,
+              "paymentType": 4,
+              "price": 6780,
+              "productType": 2,
+              "productCodeDataError": "unable to convert gtin to integer; not supported product type 1",
+              "quantity": 14.75,
+              "sum": 100005
+            }
+          ],
+          "kktRegId": "0000351342025179    ",
+          "nds0": 0,
+          "amountsReceiptNds": {
+            "amountsNds": [{ "nds": 11, "ndsSum": 18033 }]
+          },
+          "operationType": 1,
+          "operator": "КАССИР: Ельшина Наталья Анатольевна  ",
+          "prepaidSum": 0,
+          "provisionSum": 0,
+          "requestNumber": 107,
+          "retailPlace": "АЗК 35",
+          "retailPlaceAddress": "36-Воронежская область, Репьевский р-н, 396370, с.Репьевка, ул.Воронежская, д.70",
+          "shiftNumber": 427,
+          "taxationType": 1,
+          "appliedTaxationType": 1,
+          "totalSum": 100000,
+          "user": "АКЦИОНЕРНОЕ ОБЩЕСТВО \"ВОРОНЕЖНЕФТЕПРОДУКТ\"",
+          "userInn": "3664002554  "
+        }
+      }
+    }
+  }
+]

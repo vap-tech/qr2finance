@@ -1,0 +1,95 @@
+[
+  {
+    "_id": "6986dd4e77fd7093c4f7f494",
+    "createdAt": "2026-02-07T06:35:58+00:00",
+    "ticket": {
+      "document": {
+        "receipt": {
+          "cashTotalSum": 59300,
+          "code": 3,
+          "creditSum": 0,
+          "dateTime": "2026-02-06T17:15:00",
+          "ecashTotalSum": 0,
+          "fiscalDocumentFormatVer": 4,
+          "fiscalDocumentNumber": 99548,
+          "fiscalDriveNumber": "7380440801529617",
+          "fiscalSign": 77174180,
+          "fnsUrl": "www.nalog.gov.ru",
+          "items": [
+            {
+              "name": "Хлеб ржаной Бездрожжевой 300г не упак(Кулинар",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 6499,
+              "productType": 1,
+              "productCodeDataError": "not supported product type 3",
+              "quantity": 1,
+              "sum": 6499
+            },
+            {
+              "name": "ВКУСНОТЕЕВО Сыр Триумф 45% 180г пл/уп (В",
+              "nds": 2,
+              "paymentType": 4,
+              "price": 18999,
+              "productType": 33,
+              "productCodeData": {
+                "gtin": 4601751027047,
+                "rawProductCode": "0104601751027047215D7VbO",
+                "productIdType": 6,
+                "sernum": "5D7VbO"
+              },
+              "quantity": 1,
+              "sum": 18999
+            },
+            {
+              "name": "СЛОБОДА Майонез Провансаль 67% 197г д/п(Эфко)",
+              "nds": 1,
+              "paymentType": 4,
+              "price": 6499,
+              "productType": 1,
+              "productCodeDataError": "not supported product type 3",
+              "quantity": 1,
+              "sum": 6499
+            },
+            {
+              "name": "МАХЕЕВЪ Кетчуп Лечо 300г д/п(Эссен Продакшн):",
+              "nds": 1,
+              "paymentType": 4,
+              "price": 8499,
+              "productType": 1,
+              "productCodeDataError": "not supported product type 3",
+              "quantity": 1,
+              "sum": 8499
+            },
+            {
+              "name": "БЕЛЕВСКАЯ ПАСТ МАНУФ Зефир Антоновка 250г(Бел",
+              "nds": 1,
+              "paymentType": 4,
+              "price": 18899,
+              "productType": 1,
+              "productCodeDataError": "not supported product type 3",
+              "quantity": 1,
+              "sum": 18899
+            }
+          ],
+          "kktRegId": "0008989563005972    ",
+          "nds10": 2318,
+          "nds18": 5650,
+          "operationType": 1,
+          "operator": "Продавец Жихарцева",
+          "prepaidSum": 0,
+          "provisionSum": 0,
+          "requestNumber": 330,
+          "retailPlace": "Магазин  Магнит  Мантия",
+          "retailPlaceAddress": "396370, Воронежская обл, Репьевский р-н, Репьёвка с, Советская ул, дом № 9",
+          "shiftNumber": 292,
+          "taxationType": 1,
+          "appliedTaxationType": 1,
+          "totalSum": 59300,
+          "user": "АКЦИОНЕРНОЕ ОБЩЕСТВО \"ТАНДЕР\"",
+          "userInn": "2310031475  "
+        }
+      }
+    }
+  }
+]

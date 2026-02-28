@@ -1,0 +1,121 @@
+import uuid
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+from sqlalchemy.exc import MultipleResultsFound
+from sqlmodel import col, func, select
+
+from app.api.deps import CurrentUser, SessionDep
+from app.models import (
+    Cashier,
+    CashierCreate,
+    CashierPublic,
+    CashiersPublic,
+    CashierUpdate,
+    Message,
+)
+from app.servises.cashier import get_or_create_cashier
+
+router = APIRouter(prefix="/cashiers", tags=["cashiers"])
+
+
+@router.get("/", response_model=CashiersPublic)
+def read_cashiers(
+    session: SessionDep, _: CurrentUser, skip: int = 0, limit: int = 100
+) -> Any:
+    """
+    Retrieve cashiers.
+    """
+
+    count_statement = (
+        select(func.count())
+        .select_from(Cashier)
+        .where(col(Cashier.is_active).is_(True))
+    )
+    count = session.exec(count_statement).one()
+    statement = (
+        select(Cashier)
+        .where(col(Cashier.is_active).is_(True))
+        .order_by(col(Cashier.id).desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    cashiers = session.exec(statement).all()
+
+    return CashiersPublic(
+        data=[CashierPublic.model_validate(i) for i in cashiers], count=count
+    )
+
+
+@router.get("/{id}", response_model=CashierPublic)
+def read_cashier(session: SessionDep, _: CurrentUser, id: uuid.UUID) -> Any:
+    """
+    Get cashier by ID.
+    """
+    cashier = session.get(Cashier, id)
+    if not cashier:
+        raise HTTPException(status_code=404, detail="Cashier not found")
+    return cashier
+
+
+@router.post("/", response_model=CashierPublic)
+def create_cashier(
+    *, session: SessionDep, _: CurrentUser, cashier_in: CashierCreate
+) -> Any:
+    """
+    Create new cashier.
+    """
+    try:
+        cashier = get_or_create_cashier(session=session, cashier_in=cashier_in)
+        session.commit()
+        session.refresh(cashier)
+        return cashier
+    except MultipleResultsFound as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    finally:
+        if session.in_transaction():
+            session.rollback()
+
+
+@router.put("/{id}", response_model=CashierPublic)
+def update_cashier(
+    *,
+    session: SessionDep,
+    _: CurrentUser,
+    id: uuid.UUID,
+    cashier_in: CashierUpdate,
+) -> Any:
+    """
+    Update an cashier.
+    """
+    cashier = session.get(Cashier, id)
+    if not cashier:
+        raise HTTPException(status_code=404, detail="Cashier not found")
+    update_dict = cashier_in.model_dump(exclude_unset=True)
+    if "name" in update_dict and update_dict["name"] is not None:
+        update_dict["name"] = update_dict["name"].strip()
+    if "inn" in update_dict and update_dict["inn"] is not None:
+        update_dict["inn"] = update_dict["inn"].strip()
+    cashier.sqlmodel_update(update_dict)
+    session.add(cashier)
+    session.commit()
+    session.refresh(cashier)
+    return cashier
+
+
+@router.delete("/{id}")
+def delete_cashier(
+    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+) -> Message:
+    """
+    Delete an cashier.
+    """
+    cashier = session.get(Cashier, id)
+    if not cashier:
+        raise HTTPException(status_code=404, detail="Cashier not found")
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    cashier.is_active = False
+    session.add(cashier)
+    session.commit()
+    return Message(message="Cashier deactivated successfully")
