@@ -1518,45 +1518,6 @@ export const SetShopCategoriesSchema = {
     title: 'SetShopCategories'
 } as const;
 
-export const ShopAddressPublicSchema = {
-    properties: {
-        id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Id'
-        },
-        address_raw: {
-            type: 'string',
-            title: 'Address Raw'
-        },
-        address_normalized: {
-            type: 'string',
-            title: 'Address Normalized'
-        },
-        first_seen_at: {
-            type: 'string',
-            format: 'date-time',
-            title: 'First Seen At'
-        },
-        last_seen_at: {
-            type: 'string',
-            format: 'date-time',
-            title: 'Last Seen At'
-        },
-        seen_count: {
-            type: 'integer',
-            title: 'Seen Count'
-        },
-        is_primary: {
-            type: 'boolean',
-            title: 'Is Primary'
-        }
-    },
-    type: 'object',
-    required: ['id', 'address_raw', 'address_normalized', 'first_seen_at', 'last_seen_at', 'seen_count', 'is_primary'],
-    title: 'ShopAddressPublic'
-} as const;
-
 export const ShopCategoryCreateSchema = {
     properties: {
         name: {
@@ -1694,6 +1655,26 @@ export const ShopCreateSchema = {
     },
     type: 'object',
     title: 'ShopCreate'
+} as const;
+
+export const ShopDuplicateScanResultSchema = {
+    properties: {
+        scanned: {
+            type: 'integer',
+            title: 'Scanned'
+        },
+        marked: {
+            type: 'integer',
+            title: 'Marked'
+        },
+        field: {
+            type: 'string',
+            title: 'Field'
+        }
+    },
+    type: 'object',
+    required: ['scanned', 'marked', 'field'],
+    title: 'ShopDuplicateScanResult'
 } as const;
 
 export const ShopOwnerCreateSchema = {
@@ -1838,19 +1819,6 @@ export const ShopOwnersPublicSchema = {
     description: 'Paginated list of public shop owners.'
 } as const;
 
-export const ShopPrimaryAddressUpdateSchema = {
-    properties: {
-        alias_id: {
-            type: 'string',
-            format: 'uuid',
-            title: 'Alias Id'
-        }
-    },
-    type: 'object',
-    required: ['alias_id'],
-    title: 'ShopPrimaryAddressUpdate'
-} as const;
-
 export const ShopPublicSchema = {
     properties: {
         id: {
@@ -1929,22 +1897,15 @@ export const ShopPublicSchema = {
             type: 'array',
             title: 'Category Ids'
         },
-        address_aliases_count: {
-            type: 'integer',
-            title: 'Address Aliases Count',
-            default: 0
-        },
-        has_address_conflict: {
+        has_name_duplicate: {
             type: 'boolean',
-            title: 'Has Address Conflict',
+            title: 'Has Name Duplicate',
             default: false
         },
-        addresses: {
-            items: {
-                '$ref': '#/components/schemas/ShopAddressPublic'
-            },
-            type: 'array',
-            title: 'Addresses'
+        has_address_duplicate: {
+            type: 'boolean',
+            title: 'Has Address Duplicate',
+            default: false
         }
     },
     type: 'object',
@@ -2030,22 +1991,15 @@ export const ShopReadSchema = {
             type: 'array',
             title: 'Category Ids'
         },
-        address_aliases_count: {
-            type: 'integer',
-            title: 'Address Aliases Count',
-            default: 0
-        },
-        has_address_conflict: {
+        has_name_duplicate: {
             type: 'boolean',
-            title: 'Has Address Conflict',
+            title: 'Has Name Duplicate',
             default: false
         },
-        addresses: {
-            items: {
-                '$ref': '#/components/schemas/ShopAddressPublic'
-            },
-            type: 'array',
-            title: 'Addresses'
+        has_address_duplicate: {
+            type: 'boolean',
+            title: 'Has Address Duplicate',
+            default: false
         }
     },
     type: 'object',

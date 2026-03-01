@@ -8,6 +8,7 @@ import { ShopsService } from "@/client";
 import { DataTable } from "@/components/Common/DataTable";
 import PendingShops from "@/components/Pending/PendingShops";
 import AddShop from "@/components/Shops/AddShop";
+import ScanShopDuplicates from "@/components/Shops/ScanShopDuplicates";
 import { columns } from "@/components/Shops/columns";
 
 function getShopsQueryOptions(pagination: PaginationState) {
@@ -79,7 +80,10 @@ function Shops() {
           <h1 className="text-2xl font-bold tracking-tight">Shops</h1>
           <p className="text-muted-foreground">Create and manage your shops</p>
         </div>
-        <AddShop />
+        <div className="flex items-center gap-2">
+          <ScanShopDuplicates />
+          <AddShop />
+        </div>
       </div>
       <ShopsTable />
     </div>

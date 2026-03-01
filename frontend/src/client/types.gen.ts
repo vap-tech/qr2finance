@@ -343,16 +343,6 @@ export type SetShopCategories = {
     category_ids?: Array<(string)>;
 };
 
-export type ShopAddressPublic = {
-    id: string;
-    address_raw: string;
-    address_normalized: string;
-    first_seen_at: string;
-    last_seen_at: string;
-    seen_count: number;
-    is_primary: boolean;
-};
-
 export type ShopCategoryCreate = {
     name: string;
 };
@@ -382,6 +372,12 @@ export type ShopCreate = {
     is_favorite?: boolean;
     notes?: (string | null);
     shop_owner_id?: (string | null);
+};
+
+export type ShopDuplicateScanResult = {
+    scanned: number;
+    marked: number;
+    field: string;
 };
 
 export type ShopOwnerCreate = {
@@ -425,10 +421,6 @@ export type ShopOwnerUpdate = {
     inn: string;
 };
 
-export type ShopPrimaryAddressUpdate = {
-    alias_id: string;
-};
-
 export type ShopPublic = {
     id: string;
     retail_name: (string | null);
@@ -439,9 +431,8 @@ export type ShopPublic = {
     shop_owner_id: (string | null);
     shop_owner?: (ShopOwnerPublic | null);
     category_ids?: Array<(string)>;
-    address_aliases_count?: number;
-    has_address_conflict?: boolean;
-    addresses?: Array<ShopAddressPublic>;
+    has_name_duplicate?: boolean;
+    has_address_duplicate?: boolean;
 };
 
 export type ShopRead = {
@@ -454,9 +445,8 @@ export type ShopRead = {
     shop_owner_id: (string | null);
     shop_owner?: (ShopOwnerPublic | null);
     category_ids?: Array<(string)>;
-    address_aliases_count?: number;
-    has_address_conflict?: boolean;
-    addresses?: Array<ShopAddressPublic>;
+    has_name_duplicate?: boolean;
+    has_address_duplicate?: boolean;
 };
 
 /**
@@ -918,26 +908,16 @@ export type ShopsDeleteShopData = {
 
 export type ShopsDeleteShopResponse = (Message);
 
+export type ShopsScanNameDuplicatesResponse = (ShopDuplicateScanResult);
+
+export type ShopsScanAddressDuplicatesResponse = (ShopDuplicateScanResult);
+
 export type ShopsReplaceShopCategoriesData = {
     id: string;
     requestBody: SetShopCategories;
 };
 
 export type ShopsReplaceShopCategoriesResponse = (ShopPublic);
-
-export type ShopsSetPrimaryShopAddressData = {
-    id: string;
-    requestBody: ShopPrimaryAddressUpdate;
-};
-
-export type ShopsSetPrimaryShopAddressResponse = (ShopPublic);
-
-export type ShopsSplitShopByAddressData = {
-    aliasId: string;
-    id: string;
-};
-
-export type ShopsSplitShopByAddressResponse = (ShopPublic);
 
 export type TelegramTelegramWebhookResponse = ({
     [key: string]: (boolean);

@@ -119,17 +119,16 @@ export const columns: ColumnDef<ShopRead>[] = [
     },
   },
   {
-    id: "address_conflict",
-    header: "Address Conflict",
+    id: "duplicates",
+    header: "Duplicates",
     cell: ({ row }) => {
-      const aliasesCount = row.original.address_aliases_count ?? 0;
-      const hasConflict = row.original.has_address_conflict ?? false;
+      const hasNameDuplicate = row.original.has_name_duplicate ?? false;
+      const hasAddressDuplicate = row.original.has_address_duplicate ?? false;
 
-      if (!hasConflict) {
+      if (!hasNameDuplicate && !hasAddressDuplicate) {
         return (
           <div className="inline-flex items-center gap-1 text-muted-foreground">
             <span className="text-sm">No</span>
-            <Badge variant="outline">{aliasesCount}</Badge>
           </div>
         );
       }
@@ -137,8 +136,10 @@ export const columns: ColumnDef<ShopRead>[] = [
       return (
         <div className="inline-flex items-center gap-1 text-amber-700">
           <AlertTriangle className="size-4" />
-          <span className="text-sm">Conflict</span>
-          <Badge variant="secondary">{aliasesCount}</Badge>
+          <div className="inline-flex items-center gap-1">
+            {hasNameDuplicate && <Badge variant="secondary">Name</Badge>}
+            {hasAddressDuplicate && <Badge variant="secondary">Address</Badge>}
+          </div>
         </div>
       );
     },

@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import DeleteShop from "./DeleteShop";
 import EditShop from "./EditShop";
-import ManageShopAddresses from "./ManageShopAddresses";
 
 interface ShopActionsMenuProps {
   shop: ShopRead;
@@ -27,11 +26,6 @@ export const ShopActionsMenu = ({ shop }: ShopActionsMenuProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <ManageShopAddresses
-          shopId={shop.id}
-          shopName={shop.retail_name ?? shop.address ?? "Shop"}
-          onSuccess={() => setOpen(false)}
-        />
         <EditShop shop={shop} onSuccess={() => setOpen(false)} />
         <DeleteShop id={shop.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>
