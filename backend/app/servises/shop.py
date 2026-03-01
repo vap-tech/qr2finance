@@ -166,45 +166,80 @@ def split_shop_by_address_alias(
     shop: Shop,
     alias_id: uuid.UUID,
 ) -> Shop:
-    alias = session.exec(
+    source_alias = session.exec(
         select(ShopAddress).where(
             col(ShopAddress.shop_id) == shop.id,
             col(ShopAddress.id) == alias_id,
         )
     ).one_or_none()
-    if alias is None:
+    if source_alias is None:
         raise ValueError("Address alias not found for this shop")
+    if source_alias.is_primary:
+        raise ValueError(
+            "Primary address cannot be split. Set another primary address first."
+        )
 
-    existing = session.exec(
+    target_shop = session.exec(
         select(Shop).where(
             col(Shop.owner_id) == shop.owner_id,
             col(Shop.retail_name) == shop.retail_name,
-            col(Shop.address) == alias.address_raw,
+            col(Shop.address) == source_alias.address_raw,
         )
     ).one_or_none()
-    if existing is not None:
-        return existing
+    if target_shop is None:
+        target_shop = Shop(
+            owner_id=shop.owner_id,
+            shop_owner_id=shop.shop_owner_id,
+            retail_name=shop.retail_name,
+            address=source_alias.address_raw,
+            is_favorite=False,
+            notes=shop.notes,
+            is_active=True,
+        )
+        session.add(target_shop)
+        session.flush()
 
-    new_shop = Shop(
-        owner_id=shop.owner_id,
-        shop_owner_id=shop.shop_owner_id,
-        retail_name=shop.retail_name,
-        address=alias.address_raw,
-        is_favorite=False,
-        notes=shop.notes,
-        is_active=True,
-    )
-    session.add(new_shop)
+    target_shop.is_active = True
+    session.add(target_shop)
+
+    # If target already has the same normalized alias, merge counters and remove source alias.
+    target_alias_same_address = session.exec(
+        select(ShopAddress).where(
+            col(ShopAddress.shop_id) == target_shop.id,
+            col(ShopAddress.address_normalized) == source_alias.address_normalized,
+        )
+    ).one_or_none()
+
+    moved_alias: ShopAddress
+    if (
+        target_alias_same_address is not None
+        and target_alias_same_address.id != source_alias.id
+    ):
+        target_alias_same_address.seen_count += source_alias.seen_count
+        if source_alias.first_seen_at < target_alias_same_address.first_seen_at:
+            target_alias_same_address.first_seen_at = source_alias.first_seen_at
+        if source_alias.last_seen_at > target_alias_same_address.last_seen_at:
+            target_alias_same_address.last_seen_at = source_alias.last_seen_at
+        target_alias_same_address.address_raw = source_alias.address_raw
+        session.add(target_alias_same_address)
+        session.delete(source_alias)
+        moved_alias = target_alias_same_address
+    else:
+        source_alias.shop_id = target_shop.id
+        source_alias.is_primary = False
+        session.add(source_alias)
+        moved_alias = source_alias
+
+    # Make moved address primary for target shop.
+    target_aliases = list_shop_addresses(session=session, shop_id=target_shop.id)
+    for item in target_aliases:
+        item.is_primary = item.id == moved_alias.id
+        session.add(item)
+    target_shop.address = moved_alias.address_raw
+    session.add(target_shop)
+
     session.flush()
-
-    touch_shop_address(
-        session=session,
-        shop=new_shop,
-        address_raw=alias.address_raw,
-        make_primary=True,
-    )
-
-    return new_shop
+    return target_shop
 
 
 def get_or_create_shop(
