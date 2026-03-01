@@ -1,14 +1,18 @@
 import logging
 import uuid
+from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import Session, col, delete, select
 
 from app.models import (
+    Receipt,
+    ReceiptShopAddressConflict,
     Shop,
     ShopAddress,
     ShopAddressPublic,
+    ShopAddressRule,
     ShopCategory,
     ShopCategoryLink,
     ShopCreate,
@@ -21,6 +25,12 @@ from app.models import (
 logger = logging.getLogger(__name__)
 
 
+@dataclass(slots=True)
+class ShopMatchResult:
+    shop: Shop | None
+    conflict_alias_id: uuid.UUID | None = None
+
+
 def _clean(s: str) -> str:
     return s.strip()
 
@@ -31,6 +41,109 @@ def normalize_shop_name(value: str) -> str:
 
 def normalize_shop_address(value: str) -> str:
     return " ".join(value.strip().split()).casefold()
+
+
+def _activate_shop(shop: Shop, *, shop_owner_id: uuid.UUID | None) -> None:
+    shop.is_active = True
+    if shop_owner_id and shop.shop_owner_id is None:
+        shop.shop_owner_id = shop_owner_id
+
+
+def upsert_shop_address_rule(
+    session: Session,
+    *,
+    owner_id: uuid.UUID,
+    retail_name_normalized: str,
+    address_normalized: str,
+    shop_id: uuid.UUID,
+) -> None:
+    stmt = (
+        insert(ShopAddressRule)
+        .values(
+            owner_id=owner_id,
+            retail_name_normalized=retail_name_normalized,
+            address_normalized=address_normalized,
+            shop_id=shop_id,
+        )
+        .on_conflict_do_update(
+            constraint="uq_shop_address_rules_owner_name_address",
+            set_={"shop_id": shop_id},
+        )
+    )
+    session.exec(stmt)
+
+
+def resolve_shop_address_conflicts(
+    session: Session,
+    *,
+    owner_id: uuid.UUID,
+    alias_ids: list[uuid.UUID],
+    target_shop_id: uuid.UUID,
+) -> int:
+    if not alias_ids:
+        return 0
+
+    conflicts = session.exec(
+        select(ReceiptShopAddressConflict).where(
+            col(ReceiptShopAddressConflict.owner_id) == owner_id,
+            col(ReceiptShopAddressConflict.shop_address_id).in_(alias_ids),  # type: ignore
+        )
+    ).all()
+
+    touched_receipts = 0
+    for conflict in conflicts:
+        receipt = session.get(Receipt, conflict.receipt_id)
+        if receipt is not None and receipt.owner_id == owner_id:
+            if receipt.shop_id != target_shop_id:
+                receipt.shop_id = target_shop_id
+                session.add(receipt)
+            touched_receipts += 1
+        session.delete(conflict)
+
+    session.flush()
+    return touched_receipts
+
+
+def mark_receipt_shop_address_conflict(
+    session: Session,
+    *,
+    owner_id: uuid.UUID,
+    receipt_id: uuid.UUID,
+    shop_id: uuid.UUID,
+    shop_address_id: uuid.UUID,
+) -> None:
+    stmt = (
+        insert(ReceiptShopAddressConflict)
+        .values(
+            owner_id=owner_id,
+            receipt_id=receipt_id,
+            shop_id=shop_id,
+            shop_address_id=shop_address_id,
+        )
+        .on_conflict_do_nothing(
+            constraint="uq_receipt_shop_addr_conflict_receipt_alias",
+        )
+    )
+    session.exec(stmt)
+
+
+def _find_shop_by_rule(
+    session: Session,
+    *,
+    owner_id: uuid.UUID,
+    retail_name_normalized: str,
+    address_normalized: str,
+) -> Shop | None:
+    rule = session.exec(
+        select(ShopAddressRule).where(
+            col(ShopAddressRule.owner_id) == owner_id,
+            col(ShopAddressRule.retail_name_normalized) == retail_name_normalized,
+            col(ShopAddressRule.address_normalized) == address_normalized,
+        )
+    ).one_or_none()
+    if rule is None:
+        return None
+    return session.get(Shop, rule.shop_id)
 
 
 def list_shop_addresses(session: Session, *, shop_id: uuid.UUID) -> list[ShopAddress]:
@@ -156,6 +269,20 @@ def set_shop_primary_address(
 
     shop.address = selected.address_raw
     session.add(shop)
+    if shop.retail_name:
+        upsert_shop_address_rule(
+            session=session,
+            owner_id=shop.owner_id,
+            retail_name_normalized=normalize_shop_name(shop.retail_name),
+            address_normalized=selected.address_normalized,
+            shop_id=shop.id,
+        )
+    resolve_shop_address_conflicts(
+        session=session,
+        owner_id=shop.owner_id,
+        alias_ids=[selected.id],
+        target_shop_id=shop.id,
+    )
     session.flush()
     return selected
 
@@ -211,6 +338,7 @@ def split_shop_by_address_alias(
     ).one_or_none()
 
     moved_alias: ShopAddress
+    alias_to_delete: ShopAddress | None = None
     if (
         target_alias_same_address is not None
         and target_alias_same_address.id != source_alias.id
@@ -222,7 +350,7 @@ def split_shop_by_address_alias(
             target_alias_same_address.last_seen_at = source_alias.last_seen_at
         target_alias_same_address.address_raw = source_alias.address_raw
         session.add(target_alias_same_address)
-        session.delete(source_alias)
+        alias_to_delete = source_alias
         moved_alias = target_alias_same_address
     else:
         source_alias.shop_id = target_shop.id
@@ -238,13 +366,30 @@ def split_shop_by_address_alias(
     target_shop.address = moved_alias.address_raw
     session.add(target_shop)
 
+    if target_shop.retail_name:
+        upsert_shop_address_rule(
+            session=session,
+            owner_id=target_shop.owner_id,
+            retail_name_normalized=normalize_shop_name(target_shop.retail_name),
+            address_normalized=moved_alias.address_normalized,
+            shop_id=target_shop.id,
+        )
+    resolve_shop_address_conflicts(
+        session=session,
+        owner_id=target_shop.owner_id,
+        alias_ids=[source_alias.id, moved_alias.id],
+        target_shop_id=target_shop.id,
+    )
+    if alias_to_delete is not None:
+        session.delete(alias_to_delete)
+
     session.flush()
     return target_shop
 
 
-def get_or_create_shop(
+def match_or_create_shop(
     session: Session, *, owner_id: uuid.UUID, shop_in: ShopCreate
-) -> Shop | None:
+) -> ShopMatchResult:
     """Get existing shop or create one.
 
     Rules:
@@ -255,12 +400,12 @@ def get_or_create_shop(
     - no name match -> create new shop.
     """
     if not shop_in.retail_name or not shop_in.address:
-        return None
+        return ShopMatchResult(shop=None)
 
     retail_name = _clean(shop_in.retail_name)
     address = _clean(shop_in.address)
     if retail_name == "" or address == "":
-        return None
+        return ShopMatchResult(shop=None)
 
     exact_shop = session.exec(
         select(Shop).where(
@@ -270,9 +415,7 @@ def get_or_create_shop(
         )
     ).one_or_none()
     if exact_shop is not None:
-        exact_shop.is_active = True
-        if shop_in.shop_owner_id and exact_shop.shop_owner_id is None:
-            exact_shop.shop_owner_id = shop_in.shop_owner_id
+        _activate_shop(exact_shop, shop_owner_id=shop_in.shop_owner_id)
         session.add(exact_shop)
         touch_shop_address(
             session=session,
@@ -281,10 +424,31 @@ def get_or_create_shop(
             make_primary=False,
         )
         session.flush()
-        return exact_shop
+        return ShopMatchResult(shop=exact_shop)
 
     normalized_name = normalize_shop_name(retail_name)
     normalized_address = normalize_shop_address(address)
+
+    rule_shop = _find_shop_by_rule(
+        session=session,
+        owner_id=owner_id,
+        retail_name_normalized=normalized_name,
+        address_normalized=normalized_address,
+    )
+    if (
+        rule_shop is not None
+        and normalize_shop_name(rule_shop.retail_name or "") == normalized_name
+    ):
+        _activate_shop(rule_shop, shop_owner_id=shop_in.shop_owner_id)
+        session.add(rule_shop)
+        touch_shop_address(
+            session=session,
+            shop=rule_shop,
+            address_raw=address,
+            make_primary=False,
+        )
+        session.flush()
+        return ShopMatchResult(shop=rule_shop)
 
     alias_rows = session.exec(
         select(Shop, ShopAddress)
@@ -296,11 +460,9 @@ def get_or_create_shop(
         .order_by(col(Shop.is_active).desc(), col(Shop.id).asc())
     ).all()
     for alias_shop, _ in alias_rows:
-        if normalize_shop_name(alias_shop.retail_name) != normalized_name:
+        if normalize_shop_name(alias_shop.retail_name or "") != normalized_name:
             continue
-        alias_shop.is_active = True
-        if shop_in.shop_owner_id and alias_shop.shop_owner_id is None:
-            alias_shop.shop_owner_id = shop_in.shop_owner_id
+        _activate_shop(alias_shop, shop_owner_id=shop_in.shop_owner_id)
         session.add(alias_shop)
         touch_shop_address(
             session=session,
@@ -309,7 +471,7 @@ def get_or_create_shop(
             make_primary=False,
         )
         session.flush()
-        return alias_shop
+        return ShopMatchResult(shop=alias_shop)
 
     same_name_shop = None
     rows = session.exec(
@@ -318,23 +480,24 @@ def get_or_create_shop(
         .order_by(col(Shop.is_active).desc(), col(Shop.id).asc())
     ).all()
     for row in rows:
-        if normalize_shop_name(row.retail_name) == normalized_name:
+        if normalize_shop_name(row.retail_name or "") == normalized_name:
             same_name_shop = row
             break
 
     if same_name_shop is not None:
-        same_name_shop.is_active = True
-        if shop_in.shop_owner_id and same_name_shop.shop_owner_id is None:
-            same_name_shop.shop_owner_id = shop_in.shop_owner_id
+        _activate_shop(same_name_shop, shop_owner_id=shop_in.shop_owner_id)
         session.add(same_name_shop)
-        touch_shop_address(
+        conflict_alias = touch_shop_address(
             session=session,
             shop=same_name_shop,
             address_raw=address,
             make_primary=False,
         )
         session.flush()
-        return same_name_shop
+        return ShopMatchResult(
+            shop=same_name_shop,
+            conflict_alias_id=conflict_alias.id,
+        )
 
     stmt = (
         insert(Shop)
@@ -364,7 +527,17 @@ def get_or_create_shop(
         make_primary=True,
     )
     session.flush()
-    return created
+    return ShopMatchResult(shop=created)
+
+
+def get_or_create_shop(
+    session: Session, *, owner_id: uuid.UUID, shop_in: ShopCreate
+) -> Shop | None:
+    return match_or_create_shop(
+        session=session,
+        owner_id=owner_id,
+        shop_in=shop_in,
+    ).shop
 
 
 def get_shop_read(

@@ -44,7 +44,10 @@ from app.servises.receipt import (
     create_receipt_with_items,
     recalculate_receipt_payment_totals,
 )
-from app.servises.shop import get_or_create_shop
+from app.servises.shop import (
+    mark_receipt_shop_address_conflict,
+    match_or_create_shop,
+)
 from app.servises.shop_owner import get_or_create_shop_owner
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
@@ -635,7 +638,7 @@ def _create_receipt_from_raw_payload(
         )
         shop_owner_id = shop_owner.id  # type: ignore
 
-    shop = get_or_create_shop(
+    shop_match = match_or_create_shop(
         session=session,
         owner_id=current_user.id,
         shop_in=ShopCreate(
@@ -644,6 +647,7 @@ def _create_receipt_from_raw_payload(
             shop_owner_id=shop_owner_id,
         ),
     )
+    shop = shop_match.shop
     if shop is None:
         raise HTTPException(
             status_code=422,
@@ -682,6 +686,14 @@ def _create_receipt_from_raw_payload(
         owner_id=current_user.id,
         payload=ReceiptWithItemsCreate(receipt=receipt_in, items=items_in),
     )
+    if shop_match.conflict_alias_id is not None:
+        mark_receipt_shop_address_conflict(
+            session=session,
+            owner_id=current_user.id,
+            receipt_id=created.id,
+            shop_id=shop.id,
+            shop_address_id=shop_match.conflict_alias_id,
+        )
     _save_raw_backup(
         session=session,
         owner_id=current_user.id,

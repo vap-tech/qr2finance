@@ -404,6 +404,60 @@ class ShopAddressPublic(SQLModel):
     is_primary: bool
 
 
+class ShopAddressRule(SQLModel, table=True):
+    __tablename__ = "shop_address_rules"  # type: ignore
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(index=True, nullable=False)
+    retail_name_normalized: str = Field(sa_type=String, nullable=False)
+    address_normalized: str = Field(sa_type=String, nullable=False)
+    shop_id: uuid.UUID = Field(foreign_key="shops.id", index=True, nullable=False)
+    created_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_id",
+            "retail_name_normalized",
+            "address_normalized",
+            name="uq_shop_address_rules_owner_name_address",
+        ),
+        Index(
+            "ix_shop_address_rules_owner_name_address",
+            "owner_id",
+            "retail_name_normalized",
+            "address_normalized",
+        ),
+    )
+
+
+class ReceiptShopAddressConflict(SQLModel, table=True):
+    __tablename__ = "receipt_shop_address_conflicts"  # type: ignore
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(index=True, nullable=False)
+    receipt_id: uuid.UUID = Field(foreign_key="receipt.id", index=True, nullable=False)
+    shop_id: uuid.UUID = Field(foreign_key="shops.id", index=True, nullable=False)
+    shop_address_id: uuid.UUID = Field(
+        foreign_key="shop_addresses.id", index=True, nullable=False
+    )
+    created_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    __table_args__ = (
+        UniqueConstraint(
+            "receipt_id",
+            "shop_address_id",
+            name="uq_receipt_shop_addr_conflict_receipt_alias",
+        ),
+        Index(
+            "ix_receipt_shop_addr_conflict_owner_alias",
+            "owner_id",
+            "shop_address_id",
+        ),
+    )
+
+
 # --- Shop schemas ---
 class ShopCategoryCreate(SQLModel):
     name: str
