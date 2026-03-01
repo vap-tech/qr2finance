@@ -331,9 +331,14 @@ class Shop(SQLModel, table=True):
     is_favorite: bool = Field(default=False, sa_type=Boolean, index=True)
     notes: str | None = Field(default=None, sa_type=String)
     is_active: bool = Field(default=True, index=True)
+    has_name_duplicate: bool = Field(
+        default=False, sa_type=Boolean, nullable=False, index=True
+    )
+    has_address_duplicate: bool = Field(
+        default=False, sa_type=Boolean, nullable=False, index=True
+    )
     receipts: list["Receipt"] = Relationship(back_populates="shop")
     shop_owner: ShopOwner | None = Relationship(back_populates="shops")
-    addresses: list["ShopAddress"] = Relationship(back_populates="shop")
     # many-to-many
     categories: list["ShopCategory"] = Relationship(
         back_populates="shops",
@@ -360,101 +365,6 @@ class ShopCategory(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint("owner_id", "name", name="uq_shop_categories_owner_name"),
         Index("ix_shop_categories_owner_name", "owner_id", "name"),
-    )
-
-
-class ShopAddress(SQLModel, table=True):
-    __tablename__ = "shop_addresses"  # type: ignore
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    shop_id: uuid.UUID = Field(
-        foreign_key="shops.id",
-        index=True,
-        nullable=False,
-    )
-    address_raw: str = Field(sa_type=String, nullable=False)
-    address_normalized: str = Field(sa_type=String, nullable=False)
-    first_seen_at: datetime = Field(
-        default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
-    )
-    last_seen_at: datetime = Field(
-        default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
-    )
-    seen_count: int = Field(default=1, sa_type=Integer, nullable=False)
-    is_primary: bool = Field(default=False, sa_type=Boolean, nullable=False, index=True)
-    shop: Shop = Relationship(back_populates="addresses")
-    __table_args__ = (
-        UniqueConstraint(
-            "shop_id",
-            "address_normalized",
-            name="uq_shop_addresses_shop_normalized",
-        ),
-        Index("ix_shop_addresses_shop_primary", "shop_id", "is_primary"),
-    )
-
-
-class ShopAddressPublic(SQLModel):
-    id: uuid.UUID
-    address_raw: str
-    address_normalized: str
-    first_seen_at: datetime
-    last_seen_at: datetime
-    seen_count: int
-    is_primary: bool
-
-
-class ShopAddressRule(SQLModel, table=True):
-    __tablename__ = "shop_address_rules"  # type: ignore
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    owner_id: uuid.UUID = Field(index=True, nullable=False)
-    retail_name_normalized: str = Field(sa_type=String, nullable=False)
-    address_normalized: str = Field(sa_type=String, nullable=False)
-    shop_id: uuid.UUID = Field(foreign_key="shops.id", index=True, nullable=False)
-    created_at: datetime = Field(
-        default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
-    )
-    __table_args__ = (
-        UniqueConstraint(
-            "owner_id",
-            "retail_name_normalized",
-            "address_normalized",
-            name="uq_shop_address_rules_owner_name_address",
-        ),
-        Index(
-            "ix_shop_address_rules_owner_name_address",
-            "owner_id",
-            "retail_name_normalized",
-            "address_normalized",
-        ),
-    )
-
-
-class ReceiptShopAddressConflict(SQLModel, table=True):
-    __tablename__ = "receipt_shop_address_conflicts"  # type: ignore
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    owner_id: uuid.UUID = Field(index=True, nullable=False)
-    receipt_id: uuid.UUID = Field(foreign_key="receipt.id", index=True, nullable=False)
-    shop_id: uuid.UUID = Field(foreign_key="shops.id", index=True, nullable=False)
-    shop_address_id: uuid.UUID = Field(
-        foreign_key="shop_addresses.id", index=True, nullable=False
-    )
-    created_at: datetime = Field(
-        default_factory=get_datetime_utc,
-        sa_type=DateTime(timezone=True),  # type: ignore
-    )
-    __table_args__ = (
-        UniqueConstraint(
-            "receipt_id",
-            "shop_address_id",
-            name="uq_receipt_shop_addr_conflict_receipt_alias",
-        ),
-        Index(
-            "ix_receipt_shop_addr_conflict_owner_alias",
-            "owner_id",
-            "shop_address_id",
-        ),
     )
 
 
@@ -512,9 +422,8 @@ class ShopRead(SQLModel):
     shop_owner_id: uuid.UUID | None
     shop_owner: ShopOwnerPublic | None = None
     category_ids: list[uuid.UUID] = Field(default_factory=list)
-    address_aliases_count: int = 0
-    has_address_conflict: bool = False
-    addresses: list[ShopAddressPublic] = Field(default_factory=list)
+    has_name_duplicate: bool = False
+    has_address_duplicate: bool = False
 
 
 class ShopPublic(ShopRead):
@@ -528,8 +437,10 @@ class ShopsPublic(SQLModel):
     count: int
 
 
-class ShopPrimaryAddressUpdate(SQLModel):
-    alias_id: uuid.UUID
+class ShopDuplicateScanResult(SQLModel):
+    scanned: int
+    marked: int
+    field: str
 
 
 # --- Receipts ---

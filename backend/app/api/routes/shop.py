@@ -9,11 +9,10 @@ from app.models import (
     Message,
     SetShopCategories,
     Shop,
-    ShopAddress,
     ShopCategoryLink,
     ShopCreate,
+    ShopDuplicateScanResult,
     ShopOwnerPublic,
-    ShopPrimaryAddressUpdate,
     ShopPublic,
     ShopRead,
     ShopsPublic,
@@ -22,10 +21,9 @@ from app.models import (
 from app.servises.shop import (
     get_or_create_shop,
     get_shop_read,
+    rescan_shop_address_duplicates,
+    rescan_shop_name_duplicates,
     set_shop_categories,
-    set_shop_primary_address,
-    split_shop_by_address_alias,
-    touch_shop_address,
 )
 
 router = APIRouter(prefix="/shops", tags=["shops"])
@@ -98,22 +96,11 @@ def read_shops(
         for shop_id, category_id in links:
             category_map.setdefault(shop_id, []).append(category_id)
 
-    aliases_count_map: dict[uuid.UUID, int] = dict.fromkeys(shop_ids, 0)
-    if shop_ids:
-        aliases_rows = session.exec(
-            select(ShopAddress.shop_id, func.count(col(ShopAddress.id)))
-            .where(col(ShopAddress.shop_id).in_(shop_ids))
-            .group_by(col(ShopAddress.shop_id))
-        ).all()
-        for shop_id, aliases_count in aliases_rows:
-            aliases_count_map[shop_id] = int(aliases_count)
-
     data: list[ShopRead] = []
     for shop in shops:
         shop_owner = (
             ShopOwnerPublic.model_validate(shop.shop_owner) if shop.shop_owner else None
         )
-        aliases_count = aliases_count_map.get(shop.id, 0)
         data.append(
             ShopRead(
                 id=shop.id,
@@ -125,8 +112,8 @@ def read_shops(
                 shop_owner_id=shop.shop_owner_id,
                 shop_owner=shop_owner,
                 category_ids=category_map.get(shop.id, []),
-                address_aliases_count=aliases_count,
-                has_address_conflict=aliases_count > 1,
+                has_name_duplicate=shop.has_name_duplicate,
+                has_address_duplicate=shop.has_address_duplicate,
             )
         )
 
@@ -199,13 +186,6 @@ def update_shop(
     update_dict.pop("owner_id", None)
 
     shop.sqlmodel_update(update_dict)
-    if "address" in update_dict and update_dict["address"] is not None:
-        touch_shop_address(
-            session=session,
-            shop=shop,
-            address_raw=update_dict["address"],
-            make_primary=True,
-        )
     session.add(shop)
     session.commit()
     session.refresh(shop)
@@ -232,6 +212,32 @@ def delete_shop(
     session.commit()
 
     return Message(message="Shop deleted successfully")
+
+
+@router.post("/duplicates/scan-names", response_model=ShopDuplicateScanResult)
+def scan_name_duplicates(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> ShopDuplicateScanResult:
+    scanned, marked = rescan_shop_name_duplicates(
+        session=session,
+        owner_id=current_user.id,
+    )
+    session.commit()
+    return ShopDuplicateScanResult(scanned=scanned, marked=marked, field="name")
+
+
+@router.post("/duplicates/scan-addresses", response_model=ShopDuplicateScanResult)
+def scan_address_duplicates(
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> ShopDuplicateScanResult:
+    scanned, marked = rescan_shop_address_duplicates(
+        session=session,
+        owner_id=current_user.id,
+    )
+    session.commit()
+    return ShopDuplicateScanResult(scanned=scanned, marked=marked, field="address")
 
 
 @router.put("/{id}/categories", response_model=ShopPublic)
@@ -261,49 +267,3 @@ def replace_shop_categories(
         raise HTTPException(status_code=422, detail=str(e))
 
     return get_shop_read(session=session, owner_id=shop.owner_id, shop_id=shop.id)
-
-
-@router.patch("/{id}/primary-address", response_model=ShopPublic)
-def set_primary_shop_address(
-    session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
-    payload: ShopPrimaryAddressUpdate,
-) -> Any:
-    shop = _get_shop_or_404(session, current_user, id)
-    try:
-        set_shop_primary_address(
-            session=session,
-            shop=shop,
-            payload=payload,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
-    session.commit()
-    session.refresh(shop)
-    return get_shop_read(session=session, owner_id=shop.owner_id, shop_id=shop.id)
-
-
-@router.post("/{id}/split-by-address/{alias_id}", response_model=ShopPublic)
-def split_shop_by_address(
-    session: SessionDep,
-    current_user: CurrentUser,
-    id: uuid.UUID,
-    alias_id: uuid.UUID,
-) -> Any:
-    shop = _get_shop_or_404(session, current_user, id)
-    try:
-        new_shop = split_shop_by_address_alias(
-            session=session,
-            shop=shop,
-            alias_id=alias_id,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
-    session.commit()
-    session.refresh(new_shop)
-    return get_shop_read(
-        session=session,
-        owner_id=new_shop.owner_id,
-        shop_id=new_shop.id,
-    )
