@@ -249,6 +249,7 @@ def get_or_create_shop(
 
     Rules:
     - exact retail_name + address -> return that shop;
+    - exact retail_name + address alias -> return that shop;
     - same retail_name but different address -> return existing shop by name and
       record new address as alias (address conflict for later manual resolve);
     - no name match -> create new shop.
@@ -283,6 +284,33 @@ def get_or_create_shop(
         return exact_shop
 
     normalized_name = normalize_shop_name(retail_name)
+    normalized_address = normalize_shop_address(address)
+
+    alias_rows = session.exec(
+        select(Shop, ShopAddress)
+        .join(ShopAddress, col(ShopAddress.shop_id) == col(Shop.id))
+        .where(
+            col(Shop.owner_id) == owner_id,
+            col(ShopAddress.address_normalized) == normalized_address,
+        )
+        .order_by(col(Shop.is_active).desc(), col(Shop.id).asc())
+    ).all()
+    for alias_shop, _ in alias_rows:
+        if normalize_shop_name(alias_shop.retail_name) != normalized_name:
+            continue
+        alias_shop.is_active = True
+        if shop_in.shop_owner_id and alias_shop.shop_owner_id is None:
+            alias_shop.shop_owner_id = shop_in.shop_owner_id
+        session.add(alias_shop)
+        touch_shop_address(
+            session=session,
+            shop=alias_shop,
+            address_raw=address,
+            make_primary=False,
+        )
+        session.flush()
+        return alias_shop
+
     same_name_shop = None
     rows = session.exec(
         select(Shop)
