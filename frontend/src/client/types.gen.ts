@@ -287,6 +287,10 @@ export type ReceiptRead = {
     owner_id: string;
 };
 
+export type ReceiptShopUpdate = {
+    shop_id: string;
+};
+
 export type ReceiptShort = {
     id: string;
     date_time: string;
@@ -337,6 +341,16 @@ export type SetReceiptItemsCategoriesByName = {
 
 export type SetShopCategories = {
     category_ids?: Array<(string)>;
+};
+
+export type ShopAddressPublic = {
+    id: string;
+    address_raw: string;
+    address_normalized: string;
+    first_seen_at: string;
+    last_seen_at: string;
+    seen_count: number;
+    is_primary: boolean;
 };
 
 export type ShopCategoryCreate = {
@@ -411,6 +425,10 @@ export type ShopOwnerUpdate = {
     inn: string;
 };
 
+export type ShopPrimaryAddressUpdate = {
+    alias_id: string;
+};
+
 export type ShopPublic = {
     id: string;
     retail_name: (string | null);
@@ -421,6 +439,9 @@ export type ShopPublic = {
     shop_owner_id: (string | null);
     shop_owner?: (ShopOwnerPublic | null);
     category_ids?: Array<(string)>;
+    address_aliases_count?: number;
+    has_address_conflict?: boolean;
+    addresses?: Array<ShopAddressPublic>;
 };
 
 export type ShopRead = {
@@ -433,6 +454,9 @@ export type ShopRead = {
     shop_owner_id: (string | null);
     shop_owner?: (ShopOwnerPublic | null);
     category_ids?: Array<(string)>;
+    address_aliases_count?: number;
+    has_address_conflict?: boolean;
+    addresses?: Array<ShopAddressPublic>;
 };
 
 /**
@@ -760,6 +784,13 @@ export type ReceiptsDeleteReceiptData = {
 
 export type ReceiptsDeleteReceiptResponse = (Message);
 
+export type ReceiptsUpdateReceiptShopData = {
+    id: string;
+    requestBody: ReceiptShopUpdate;
+};
+
+export type ReceiptsUpdateReceiptShopResponse = (ReceiptWithItemsFullPublic);
+
 export type ReceiptsAddReceiptItemsData = {
     id: string;
     requestBody: Array<ReceiptItemInlineCreate>;
@@ -893,6 +924,24 @@ export type ShopsReplaceShopCategoriesData = {
 };
 
 export type ShopsReplaceShopCategoriesResponse = (ShopPublic);
+
+export type ShopsSetPrimaryShopAddressData = {
+    id: string;
+    requestBody: ShopPrimaryAddressUpdate;
+};
+
+export type ShopsSetPrimaryShopAddressResponse = (ShopPublic);
+
+export type ShopsSplitShopByAddressData = {
+    aliasId: string;
+    id: string;
+};
+
+export type ShopsSplitShopByAddressResponse = (ShopPublic);
+
+export type TelegramTelegramWebhookResponse = ({
+    [key: string]: (boolean);
+});
 
 export type UsersReadUsersData = {
     limit?: number;

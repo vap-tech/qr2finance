@@ -26,12 +26,14 @@ from app.models import (
     ReceiptItemRead,
     ReceiptRawBackup,
     ReceiptRead,
+    ReceiptShopUpdate,
     ReceiptShort,
     ReceiptSource,
     ReceiptsShortPublic,
     ReceiptWithItemsCreate,
     ReceiptWithItemsFullPublic,
     ReceiptWithItemsPublic,
+    Shop,
     ShopCreate,
     ShopOwnerCreate,
     ShopOwnerPublic,
@@ -374,6 +376,55 @@ def delete_receipt(
     session.delete(receipt)
     session.commit()
     return Message(message="Receipt deleted successfully")
+
+
+@router.patch("/{id}/shop", response_model=ReceiptWithItemsFullPublic)
+def update_receipt_shop(
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    payload: ReceiptShopUpdate,
+) -> Any:
+    """
+    Reassign receipt to another existing shop of the same owner.
+    """
+    receipt = session.get(Receipt, id)
+    if not receipt:
+        raise HTTPException(status_code=404, detail="Receipt not found")
+    if not current_user.is_superuser and (receipt.owner_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+
+    target_shop = session.get(Shop, payload.shop_id)
+    if not target_shop or target_shop.owner_id != receipt.owner_id:
+        raise HTTPException(
+            status_code=422,
+            detail="Target shop not found for this receipt owner",
+        )
+    if target_shop.is_active is False:
+        raise HTTPException(status_code=422, detail="Target shop is inactive")
+
+    receipt.shop_id = target_shop.id
+    session.add(receipt)
+    session.commit()
+    session.refresh(receipt)
+
+    db_items = session.exec(
+        select(ReceiptItem).where(ReceiptItem.receipt_id == receipt.id)
+    ).all()
+    shop = ShopRead.model_validate(receipt.shop) if receipt.shop else None
+    shop_owner = (
+        ShopOwnerPublic.model_validate(receipt.shop.shop_owner)
+        if receipt.shop and receipt.shop.shop_owner
+        else None
+    )
+    cashier = CashierPublic.model_validate(receipt.cashier) if receipt.cashier else None
+    return ReceiptWithItemsFullPublic(
+        receipt=ReceiptRead.model_validate(receipt),
+        items=[ReceiptItemRead.model_validate(i) for i in db_items],
+        shop=shop,
+        shop_owner=shop_owner,
+        cashier=cashier,
+    )
 
 
 @router.post("/{id}/items", response_model=ReceiptWithItemsPublic)

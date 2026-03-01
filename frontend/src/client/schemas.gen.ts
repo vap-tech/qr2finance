@@ -1299,6 +1299,19 @@ export const ReceiptReadSchema = {
     title: 'ReceiptRead'
 } as const;
 
+export const ReceiptShopUpdateSchema = {
+    properties: {
+        shop_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Shop Id'
+        }
+    },
+    type: 'object',
+    required: ['shop_id'],
+    title: 'ReceiptShopUpdate'
+} as const;
+
 export const ReceiptShortSchema = {
     properties: {
         id: {
@@ -1503,6 +1516,45 @@ export const SetShopCategoriesSchema = {
     },
     type: 'object',
     title: 'SetShopCategories'
+} as const;
+
+export const ShopAddressPublicSchema = {
+    properties: {
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        address_raw: {
+            type: 'string',
+            title: 'Address Raw'
+        },
+        address_normalized: {
+            type: 'string',
+            title: 'Address Normalized'
+        },
+        first_seen_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'First Seen At'
+        },
+        last_seen_at: {
+            type: 'string',
+            format: 'date-time',
+            title: 'Last Seen At'
+        },
+        seen_count: {
+            type: 'integer',
+            title: 'Seen Count'
+        },
+        is_primary: {
+            type: 'boolean',
+            title: 'Is Primary'
+        }
+    },
+    type: 'object',
+    required: ['id', 'address_raw', 'address_normalized', 'first_seen_at', 'last_seen_at', 'seen_count', 'is_primary'],
+    title: 'ShopAddressPublic'
 } as const;
 
 export const ShopCategoryCreateSchema = {
@@ -1786,6 +1838,19 @@ export const ShopOwnersPublicSchema = {
     description: 'Paginated list of public shop owners.'
 } as const;
 
+export const ShopPrimaryAddressUpdateSchema = {
+    properties: {
+        alias_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Alias Id'
+        }
+    },
+    type: 'object',
+    required: ['alias_id'],
+    title: 'ShopPrimaryAddressUpdate'
+} as const;
+
 export const ShopPublicSchema = {
     properties: {
         id: {
@@ -1863,6 +1928,23 @@ export const ShopPublicSchema = {
             },
             type: 'array',
             title: 'Category Ids'
+        },
+        address_aliases_count: {
+            type: 'integer',
+            title: 'Address Aliases Count',
+            default: 0
+        },
+        has_address_conflict: {
+            type: 'boolean',
+            title: 'Has Address Conflict',
+            default: false
+        },
+        addresses: {
+            items: {
+                '$ref': '#/components/schemas/ShopAddressPublic'
+            },
+            type: 'array',
+            title: 'Addresses'
         }
     },
     type: 'object',
@@ -1947,6 +2029,23 @@ export const ShopReadSchema = {
             },
             type: 'array',
             title: 'Category Ids'
+        },
+        address_aliases_count: {
+            type: 'integer',
+            title: 'Address Aliases Count',
+            default: 0
+        },
+        has_address_conflict: {
+            type: 'boolean',
+            title: 'Has Address Conflict',
+            default: false
+        },
+        addresses: {
+            items: {
+                '$ref': '#/components/schemas/ShopAddressPublic'
+            },
+            type: 'array',
+            title: 'Addresses'
         }
     },
     type: 'object',

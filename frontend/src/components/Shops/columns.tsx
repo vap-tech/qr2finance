@@ -1,49 +1,50 @@
-import type { ColumnDef } from "@tanstack/react-table"
-import { BadgeCheck, Heart, HeartOff } from "lucide-react"
+import type { ColumnDef } from "@tanstack/react-table";
+import { AlertTriangle, BadgeCheck, Heart, HeartOff } from "lucide-react";
 
-import type { ShopRead } from "@/client"
+import type { ShopRead } from "@/client";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
-import { ShopActionsMenu } from "./ShopActionsMenu"
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { ShopActionsMenu } from "./ShopActionsMenu";
 
-const ADDRESS_PREVIEW_LIMIT = 10
-const RETAIL_NAME_PREVIEW_LIMIT = 25
-const RIGHTSHOLDER_PREVIEW_LIMIT = 25
+const ADDRESS_PREVIEW_LIMIT = 10;
+const RETAIL_NAME_PREVIEW_LIMIT = 25;
+const RIGHTSHOLDER_PREVIEW_LIMIT = 25;
 
 export const columns: ColumnDef<ShopRead>[] = [
   {
     id: "row_number",
     header: "#",
     cell: ({ row, table }) => {
-      const { pageIndex, pageSize } = table.getState().pagination
+      const { pageIndex, pageSize } = table.getState().pagination;
       return (
         <span className="tabular-nums text-muted-foreground">
           {pageIndex * pageSize + row.index + 1}
         </span>
-      )
+      );
     },
   },
   {
     accessorKey: "retail_name",
     header: "Retail Name",
     cell: ({ row }) => {
-      const retailName = row.original.retail_name
+      const retailName = row.original.retail_name;
       if (!retailName) {
         return (
           <span className="font-medium italic text-muted-foreground">
             No retail name
           </span>
-        )
+        );
       }
 
       const preview =
         retailName.length > RETAIL_NAME_PREVIEW_LIMIT
           ? `${retailName.slice(0, RETAIL_NAME_PREVIEW_LIMIT)}...`
-          : retailName
+          : retailName;
 
       return (
         <Tooltip>
@@ -54,26 +55,26 @@ export const columns: ColumnDef<ShopRead>[] = [
           </TooltipTrigger>
           <TooltipContent side="top">{retailName}</TooltipContent>
         </Tooltip>
-      )
+      );
     },
   },
   {
     accessorKey: "address",
     header: "Address",
     cell: ({ row }) => {
-      const address = row.original.address
+      const address = row.original.address;
       if (!address) {
         return (
           <span className="max-w-xs truncate block text-muted-foreground italic">
             No address
           </span>
-        )
+        );
       }
 
       const preview =
         address.length > ADDRESS_PREVIEW_LIMIT
           ? `${address.slice(0, ADDRESS_PREVIEW_LIMIT)}...`
-          : address
+          : address;
 
       return (
         <Tooltip>
@@ -84,26 +85,26 @@ export const columns: ColumnDef<ShopRead>[] = [
           </TooltipTrigger>
           <TooltipContent side="top">{address}</TooltipContent>
         </Tooltip>
-      )
+      );
     },
   },
   {
     accessorKey: "shop_owner",
     header: "Rightsholder",
     cell: ({ row }) => {
-      const rightsholder = row.original.shop_owner?.name
+      const rightsholder = row.original.shop_owner?.name;
       if (!rightsholder) {
         return (
           <span className="max-w-xs truncate block text-muted-foreground italic">
             No rightsholder
           </span>
-        )
+        );
       }
 
       const preview =
         rightsholder.length > RIGHTSHOLDER_PREVIEW_LIMIT
           ? `${rightsholder.slice(0, RIGHTSHOLDER_PREVIEW_LIMIT)}...`
-          : rightsholder
+          : rightsholder;
 
       return (
         <Tooltip>
@@ -114,7 +115,32 @@ export const columns: ColumnDef<ShopRead>[] = [
           </TooltipTrigger>
           <TooltipContent side="top">{rightsholder}</TooltipContent>
         </Tooltip>
-      )
+      );
+    },
+  },
+  {
+    id: "address_conflict",
+    header: "Address Conflict",
+    cell: ({ row }) => {
+      const aliasesCount = row.original.address_aliases_count ?? 0;
+      const hasConflict = row.original.has_address_conflict ?? false;
+
+      if (!hasConflict) {
+        return (
+          <div className="inline-flex items-center gap-1 text-muted-foreground">
+            <span className="text-sm">No</span>
+            <Badge variant="outline">{aliasesCount}</Badge>
+          </div>
+        );
+      }
+
+      return (
+        <div className="inline-flex items-center gap-1 text-amber-700">
+          <AlertTriangle className="size-4" />
+          <span className="text-sm">Conflict</span>
+          <Badge variant="secondary">{aliasesCount}</Badge>
+        </div>
+      );
     },
   },
   {
@@ -150,7 +176,7 @@ export const columns: ColumnDef<ShopRead>[] = [
     accessorKey: "notes",
     header: "Notes",
     cell: ({ row }) => {
-      const notes = row.original.notes
+      const notes = row.original.notes;
       return (
         <span
           className={cn(
@@ -160,7 +186,7 @@ export const columns: ColumnDef<ShopRead>[] = [
         >
           {notes || "No notes"}
         </span>
-      )
+      );
     },
   },
   {
@@ -172,4 +198,4 @@ export const columns: ColumnDef<ShopRead>[] = [
       </div>
     ),
   },
-]
+];

@@ -333,6 +333,7 @@ class Shop(SQLModel, table=True):
     is_active: bool = Field(default=True, index=True)
     receipts: list["Receipt"] = Relationship(back_populates="shop")
     shop_owner: ShopOwner | None = Relationship(back_populates="shops")
+    addresses: list["ShopAddress"] = Relationship(back_populates="shop")
     # many-to-many
     categories: list["ShopCategory"] = Relationship(
         back_populates="shops",
@@ -360,6 +361,47 @@ class ShopCategory(SQLModel, table=True):
         UniqueConstraint("owner_id", "name", name="uq_shop_categories_owner_name"),
         Index("ix_shop_categories_owner_name", "owner_id", "name"),
     )
+
+
+class ShopAddress(SQLModel, table=True):
+    __tablename__ = "shop_addresses"  # type: ignore
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    shop_id: uuid.UUID = Field(
+        foreign_key="shops.id",
+        index=True,
+        nullable=False,
+    )
+    address_raw: str = Field(sa_type=String, nullable=False)
+    address_normalized: str = Field(sa_type=String, nullable=False)
+    first_seen_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    last_seen_at: datetime = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    seen_count: int = Field(default=1, sa_type=Integer, nullable=False)
+    is_primary: bool = Field(default=False, sa_type=Boolean, nullable=False, index=True)
+    shop: Shop = Relationship(back_populates="addresses")
+    __table_args__ = (
+        UniqueConstraint(
+            "shop_id",
+            "address_normalized",
+            name="uq_shop_addresses_shop_normalized",
+        ),
+        Index("ix_shop_addresses_shop_primary", "shop_id", "is_primary"),
+    )
+
+
+class ShopAddressPublic(SQLModel):
+    id: uuid.UUID
+    address_raw: str
+    address_normalized: str
+    first_seen_at: datetime
+    last_seen_at: datetime
+    seen_count: int
+    is_primary: bool
 
 
 # --- Shop schemas ---
@@ -416,6 +458,9 @@ class ShopRead(SQLModel):
     shop_owner_id: uuid.UUID | None
     shop_owner: ShopOwnerPublic | None = None
     category_ids: list[uuid.UUID] = Field(default_factory=list)
+    address_aliases_count: int = 0
+    has_address_conflict: bool = False
+    addresses: list[ShopAddressPublic] = Field(default_factory=list)
 
 
 class ShopPublic(ShopRead):
@@ -427,6 +472,10 @@ class ShopsPublic(SQLModel):
 
     data: list[ShopRead]
     count: int
+
+
+class ShopPrimaryAddressUpdate(SQLModel):
+    alias_id: uuid.UUID
 
 
 # --- Receipts ---
@@ -682,6 +731,10 @@ class ReceiptUpdate(SQLModel):
     cashier_id: uuid.UUID | None = None
     status: ReceiptStatus | None = None
     source: ReceiptSource | None = None
+
+
+class ReceiptShopUpdate(SQLModel):
+    shop_id: uuid.UUID
 
 
 class ReceiptRead(ReceiptBase):

@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AnalyticsReadDashboardData, AnalyticsReadDashboardResponse, CashiersReadCashiersData, CashiersReadCashiersResponse, CashiersCreateCashierData, CashiersCreateCashierResponse, CashiersReadCashierData, CashiersReadCashierResponse, CashiersUpdateCashierData, CashiersUpdateCashierResponse, CashiersDeleteCashierData, CashiersDeleteCashierResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ReceiptItemCategoriesReadReceiptItemCategoriesData, ReceiptItemCategoriesReadReceiptItemCategoriesResponse, ReceiptItemCategoriesCreateReceiptItemCategoryData, ReceiptItemCategoriesCreateReceiptItemCategoryResponse, ReceiptItemCategoriesReadReceiptItemCategoryData, ReceiptItemCategoriesReadReceiptItemCategoryResponse, ReceiptItemCategoriesUpdateReceiptItemCategoryData, ReceiptItemCategoriesUpdateReceiptItemCategoryResponse, ReceiptItemCategoriesDeleteReceiptItemCategoryData, ReceiptItemCategoriesDeleteReceiptItemCategoryResponse, ReceiptItemsReadReceiptItemsData, ReceiptItemsReadReceiptItemsResponse, ReceiptItemsCreateReceiptItemData, ReceiptItemsCreateReceiptItemResponse, ReceiptItemsReadReceiptItemData, ReceiptItemsReadReceiptItemResponse, ReceiptItemsUpdateReceiptItemData, ReceiptItemsUpdateReceiptItemResponse, ReceiptItemsDeleteReceiptItemData, ReceiptItemsDeleteReceiptItemResponse, ReceiptItemsReplaceReceiptItemCategoriesData, ReceiptItemsReplaceReceiptItemCategoriesResponse, ReceiptItemsReplaceReceiptItemsCategoriesByNameData, ReceiptItemsReplaceReceiptItemsCategoriesByNameResponse, ReceiptsReadReceiptsData, ReceiptsReadReceiptsResponse, ReceiptsExportReceiptsData, ReceiptsExportReceiptsResponse, ReceiptsImportReceiptsData, ReceiptsImportReceiptsResponse, ReceiptsReadReceiptData, ReceiptsReadReceiptResponse, ReceiptsDeleteReceiptData, ReceiptsDeleteReceiptResponse, ReceiptsAddReceiptItemsData, ReceiptsAddReceiptItemsResponse, ReceiptsCreateReceiptFromRawJsonData, ReceiptsCreateReceiptFromRawJsonResponse, ReceiptsCreateReceiptFromRawFileData, ReceiptsCreateReceiptFromRawFileResponse, ShopCategoriesReadShopCategoriesData, ShopCategoriesReadShopCategoriesResponse, ShopCategoriesCreateCategoryData, ShopCategoriesCreateCategoryResponse, ShopCategoriesReadShopCategorieData, ShopCategoriesReadShopCategorieResponse, ShopCategoriesUpdateCategoryData, ShopCategoriesUpdateCategoryResponse, ShopCategoriesDeleteCategoryData, ShopCategoriesDeleteCategoryResponse, ShopOwnersReadShopOwnersData, ShopOwnersReadShopOwnersResponse, ShopOwnersCreateShopOwnerData, ShopOwnersCreateShopOwnerResponse, ShopOwnersReadShopOwnerData, ShopOwnersReadShopOwnerResponse, ShopOwnersUpdateShopOwnerData, ShopOwnersUpdateShopOwnerResponse, ShopOwnersDeleteShopOwnerData, ShopOwnersDeleteShopOwnerResponse, ShopOwnersSetPrimaryNameData, ShopOwnersSetPrimaryNameResponse, ShopsReadShopsData, ShopsReadShopsResponse, ShopsCreateShopData, ShopsCreateShopResponse, ShopsReadShopData, ShopsReadShopResponse, ShopsUpdateShopData, ShopsUpdateShopResponse, ShopsDeleteShopData, ShopsDeleteShopResponse, ShopsReplaceShopCategoriesData, ShopsReplaceShopCategoriesResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AnalyticsReadDashboardData, AnalyticsReadDashboardResponse, CashiersReadCashiersData, CashiersReadCashiersResponse, CashiersCreateCashierData, CashiersCreateCashierResponse, CashiersReadCashierData, CashiersReadCashierResponse, CashiersUpdateCashierData, CashiersUpdateCashierResponse, CashiersDeleteCashierData, CashiersDeleteCashierResponse, ItemsReadItemsData, ItemsReadItemsResponse, ItemsCreateItemData, ItemsCreateItemResponse, ItemsReadItemData, ItemsReadItemResponse, ItemsUpdateItemData, ItemsUpdateItemResponse, ItemsDeleteItemData, ItemsDeleteItemResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, ReceiptItemCategoriesReadReceiptItemCategoriesData, ReceiptItemCategoriesReadReceiptItemCategoriesResponse, ReceiptItemCategoriesCreateReceiptItemCategoryData, ReceiptItemCategoriesCreateReceiptItemCategoryResponse, ReceiptItemCategoriesReadReceiptItemCategoryData, ReceiptItemCategoriesReadReceiptItemCategoryResponse, ReceiptItemCategoriesUpdateReceiptItemCategoryData, ReceiptItemCategoriesUpdateReceiptItemCategoryResponse, ReceiptItemCategoriesDeleteReceiptItemCategoryData, ReceiptItemCategoriesDeleteReceiptItemCategoryResponse, ReceiptItemsReadReceiptItemsData, ReceiptItemsReadReceiptItemsResponse, ReceiptItemsCreateReceiptItemData, ReceiptItemsCreateReceiptItemResponse, ReceiptItemsReadReceiptItemData, ReceiptItemsReadReceiptItemResponse, ReceiptItemsUpdateReceiptItemData, ReceiptItemsUpdateReceiptItemResponse, ReceiptItemsDeleteReceiptItemData, ReceiptItemsDeleteReceiptItemResponse, ReceiptItemsReplaceReceiptItemCategoriesData, ReceiptItemsReplaceReceiptItemCategoriesResponse, ReceiptItemsReplaceReceiptItemsCategoriesByNameData, ReceiptItemsReplaceReceiptItemsCategoriesByNameResponse, ReceiptsReadReceiptsData, ReceiptsReadReceiptsResponse, ReceiptsExportReceiptsData, ReceiptsExportReceiptsResponse, ReceiptsImportReceiptsData, ReceiptsImportReceiptsResponse, ReceiptsReadReceiptData, ReceiptsReadReceiptResponse, ReceiptsDeleteReceiptData, ReceiptsDeleteReceiptResponse, ReceiptsUpdateReceiptShopData, ReceiptsUpdateReceiptShopResponse, ReceiptsAddReceiptItemsData, ReceiptsAddReceiptItemsResponse, ReceiptsCreateReceiptFromRawJsonData, ReceiptsCreateReceiptFromRawJsonResponse, ReceiptsCreateReceiptFromRawFileData, ReceiptsCreateReceiptFromRawFileResponse, ShopCategoriesReadShopCategoriesData, ShopCategoriesReadShopCategoriesResponse, ShopCategoriesCreateCategoryData, ShopCategoriesCreateCategoryResponse, ShopCategoriesReadShopCategorieData, ShopCategoriesReadShopCategorieResponse, ShopCategoriesUpdateCategoryData, ShopCategoriesUpdateCategoryResponse, ShopCategoriesDeleteCategoryData, ShopCategoriesDeleteCategoryResponse, ShopOwnersReadShopOwnersData, ShopOwnersReadShopOwnersResponse, ShopOwnersCreateShopOwnerData, ShopOwnersCreateShopOwnerResponse, ShopOwnersReadShopOwnerData, ShopOwnersReadShopOwnerResponse, ShopOwnersUpdateShopOwnerData, ShopOwnersUpdateShopOwnerResponse, ShopOwnersDeleteShopOwnerData, ShopOwnersDeleteShopOwnerResponse, ShopOwnersSetPrimaryNameData, ShopOwnersSetPrimaryNameResponse, ShopsReadShopsData, ShopsReadShopsResponse, ShopsCreateShopData, ShopsCreateShopResponse, ShopsReadShopData, ShopsReadShopResponse, ShopsUpdateShopData, ShopsUpdateShopResponse, ShopsDeleteShopData, ShopsDeleteShopResponse, ShopsReplaceShopCategoriesData, ShopsReplaceShopCategoriesResponse, ShopsSetPrimaryShopAddressData, ShopsSetPrimaryShopAddressResponse, ShopsSplitShopByAddressData, ShopsSplitShopByAddressResponse, TelegramTelegramWebhookResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AnalyticsService {
     /**
@@ -756,6 +756,30 @@ export class ReceiptsService {
     }
     
     /**
+     * Update Receipt Shop
+     * Reassign receipt to another existing shop of the same owner.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns ReceiptWithItemsFullPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateReceiptShop(data: ReceiptsUpdateReceiptShopData): CancelablePromise<ReceiptsUpdateReceiptShopResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/receipts/{id}/shop',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
      * Add Receipt Items
      * Add items to an existing receipt.
      * @param data The data for the request.
@@ -1201,6 +1225,65 @@ export class ShopsService {
             errors: {
                 422: 'Validation Error'
             }
+        });
+    }
+    
+    /**
+     * Set Primary Shop Address
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns ShopPublic Successful Response
+     * @throws ApiError
+     */
+    public static setPrimaryShopAddress(data: ShopsSetPrimaryShopAddressData): CancelablePromise<ShopsSetPrimaryShopAddressResponse> {
+        return __request(OpenAPI, {
+            method: 'PATCH',
+            url: '/api/v1/shops/{id}/primary-address',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Split Shop By Address
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.aliasId
+     * @returns ShopPublic Successful Response
+     * @throws ApiError
+     */
+    public static splitShopByAddress(data: ShopsSplitShopByAddressData): CancelablePromise<ShopsSplitShopByAddressResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/shops/{id}/split-by-address/{alias_id}',
+            path: {
+                id: data.id,
+                alias_id: data.aliasId
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class TelegramService {
+    /**
+     * Telegram Webhook
+     * @returns boolean Successful Response
+     * @throws ApiError
+     */
+    public static telegramWebhook(): CancelablePromise<TelegramTelegramWebhookResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/telegram/webhook'
         });
     }
 }

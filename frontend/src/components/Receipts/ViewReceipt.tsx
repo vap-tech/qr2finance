@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import ChangeReceiptShop from "./ChangeReceiptShop";
 import { ReceiptItemActionsMenu } from "./ReceiptItemActionsMenu";
 
 interface ViewReceiptProps {
@@ -89,7 +90,7 @@ const ViewReceipt = ({ id, open, onOpenChange }: ViewReceiptProps) => {
               </div>
               <div>
                 <span className="text-muted-foreground">Shop: </span>
-                <div className="inline-flex max-w-55 flex-col align-top">
+                <div className="inline-flex max-w-55 flex-col align-top gap-2">
                   {(() => {
                     const shopName =
                       receiptData.shop?.retail_name ||
@@ -120,6 +121,14 @@ const ViewReceipt = ({ id, open, onOpenChange }: ViewReceiptProps) => {
                       </Tooltip>
                     );
                   })()}
+                  <ChangeReceiptShop
+                    receiptId={id}
+                    currentShopId={receiptData.shop?.id ?? null}
+                    trigger="button"
+                    onSuccess={() => {
+                      query.refetch();
+                    }}
+                  />
                 </div>
               </div>
               <div>
